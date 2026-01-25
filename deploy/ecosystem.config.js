@@ -10,7 +10,7 @@ module.exports = {
       watch: false,
       max_memory_restart: '500M',
       env: {
-        NODE_ENV: 'dev',
+        NODE_ENV: 'production',
         PORT: 5100,
         BACKEND_INTERNAL_URL: 'http://127.0.0.1:8000',
       },
