@@ -1,117 +1,214 @@
 # Certificate Master - Project Overview
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-01-25
 
-## 📋 Project Summary
+## Project Summary
 
 **Certificate Master (자격증 마스터)** is an all-in-one platform providing certificate information, personalized study plans, and AI guidance.
 
-- **Status**: MVP Development (Week 1-2)
+- **Status**: MVP Development (Active)
 - **Target**: 자격증 준비 중인 모든 사람
 - **Business Model**: Free (initial), Premium subscription + Ads (later)
+- **Dev Server**: https://dev-cert.i-ve.ai
 
 ---
 
-## 🎯 Core Value Proposition
+## Core Value Proposition
 
 **자격증 정보 + 맞춤형 학습 플랜 + AI 가이드** in one place
 
-### Key Features (MVP)
-1. ✅ **Certificate Search & Details** - API-based enriched data
-2. ✅ **Google OAuth Authentication** - Secure social login
-3. ✅ **Session Management** - Auto session sync & logout
-4. 🚧 **Study Progress Tracking** - AI milestones + check-ins
-5. 🔜 **Community** (Optional) - Tag-based forum
+### Key Features
+1. **Certificate Search & Details** - API-based enriched data with autocomplete
+2. **Google OAuth Authentication** - Secure social login via Supabase
+3. **AI-Powered Recommendations** - RAG-based certificate recommendations
+4. **Study Plan Management** - LLM-generated personalized study plans
+5. **Check-in & Progress Tracking** - Daily check-ins with analytics
+6. **Learning Analytics** - Progress metrics, patterns, and insights
 
 ---
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 ### Backend
 - **Framework**: Python FastAPI
-- **Database**: Supabase (PostgreSQL)
+- **Database**: MariaDB (SQLAlchemy ORM + PyMySQL)
 - **Auth**: Supabase Auth (Google OAuth)
+- **Vector DB**: ChromaDB + BGE-M3 Embeddings
+- **LLM**: OpenAI GPT-4o-mini
+- **Search**: Brave Search API
 - **Package Manager**: uv
 - **API Documentation**: OpenAPI/Swagger
 
-**Key Technologies**:
-- Pydantic for data validation
-- SQLAlchemy ORM
-- Pytest for testing
-
 ### Frontend
 - **Framework**: Next.js 14 (App Router)
-- **Styling**: Tailwind CSS + shadcn/ui
-- **State Management**: Zustand (with persist)
-- **Data Fetching**: TanStack Query (React Query)
-- **Testing**: Playwright (E2E)
 - **Language**: TypeScript
-
-**Key Features**:
-- Google OAuth integration
-- Infinite scroll search
-- Autocomplete with debouncing
-- Session management with useAuth hook
+- **Styling**: Tailwind CSS + shadcn/ui
+- **State Management**: Zustand
+- **Data Fetching**: TanStack Query (React Query)
+- **Forms**: React Hook Form + Zod validation
+- **Testing**: Playwright (E2E)
 
 ### Deployment
-- **Local**: Supabase CLI + Docker
-- **Backend**: Docker container (FastAPI)
-- **Frontend**: Docker/Vercel
-- **Database**: Supabase (local + cloud)
+- **Container**: Docker + Docker Compose
+- **Backend**: FastAPI container (port 8000)
+- **Frontend**: Next.js container (port 5100)
+- **Database**: MariaDB (external)
+- **Vector Store**: ChromaDB (external server)
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 certificate-master/
-├── backend/              # Python FastAPI Backend
-│   ├── app/              # Application code
-│   │   ├── api/v1/      # API endpoints
-│   │   ├── core/        # Config, database, security
-│   │   ├── schemas/     # Pydantic models
-│   │   └── services/    # Business logic
-│   ├── scripts/         # Data processing scripts
-│   ├── tests/           # Unit & integration tests
-│   ├── CLAUDE.md        # Backend development guide
-│   └── README.md        # Backend setup
+├── backend/                    # Python FastAPI Backend
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── v1/
+│   │   │   │   ├── certificates.py    # Certificate CRUD & search
+│   │   │   │   ├── study_plans.py     # Study plan management
+│   │   │   │   ├── checkins.py        # Check-in tracking
+│   │   │   │   ├── analytics.py       # Learning pattern API
+│   │   │   │   ├── progress_analytics.py
+│   │   │   │   └── recommendations.py # RAG recommendations
+│   │   │   ├── deps.py                # Dependencies
+│   │   │   └── chroma.py              # ChromaDB API
+│   │   ├── core/
+│   │   │   ├── config.py              # Settings (Pydantic)
+│   │   │   ├── database.py            # MariaDB connection
+│   │   │   ├── security.py            # Auth middleware
+│   │   │   └── supabase.py            # Supabase client
+│   │   ├── models/                    # SQLAlchemy models
+│   │   │   ├── certificate.py
+│   │   │   ├── study_plan.py
+│   │   │   └── checkin.py
+│   │   ├── schemas/                   # Pydantic schemas
+│   │   │   ├── certificate.py
+│   │   │   ├── study_plan.py
+│   │   │   ├── checkin.py
+│   │   │   ├── analytics.py
+│   │   │   └── recommendation.py
+│   │   ├── services/                  # Business logic
+│   │   │   ├── analytics_service.py
+│   │   │   ├── learning_pattern_service.py
+│   │   │   ├── study_plan_service.py
+│   │   │   ├── recommendation_service.py
+│   │   │   ├── embedding_service.py
+│   │   │   ├── vector_store.py
+│   │   │   ├── llm_service.py
+│   │   │   ├── brave_search.py
+│   │   │   ├── enrichment_service.py
+│   │   │   └── velocity_calculator.py
+│   │   ├── utils/
+│   │   └── main.py                    # FastAPI entrypoint
+│   ├── data/
+│   │   ├── raw/                       # Raw CSV data
+│   │   └── processed/                 # Processed JSON data
+│   ├── scripts/                       # Data processing scripts
+│   │   ├── parse_csv.py
+│   │   ├── enrich_certificates.py
+│   │   ├── generate_embeddings.py
+│   │   ├── seed_certificates.py
+│   │   └── database/                  # SQL migrations
+│   ├── tests/
+│   │   ├── unit/
+│   │   ├── integration/
+│   │   └── e2e/
+│   ├── docs/
+│   ├── CLAUDE.md
+│   ├── README.md
+│   └── pyproject.toml
 │
-├── frontend/            # Next.js Frontend
+├── frontend/                   # Next.js Frontend
 │   ├── src/
-│   │   ├── app/         # App Router pages
-│   │   ├── components/  # UI components
-│   │   ├── hooks/       # Custom hooks (useAuth, useCertificates)
-│   │   ├── lib/         # API client, utils
-│   │   └── stores/      # Zustand stores
-│   ├── tests/e2e/       # Playwright E2E tests
-│   ├── CLAUDE.md        # Frontend development guide
-│   └── README.md        # Frontend setup
+│   │   ├── app/                       # App Router pages
+│   │   │   ├── page.tsx               # Landing page
+│   │   │   ├── search/                # Search + AI recommend
+│   │   │   ├── certificates/[id]/     # Certificate detail
+│   │   │   ├── dashboard/             # User dashboard
+│   │   │   ├── study-plans/           # Study plan pages
+│   │   │   ├── analytics/             # Analytics page
+│   │   │   ├── login/                 # Login page
+│   │   │   ├── auth/callback/         # OAuth callback
+│   │   │   ├── community/             # Community (placeholder)
+│   │   │   ├── privacy/               # Privacy policy
+│   │   │   └── terms/                 # Terms of service
+│   │   ├── components/
+│   │   │   ├── ui/                    # shadcn/ui components
+│   │   │   ├── auth/                  # Auth components
+│   │   │   ├── certificate/           # Certificate components
+│   │   │   ├── recommend/             # AI recommend wizard
+│   │   │   ├── study-plan/            # Study plan components
+│   │   │   ├── dashboard/             # Dashboard widgets
+│   │   │   ├── analytics/             # Analytics components
+│   │   │   ├── landing/               # Landing page components
+│   │   │   ├── layout/                # Header, Footer
+│   │   │   └── providers/             # SessionProvider
+│   │   ├── hooks/
+│   │   │   ├── use-auth.ts
+│   │   │   ├── use-certificates.ts
+│   │   │   ├── use-study-plans.ts
+│   │   │   ├── use-checkins.ts
+│   │   │   ├── use-recommendations.ts
+│   │   │   ├── use-analytics.ts
+│   │   │   ├── use-velocity-metrics.ts
+│   │   │   └── use-debounce.ts
+│   │   ├── lib/
+│   │   │   ├── api/                   # API client & types
+│   │   │   ├── supabase/              # Supabase clients
+│   │   │   ├── providers.tsx
+│   │   │   └── utils.ts
+│   │   └── stores/
+│   │       ├── auth-store.ts
+│   │       ├── search-store.ts
+│   │       └── recommend-store.ts
+│   ├── tests/e2e/                     # Playwright tests
+│   ├── public/
+│   ├── CLAUDE.md
+│   ├── README.md
+│   ├── playwright.config.ts
+│   └── package.json
 │
-├── docs/                # Documentation
-│   ├── cert-plan.md     # Original project plan
-│   ├── plan-template.md # Planning template
-│   └── SKILL.md         # Feature planner skill
+├── deploy/                     # Deployment configuration
+│   ├── Dockerfile.backend
+│   ├── Dockerfile.frontend
+│   ├── docker-compose.yml
+│   ├── docker-compose.backend.yml
+│   ├── deploy-backend.sh
+│   ├── deploy-frontend.sh
+│   ├── deploy.sh
+│   ├── ecosystem.config.js
+│   └── README.md
 │
-├── CLAUDE.md            # This file (main guide)
-└── SESSION_MANAGEMENT_IMPLEMENTATION.md  # Session management docs
+├── docs/                       # Documentation
+│   ├── cert-plan.md
+│   ├── plan-template.md
+│   ├── RAG_RECOMMENDATION_PLAN.md
+│   ├── PINECONE_DATA_PIPELINE.md
+│   └── CLAUDE.md
+│
+├── CLAUDE.md                   # This file
+├── AGENTS.md                   # AI agent guidelines
+└── .gitignore
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.11+ with uv
 - Node.js 18+
-- Supabase CLI
-- Docker (for Supabase)
+- Docker (for deployment)
+- MariaDB (or use Docker)
+- ChromaDB server (or use Docker)
 
 ### Backend Setup
 ```bash
 cd backend
 uv sync --extra dev
 cp .env.example .env
-# Edit .env with your Supabase credentials
+# Edit .env with your credentials
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
@@ -119,105 +216,101 @@ uv run uvicorn app.main:app --reload --port 8000
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local
-# Edit .env.local with Supabase URL and keys
+cp .env.sample .env.local
+# Edit .env.local with your settings
 npm run dev
 ```
 
-### Supabase Setup
+### Docker Deployment
 ```bash
-# Start local Supabase
-supabase start
-
-# Get credentials
-supabase status -o env
-
-# Run migrations
-supabase db reset
+cd deploy
+docker-compose build
+docker-compose up -d
 ```
 
 ---
 
-## 📚 Detailed Documentation
+## API Endpoints
 
-### Development Guides
-- **[Backend Guide](./backend/CLAUDE.md)** - API development, database schema, testing
-- **[Frontend Guide](./frontend/CLAUDE.md)** - Components, hooks, state management, E2E tests
-- **[Session Management](./SESSION_MANAGEMENT_IMPLEMENTATION.md)** - Authentication & session flow
+### Certificates
+- `GET /api/v1/certificates/search` - Search certificates
+- `GET /api/v1/certificates/autocomplete` - Autocomplete suggestions
+- `GET /api/v1/certificates/categories` - Get categories
+- `GET /api/v1/certificates/series` - Get series by category
+- `GET /api/v1/certificates/{id}` - Get certificate details
 
-### Setup & Configuration
-- **[Backend README](./backend/README.md)** - Installation & running
-- **[Frontend README](./frontend/README.md)** - Installation & running
+### Study Plans
+- `GET /api/v1/study-plans` - List user's study plans
+- `POST /api/v1/study-plans` - Create study plan (LLM-generated)
+- `GET /api/v1/study-plans/{id}` - Get study plan details
+- `PATCH /api/v1/study-plans/{id}` - Update study plan
+- `DELETE /api/v1/study-plans/{id}` - Delete study plan
 
-### Project Planning
-- **[Project Plan](./docs/cert-plan.md)** - Original MVP planning
-- **[Plan Template](./docs/plan-template.md)** - Feature planning template
+### Check-ins
+- `GET /api/v1/checkins` - List check-ins
+- `POST /api/v1/checkins` - Create check-in
+- `GET /api/v1/checkins/{study_plan_id}/stats` - Check-in statistics
+- `GET /api/v1/checkins/{study_plan_id}/streak` - Current streak
 
----
+### Analytics
+- `GET /api/v1/analytics/progress/{study_plan_id}` - Progress analytics
+- `GET /api/v1/analytics/learning-pattern/{study_plan_id}` - Learning patterns
 
-## ✨ Recent Updates (2026-01-06)
+### Recommendations
+- `POST /api/v1/recommendations` - Get AI recommendations
 
-### Implemented Features
-1. **Google OAuth Authentication** ✅
-   - Single authentication method (email/password removed)
-   - Automatic session management
-   - OAuth callback handling
-   - 14/14 E2E tests passing
-
-2. **Session Management** ✅
-   - useAuth hook for global auth state
-   - SessionProvider for app-wide sync
-   - Auto session check on app load
-   - Real-time auth state changes
-   - 23/31 tests passing (8 require real login)
-
-3. **Study Plan Button** ✅
-   - "학습 계획 만들기" button on certificate detail page
-   - Login check before adding to study plan
-   - Redirect to /login if not authenticated
-   - 2/2 E2E tests passing
-
-4. **Type Safety Improvements** ✅
-   - Fixed TypeError in type guards (optional chaining)
-   - All type guards now handle undefined arrays safely
-
-### Test Coverage
-- **Frontend E2E**: 125+ tests, ~94% passing
-- **Backend**: Unit & integration tests
+### ChromaDB
+- `GET /chroma/stats` - Vector store statistics
+- `GET /chroma/search` - Semantic search
 
 ---
 
-## 🎯 Development Status
+## Environment Variables
 
-### ✅ Completed
-- [x] Backend API (Schema V2)
-- [x] Certificate search with autocomplete
-- [x] Infinite scroll pagination
-- [x] Google OAuth login
-- [x] Session management
-- [x] Certificate detail page
-- [x] Study plan button (UI only)
-- [x] E2E test suite
-- [x] Debouncing (300ms)
+### Backend (.env)
+```env
+# Supabase (Auth)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-### 🚧 In Progress
-- [ ] Study plan CRUD API
-- [ ] Study plan dashboard UI
-- [ ] Check-in functionality
+# MariaDB
+MARIADB_HOST=localhost
+MARIADB_PORT=3306
+MARIADB_USER=your-user
+MARIADB_PASSWORD=your-password
+MARIADB_DATABASE=certificate_master
 
-### 🔜 Planned
-- [ ] AI-generated study plans
-- [ ] Progress tracking
-- [ ] Community forum
-- [ ] Notifications
+# ChromaDB
+CHROMA_HOST=db01.server.ivetech.co.kr
+CHROMA_PORT=38000
+CHROMA_COLLECTION_NAME=certificate-master-index
+
+# APIs
+OPENAI_API_KEY=sk-...
+BRAVE_API_KEY=BSA...
+
+# Application
+ENVIRONMENT=development
+DEBUG=true
+CORS_ORIGINS=http://localhost:3000,http://localhost:5100
+```
+
+### Frontend (.env.local)
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
 ---
 
-## 🛠️ Development Workflow
+## Development Workflow
 
 ### Code Style
 - **Python**: Black formatter, Ruff linter, Type hints required
-- **TypeScript**: Prettier, ESLint, Strict mode
+- **TypeScript**: ESLint, Strict mode
+- **Indentation**: 2 spaces (TS/TSX), 4 spaces (Python)
 
 ### Git Conventions
 ```
@@ -226,70 +319,78 @@ fix: Bug fix
 refactor: Code refactoring
 docs: Documentation
 test: Test code
+chore: Maintenance
 ```
 
-### Testing Strategy
-- **TDD Approach**: RED (test) → GREEN (implement) → VERIFY (run tests)
-- **Backend**: pytest (unit + integration)
-- **Frontend**: Playwright (E2E)
-- **Target Coverage**: 80%+ for business logic
+### Testing
+```bash
+# Backend
+uv run pytest                           # All tests
+uv run pytest tests/unit               # Unit tests
+uv run pytest tests/integration        # Integration tests
 
----
-
-## 🔐 Environment Variables
-
-### Backend (.env)
-```env
-SUPABASE_URL=http://localhost:54321
-SUPABASE_ANON_KEY=<from supabase status>
-SUPABASE_SERVICE_ROLE_KEY=<from supabase status>
-SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:54322/postgres
-```
-
-### Frontend (.env.local)
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
-NEXT_PUBLIC_API_URL=http://localhost:8000
+# Frontend
+npm test                               # All E2E tests
+npm run test:ui                        # Interactive mode
+npm run test:headed                    # With browser
 ```
 
 ---
 
-## 📊 Success Metrics (MVP)
+## Key Features Implementation
 
-1. ✅ 100+ certificates in database (enriched with AI)
-2. ✅ Search functionality working
-3. ✅ Google OAuth authentication
-4. 🚧 AI-generated study plans
-5. 🔜 Progress tracking functional
-6. 🔜 Deployed and accessible
+### 1. RAG-based Recommendations
+- 5-step interaction wizard (field, goal, experience, time, duration)
+- ChromaDB vector search with BGE-M3 embeddings
+- Match score calculation based on similarity and feasibility
 
----
+### 2. LLM Study Plan Generation
+- GPT-4o-mini generates personalized milestones and topics
+- Considers certificate difficulty, user's daily hours, target date
+- Automatic week-by-week breakdown
 
-## 🤝 Contributing
+### 3. Learning Analytics
+- Completion rate, time adherence, schedule adherence
+- Learning pattern analysis (preferred time slots, consistency)
+- Risk signal detection (streak broken, mood deterioration)
 
-This project follows TDD (Test-Driven Development):
-1. Write failing tests first
-2. Implement minimal code to pass tests
-3. Verify tests pass
-4. Refactor if needed
-
-See individual component guides for detailed development instructions:
-- [Backend Development](./backend/CLAUDE.md)
-- [Frontend Development](./frontend/CLAUDE.md)
-
----
-
-## 📞 Support & Resources
-
-- **Backend API Docs**: http://localhost:8000/docs (when running)
-- **Supabase Studio**: http://localhost:54323 (local)
-- **Frontend Dev Server**: http://localhost:3000
-
-For detailed technical documentation, refer to the component-specific CLAUDE.md files in `backend/` and `frontend/` directories.
+### 4. Check-in System
+- Daily study hour logging with mood tracking
+- Streak calculation for motivation
+- AI encouragement messages based on mood
 
 ---
 
-**Author**: Claude Sonnet 4.5
-**Project Status**: ✅ MVP Phase 1 Complete (Search + Auth)
-**Next Phase**: Study Plan Features
+## Testing Status
+
+### Backend
+- Unit tests: 100+ tests
+- Integration tests: 30+ tests
+- Test framework: pytest
+
+### Frontend
+- E2E tests: 22 test files, 150+ tests
+- Key areas: Landing, Search, Recommend, Auth, Dashboard, Study Plans
+- Test framework: Playwright
+
+---
+
+## Documentation
+
+- **[Backend Guide](./backend/CLAUDE.md)** - API development, services, testing
+- **[Frontend Guide](./frontend/CLAUDE.md)** - Components, hooks, E2E tests
+- **[Deploy Guide](./deploy/README.md)** - Docker deployment instructions
+- **[RAG Plan](./docs/RAG_RECOMMENDATION_PLAN.md)** - Recommendation system design
+
+---
+
+## Resources
+
+- **Backend API Docs**: http://localhost:8000/docs (local)
+- **Frontend Dev**: http://localhost:3000 (local)
+- **Dev Server**: https://dev-cert.i-ve.ai
+
+---
+
+**Author**: Development Team
+**Project Status**: MVP Phase 2 (AI Features)
