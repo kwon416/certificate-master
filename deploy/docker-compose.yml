@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../deploy/Dockerfile.backend
+    container_name: cert-master-backend
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=https://dev-cert.i-ve.ai
+    ports:
+      - "8000:8000"
+    networks:
+      - cert-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend (Next.js) - 5100 포트에서 직접 서빙
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../deploy/Dockerfile.frontend
+      args:
+        - NEXT_PUBLIC_API_URL=https://dev-cert.i-ve.ai/api
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    container_name: cert-master-frontend
+    restart: unless-stopped
+    env_file:
+      - ../frontend/.env
+    environment:
+      - PORT=5100
+      - BACKEND_INTERNAL_URL=http://backend:8000
+    ports:
+      - "5100:5100"
+    networks:
+      - cert-network
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  cert-network:
+    driver: bridge

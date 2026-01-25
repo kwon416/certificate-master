@@ -1,0 +1,71 @@
+[project]
+name = "certificate-master-backend"
+version = "0.1.0"
+description = "Backend API for Certificate Master - Korean certificate information platform"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "supabase>=2.3.4",
+    "python-dotenv>=1.0.0",
+    "pydantic-settings>=2.1.0",
+    "redis>=5.0.1",
+    "celery>=5.3.4",
+    "openai>=1.10.0",
+    "httpx>=0.26.0",
+    "pytest>=9.0.2",
+    "psycopg2-binary>=2.9.11",
+    "beautifulsoup4>=4.12.0",
+    # Vector DB & Embedding (Pinecone → ChromaDB + BGE-M3)
+    "chromadb>=0.4.0",
+    "FlagEmbedding>=1.2.0",
+    # MariaDB (SQLAlchemy + PyMySQL)
+    "sqlalchemy>=2.0.0",
+    "pymysql>=1.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "ruff>=0.1.0",
+    "requests>=2.31.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore:.*enablePackrat.*:DeprecationWarning:pyiceberg\\.expressions\\.parser",
+    "ignore:.*escChar.*:DeprecationWarning:pyiceberg\\.expressions\\.parser",
+    "ignore:.*unquoteResults.*:DeprecationWarning:pyiceberg\\.expressions\\.parser",
+    "ignore:.*model_validator.*:DeprecationWarning:pyiceberg\\.table\\.metadata",
+    "ignore:.*timeout.*deprecated.*:DeprecationWarning:supabase\\._sync\\.client",
+    "ignore:.*verify.*deprecated.*:DeprecationWarning:supabase\\._sync\\.client",
+]
+markers = [
+    "e2e: marks tests as end-to-end tests (requires running server)",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "I", "W"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,0 +1,349 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Filter, RotateCcw, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Slider } from '@/components/ui/slider'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { useSearchStore } from '@/stores/search-store'
+import { certificatesAPI } from '@/lib/api'
+
+const studyPeriods = [
+  { value: 'all', label: '전체' },
+  { value: '1', label: '1개월 이내' },
+  { value: '3', label: '3개월 이내' },
+  { value: '6', label: '6개월 이내' },
+  { value: '12', label: '1년 이내' },
+]
+
+interface SearchFiltersProps {
+  onFilterChange?: () => void
+}
+
+export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
+  const { filters, setFilters, resetFilters } = useSearchStore()
+  const [isOpen, setIsOpen] = useState(false)
+  const [categories, setCategories] = useState<string[]>([])
+  const [availableSeries, setAvailableSeries] = useState<string[]>([])
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
+  const [isLoadingSeries, setIsLoadingSeries] = useState(false)
+
+  // Load categories on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await certificatesAPI.getCategories()
+        setCategories(cats)
+      } catch (error) {
+        console.error('Failed to load categories:', error)
+      } finally {
+        setIsLoadingCategories(false)
+      }
+    }
+    loadCategories()
+  }, [])
+
+  // Load series when category changes
+  useEffect(() => {
+    const loadSeries = async () => {
+      if (!filters.category) {
+        setAvailableSeries([])
+        return
+      }
+
+      setIsLoadingSeries(true)
+      try {
+        const data = await certificatesAPI.getSeries(filters.category)
+
+        // Find series for selected category
+        const categoryData = data.find(d => d.category === filters.category)
+        setAvailableSeries(categoryData?.series || [])
+      } catch (error) {
+        console.error('Failed to load series:', error)
+        setAvailableSeries([])
+      } finally {
+        setIsLoadingSeries(false)
+      }
+    }
+    loadSeries()
+  }, [filters.category])
+
+  const handleDifficultyChange = (value: number[]) => {
+    if (value.length === 2) {
+      setFilters({ difficulty: [value[0], value[1]] })
+      onFilterChange?.()
+    }
+  }
+
+  const handleCategoryChange = (value: string) => {
+    setFilters({ 
+      category: value === 'all' ? null : value,
+      series: null // Reset series when category changes
+    })
+    onFilterChange?.()
+  }
+
+  const handleSeriesChange = (value: string) => {
+    setFilters({ series: value === 'all' ? null : value })
+    onFilterChange?.()
+  }
+
+  const handleStudyPeriodChange = (value: string) => {
+    setFilters({ studyPeriod: value === 'all' ? null : value })
+    onFilterChange?.()
+  }
+
+  const handleReset = () => {
+    resetFilters()
+    onFilterChange?.()
+  }
+
+  const activeFilterCount = [
+    filters.difficulty[0] !== 1 || filters.difficulty[1] !== 5,
+    filters.category !== null,
+    filters.series !== null,
+    filters.studyPeriod !== null,
+  ].filter(Boolean).length
+
+  const FilterContent = () => (
+    <div className="space-y-6">
+      {/* Category Filter (Level 1) */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-white">자격구분</label>
+          <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs">
+            1단계
+          </Badge>
+        </div>
+        <Select
+          value={filters.category || 'all'}
+          onValueChange={handleCategoryChange}
+          disabled={isLoadingCategories}
+        >
+          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+            <SelectValue placeholder={isLoadingCategories ? "로딩 중..." : "자격구분 선택"} />
+          </SelectTrigger>
+          <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectItem
+              value="all"
+              className="text-slate-200 focus:bg-slate-700 focus:text-white"
+            >
+              전체
+            </SelectItem>
+            {categories.map((category) => (
+              <SelectItem
+                key={category}
+                value={category}
+                className="text-slate-200 focus:bg-slate-700 focus:text-white"
+              >
+                {category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Series Filter (Level 2 - only show when category selected) */}
+      {filters.category && (
+        <div className="space-y-3 pl-4 border-l-2 border-emerald-500/30">
+          <div className="flex items-center gap-2">
+            <ChevronRight className="h-4 w-4 text-emerald-400" />
+            <label className="text-sm font-medium text-white">계열</label>
+            <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 text-xs">
+              2단계
+            </Badge>
+          </div>
+          <Select
+            value={filters.series || 'all'}
+            onValueChange={handleSeriesChange}
+            disabled={isLoadingSeries || availableSeries.length === 0}
+          >
+            <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+              <SelectValue 
+                placeholder={
+                  isLoadingSeries 
+                    ? "로딩 중..." 
+                    : availableSeries.length === 0 
+                    ? "계열 정보 없음"
+                    : "계열 선택"
+                } 
+              />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-800 border-slate-700 max-h-[300px]">
+              <SelectItem
+                value="all"
+                className="text-slate-200 focus:bg-slate-700 focus:text-white"
+              >
+                전체
+              </SelectItem>
+              {availableSeries.map((series) => (
+                <SelectItem
+                  key={series}
+                  value={series}
+                  className="text-slate-200 focus:bg-slate-700 focus:text-white"
+                >
+                  {series}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Study Period Filter */}
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-white">준비기간</label>
+        <Select
+          value={filters.studyPeriod || 'all'}
+          onValueChange={handleStudyPeriodChange}
+        >
+          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+            <SelectValue placeholder="준비기간 선택" />
+          </SelectTrigger>
+          <SelectContent className="bg-slate-800 border-slate-700">
+            {studyPeriods.map((period) => (
+              <SelectItem
+                key={period.value}
+                value={period.value}
+                className="text-slate-200 focus:bg-slate-700 focus:text-white"
+              >
+                {period.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Difficulty Filter */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-white">난이도</label>
+          <span className="text-sm text-slate-400">
+            {filters.difficulty[0]} - {filters.difficulty[1]}
+          </span>
+        </div>
+        <Slider
+          value={filters.difficulty}
+          min={1}
+          max={5}
+          step={1}
+          onValueChange={handleDifficultyChange}
+          className="py-2"
+        />
+        <div className="flex justify-between text-xs text-slate-500">
+          <span>쉬움</span>
+          <span>어려움</span>
+        </div>
+      </div>
+
+      {/* Reset Button */}
+      <Button
+        variant="outline"
+        className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+        onClick={handleReset}
+      >
+        <RotateCcw className="mr-2 h-4 w-4" />
+        필터 초기화
+      </Button>
+
+      {/* Active Filters Summary */}
+      {activeFilterCount > 0 && (
+        <div className="pt-4 border-t border-slate-800">
+          <div className="text-xs text-slate-500 mb-2">적용된 필터</div>
+          <div className="flex flex-wrap gap-2">
+            {filters.category && (
+              <Badge variant="secondary" className="bg-emerald-900/30 text-emerald-400">
+                {filters.category}
+              </Badge>
+            )}
+            {filters.series && (
+              <Badge variant="secondary" className="bg-cyan-900/30 text-cyan-400">
+                {filters.series}
+              </Badge>
+            )}
+            {filters.studyPeriod && (
+              <Badge variant="secondary" className="bg-slate-800 text-slate-300">
+                {studyPeriods.find(p => p.value === filters.studyPeriod)?.label}
+              </Badge>
+            )}
+            {(filters.difficulty[0] !== 1 || filters.difficulty[1] !== 5) && (
+              <Badge variant="secondary" className="bg-slate-800 text-slate-300">
+                난이도 {filters.difficulty[0]}-{filters.difficulty[1]}
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  return (
+    <>
+      {/* Desktop Filters */}
+      <div className="hidden lg:block">
+        <div className="sticky top-24 space-y-6 rounded-xl bg-slate-900/50 border border-slate-800/50 p-6">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              필터
+            </h3>
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </div>
+          <FilterContent />
+        </div>
+      </div>
+
+      {/* Mobile Filter Button & Sheet */}
+      <div className="lg:hidden">
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              className="border-slate-700 text-slate-300"
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              필터
+              {activeFilterCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="ml-2 bg-emerald-500/20 text-emerald-400"
+                >
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[300px] bg-slate-950 border-slate-800">
+            <SheetHeader>
+              <SheetTitle className="text-white flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                필터
+              </SheetTitle>
+            </SheetHeader>
+            <div className="mt-6">
+              <FilterContent />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </>
+  )
+}
