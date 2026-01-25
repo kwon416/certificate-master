@@ -8,6 +8,7 @@ services:
       dockerfile: ../deploy/Dockerfile.backend
     container_name: cert-master-backend
     restart: unless-stopped
+    network_mode: host  # 호스트 네트워크 사용 (MySQL 권한 문제 해결)
     env_file:
       - ../backend/.env
     environment:
@@ -15,8 +16,7 @@ services:
       - DEBUG=false
       - LOG_LEVEL=INFO
       - CORS_ORIGINS=https://dev-cert.i-ve.ai,http://localhost:3000
-    ports:
-      - "8000:8000"
+    # network_mode: host 사용 시 ports 불필요 (자동으로 8000 사용)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
