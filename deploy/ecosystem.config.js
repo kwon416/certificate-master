@@ -10,8 +10,9 @@ module.exports = {
       watch: false,
       max_memory_restart: '500M',
       env: {
-        NODE_ENV: 'production',
+        NODE_ENV: 'dev',
         PORT: 5100,
+        BACKEND_INTERNAL_URL: 'http://127.0.0.1:8000',
       },
       // 로그 설정
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
