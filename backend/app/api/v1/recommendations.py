@@ -39,9 +39,17 @@ async def get_recommendations(
     """
     logger.info(f"Recommendation request: {request.model_dump()}")
 
-    # Create service and get recommendations
-    service = RecommendationService(db)
-    response = await service.get_recommendations(request)
+    try:
+        # Create service and get recommendations
+        logger.info("Creating RecommendationService...")
+        service = RecommendationService(db)
+        logger.info("RecommendationService created, calling get_recommendations...")
+        response = await service.get_recommendations(request)
 
-    logger.info(f"Returning {len(response.recommendations)} recommendations")
-    return response
+        logger.info(f"Returning {len(response.recommendations)} recommendations")
+        return response
+    except Exception as e:
+        logger.error(f"Recommendation error: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
