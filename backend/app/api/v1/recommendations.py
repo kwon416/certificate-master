@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/", response_model=RecommendationResponse)
+@router.post("", response_model=RecommendationResponse)
 async def get_recommendations(
     request: RecommendationRequest,
     db: DBSession,
