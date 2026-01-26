@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Enhanced Progress Metrics', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     await page.waitForLoadState('networkidle')
   })
 
@@ -153,7 +153,7 @@ test.describe('Enhanced Progress Metrics', () => {
       })
     })
 
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     await page.waitForTimeout(2000)
 
     const hasStudyPlan = await page.getByText(/진행 중인 학습 계획/i)
@@ -202,7 +202,7 @@ test.describe('Enhanced Progress Metrics', () => {
 
   test('RED: should be responsive on mobile viewport', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     await page.waitForTimeout(2000)
 
     const hasStudyPlan = await page.getByText(/진행 중인 학습 계획/i)

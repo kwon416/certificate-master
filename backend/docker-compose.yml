@@ -4,18 +4,18 @@ services:
   # Backend API (FastAPI) - Docker 배포
   backend:
     build:
-      context: ../backend
-      dockerfile: ../deploy/Dockerfile.backend
+      context: .
+      dockerfile: Dockerfile
     container_name: cert-master-backend
     restart: unless-stopped
     network_mode: host  # 호스트 네트워크 사용 (MySQL 권한 문제 해결)
     env_file:
-      - ../backend/.env
+      - .env
     environment:
       - ENVIRONMENT=production
       - DEBUG=false
       - LOG_LEVEL=INFO
-      # CORS_ORIGINS는 backend/.env에서 불러옴
+      # CORS_ORIGINS는 .env에서 불러옴
       # 같은 서버의 MariaDB 사용 시 localhost로 연결
       - MARIADB_HOST=127.0.0.1
     # network_mode: host 사용 시 ports 불필요 (자동으로 8000 사용)

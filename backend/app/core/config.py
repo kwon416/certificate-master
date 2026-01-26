@@ -88,7 +88,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5100"
+    CORS_ORIGINS: str  # .env에서 필수로 불러옴
 
 
 @lru_cache()

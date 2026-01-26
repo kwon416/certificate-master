@@ -84,7 +84,7 @@ test.describe('Google OAuth Authentication', () => {
         popup !== null;
 
       // OAuth 플로우가 시작되었거나, 최소한 버튼이 클릭 가능해야 함
-      expect(oauthStarted || currentUrl === 'http://localhost:3000/login').toBeTruthy();
+      expect(oauthStarted || currentUrl === 'http://localhost:5100/login').toBeTruthy();
     });
   });
 

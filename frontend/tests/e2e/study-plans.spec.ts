@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Study Plans', () => {
   test.beforeEach(async ({ page }) => {
     // 로그인 페이지로 이동
-    await page.goto('http://localhost:3000/login')
+    await page.goto('http://localhost:5100/login')
     
     // 테스트 계정으로 로그인
     await page.fill('input[type="email"]', 'test@example.com')
@@ -21,13 +21,13 @@ test.describe('Study Plans', () => {
   })
 
   test('should redirect study plans list to dashboard', async ({ page }) => {
-    await page.goto('http://localhost:3000/study-plans')
+    await page.goto('http://localhost:5100/study-plans')
     await expect(page).toHaveURL(/.*dashboard/)
   })
 
   test('should display empty state when no study plans exist', async ({ page }) => {
     // Dashboard에서 학습 계획이 없는 경우
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // Empty state 확인
     await expect(page.getByText('아직 학습 계획이 없습니다')).toBeVisible()
@@ -35,7 +35,7 @@ test.describe('Study Plans', () => {
   })
 
   test('should navigate to certificates page to create plan', async ({ page }) => {
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // '새 학습 계획' 버튼 클릭
     await page.click('text=새 학습 계획')
@@ -46,7 +46,7 @@ test.describe('Study Plans', () => {
 
   test('should create a new study plan', async ({ page }) => {
     // 1. 자격증 페이지로 이동
-    await page.goto('http://localhost:3000/search')
+    await page.goto('http://localhost:5100/search')
     
     // 2. 자격증 선택 (첫 번째 자격증 클릭)
     await page.waitForSelector('[data-testid="certificate-card"]', { timeout: 10000 })
@@ -81,7 +81,7 @@ test.describe('Study Plans', () => {
 
   test('should display study plan list', async ({ page }) => {
     // 학습 계획이 있는 상태에서
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // 로딩 완료 대기
     await page.waitForSelector('[data-testid="study-plan-card"]', { 
@@ -100,7 +100,7 @@ test.describe('Study Plans', () => {
   })
 
   test('should show study plan details', async ({ page }) => {
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // 첫 번째 학습 계획 카드 대기
     await page.waitForSelector('[data-testid="study-plan-card"]', { timeout: 10000 })
@@ -117,7 +117,7 @@ test.describe('Study Plans', () => {
   })
 
   test('should delete a study plan', async ({ page }) => {
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // 학습 계획 카드 대기
     await page.waitForSelector('[data-testid="study-plan-card"]', { timeout: 10000 })
@@ -131,7 +131,7 @@ test.describe('Study Plans', () => {
   })
 
   test('should update milestone completion', async ({ page }) => {
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // 상세 페이지로 이동
     await page.waitForSelector('[data-testid="study-plan-card"]', { timeout: 10000 })
@@ -147,7 +147,7 @@ test.describe('Study Plans', () => {
   })
 
   test('should pause and resume study plan', async ({ page }) => {
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // 상세 페이지로 이동
     await page.waitForSelector('[data-testid="study-plan-card"]', { timeout: 10000 })
@@ -170,7 +170,7 @@ test.describe('Study Plans', () => {
     // 네트워크 오류 시뮬레이션
     await page.route('**/api/v1/study-plans/**', route => route.abort())
     
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // 에러 메시지 확인
     await expect(page.getByText(/데이터를 불러오는데 실패했습니다/)).toBeVisible({
@@ -180,7 +180,7 @@ test.describe('Study Plans', () => {
 
   test('should validate form inputs', async ({ page }) => {
     // 자격증 페이지로 이동하여 학습 계획 생성 시도
-    await page.goto('http://localhost:3000/certificates')
+    await page.goto('http://localhost:5100/certificates')
     
     await page.waitForSelector('[data-testid="certificate-card"]', { timeout: 10000 })
     await page.locator('[data-testid="certificate-card"]').first().click()
@@ -204,7 +204,7 @@ test.describe('Study Plans', () => {
 test.describe('Study Plans - Authentication', () => {
   test('should redirect to login when not authenticated', async ({ page }) => {
     // 로그아웃 상태에서 학습 계획 페이지 접근
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     
     // 로그인 페이지로 리다이렉트 확인
     await expect(page).toHaveURL(/.*login/, { timeout: 5000 })
@@ -212,14 +212,14 @@ test.describe('Study Plans - Authentication', () => {
 
   test('should maintain study plans after page refresh', async ({ page }) => {
     // 로그인
-    await page.goto('http://localhost:3000/login')
+    await page.goto('http://localhost:5100/login')
     await page.fill('input[type="email"]', 'test@example.com')
     await page.fill('input[type="password"]', 'test123456')
     await page.click('button[type="submit"]')
     await page.waitForURL('**/dashboard')
     
     // 학습 계획 페이지로 이동
-    await page.goto('http://localhost:3000/dashboard')
+    await page.goto('http://localhost:5100/dashboard')
     await page.waitForSelector('[data-testid="study-plan-card"]', { timeout: 10000 })
     
     // 페이지 새로고침

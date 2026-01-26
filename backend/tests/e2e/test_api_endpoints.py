@@ -15,6 +15,10 @@ load_dotenv()
 # Get API base URL from environment or use default
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
+# Get CORS origins from environment (첫 번째 origin 사용)
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5100")
+CORS_TEST_ORIGIN = CORS_ORIGINS.split(",")[0].strip()
+
 
 @pytest.fixture(scope="module")
 def api_url():
@@ -176,13 +180,13 @@ class TestAPIErrorHandling:
         When: Cross-origin request is made
         Then: CORS headers are present
         """
-        # Make a cross-origin request by adding Origin header
-        headers = {"Origin": "http://localhost:3000"}
+        # Make a cross-origin request by adding Origin header (from .env)
+        headers = {"Origin": CORS_TEST_ORIGIN}
         response = requests.get(f"{api_url}/health", headers=headers)
 
         # Check for CORS headers
         assert "access-control-allow-origin" in response.headers
-        assert response.headers["access-control-allow-origin"] in ["*", "http://localhost:3000"]
+        assert response.headers["access-control-allow-origin"] in ["*", CORS_TEST_ORIGIN]
         print(f"\n[PASS] CORS headers present: {response.headers.get('access-control-allow-origin')}")
 
 
