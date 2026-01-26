@@ -105,7 +105,7 @@ export function RecommendationResults() {
             </div>
             <div>
               <p className="text-xs text-emerald-300 mb-1">내 요청</p>
-              <p className="text-sm md:text-base text-white">"{userSummary}"</p>
+              <p className="text-sm md:text-base text-white">&ldquo;{userSummary}&rdquo;</p>
             </div>
           </div>
         </div>
