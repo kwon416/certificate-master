@@ -1,27 +1,30 @@
 """자격증 정보 보강을 수행하는 오케스트레이션 서비스.
 
 Supabase에서 MariaDB로 마이그레이션됨 (2026-01-21).
+검색 서비스 추상화 추가됨 (2026-01-26) - Brave/SearXNG 선택 가능.
 """
 from typing import Dict, Any, Optional
 
 from sqlalchemy.orm import Session
 
 from app.models.certificate import Certificate
-from app.services.brave_search import BraveSearchService
+from app.services.search_factory import get_search_service
+from app.services.search_protocol import SearchServiceProtocol
 from app.services.llm_service import LLMService
 
 
 class CertificateEnrichmentService:
     """자격증 정보를 검색·정제·저장하는 오케스트레이션 서비스."""
 
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, search_service: Optional[SearchServiceProtocol] = None):
         """보강 서비스를 초기화합니다.
 
         Args:
             session: SQLAlchemy 세션 인스턴스.
+            search_service: 검색 서비스 인스턴스. None이면 팩토리에서 생성.
         """
         self.session = session
-        self.brave = BraveSearchService()
+        self.search = search_service or get_search_service()
         self.llm = LLMService()
 
     async def enrich_certificate(
@@ -36,8 +39,8 @@ class CertificateEnrichmentService:
 
         try:
             # Step 1: 종합 검색 (7개 쿼리)
-            print(f"\n[1/2] 종합 검색 시작: {certificate_title}")
-            search_results = await self.brave.search_certificate_comprehensive(
+            print(f"\n[1/2] 종합 검색 시작: {certificate_title} (provider: {self.search.provider_name})")
+            search_results = await self.search.search_certificate_comprehensive(
                 certificate_title
             )
 
@@ -46,7 +49,7 @@ class CertificateEnrichmentService:
             print(f"  총 {total_results}개 검색 결과 수집 완료")
 
             # Format for LLM
-            search_context = self.brave.format_search_results_for_llm(search_results)
+            search_context = self.search.format_search_results_for_llm(search_results)
 
             # Step 2: Process with LLM (2-phase)
             print(f"[2/2] LLM 2단계 처리 중...")
@@ -168,14 +171,18 @@ class CertificateEnrichmentService:
 _enrichment_service: Optional[CertificateEnrichmentService] = None
 
 
-def get_enrichment_service(session: Session) -> CertificateEnrichmentService:
+def get_enrichment_service(
+    session: Session,
+    search_service: Optional[SearchServiceProtocol] = None
+) -> CertificateEnrichmentService:
     """Certificate Enrichment Service 인스턴스를 반환합니다.
 
     Args:
         session: SQLAlchemy 세션 인스턴스.
+        search_service: 검색 서비스 인스턴스. None이면 기본 서비스 사용.
 
     Returns:
         CertificateEnrichmentService 인스턴스.
     """
     # Note: Not using singleton pattern since service needs session
-    return CertificateEnrichmentService(session)
+    return CertificateEnrichmentService(session, search_service=search_service)

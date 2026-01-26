@@ -117,25 +117,34 @@ def get_mariadb_session() -> Session:
 
 def clear_certificates_mariadb(
     session: Session,
-    category: str | None = None,
+    category_name: str | None = None,
     raw_id_prefix: str | None = None,
 ) -> int:
     """certificates 테이블의 레코드를 삭제한다.
 
     Args:
         session: SQLAlchemy 세션
-        category: 삭제할 카테고리 (None이면 전체 삭제)
+        category_name: 삭제할 카테고리명 (None이면 전체 삭제)
         raw_id_prefix: 삭제할 raw_id 접두어 (테스트용)
 
     Returns:
         삭제된 레코드 수
     """
+    from sqlalchemy import func, text
+
     query = session.query(Certificate)
 
     if raw_id_prefix:
         query = query.filter(Certificate.raw_id.like(f"{raw_id_prefix}%"))
-    elif category:
-        query = query.filter(Certificate.category == category)
+    elif category_name:
+        # categories JSON 배열에서 name 필드로 검색
+        query = query.filter(
+            func.json_contains(
+                Certificate.categories,
+                func.json_quote(category_name),
+                text("'$[*].name'")
+            )
+        )
 
     count = query.count()
     query.delete(synchronize_session="fetch")
@@ -177,9 +186,17 @@ def seed_certificates_mariadb(
             batch_skipped = 0
 
             for cert_data in batch:
-                code = cert_data["code"]
-                category_name = cert_data["category"]
                 title = cert_data["title"]
+
+                # categories 배열 처리 (신규 형식 또는 기존 형식 모두 지원)
+                if "categories" in cert_data and cert_data["categories"]:
+                    # 신규 형식: categories 배열
+                    input_categories = cert_data["categories"]
+                else:
+                    # 기존 형식: code, category 필드 (하위 호환성)
+                    code = cert_data.get("code", "")
+                    category_name = cert_data.get("category", "")
+                    input_categories = [{"code": code, "name": category_name}]
 
                 # title 기준으로 기존 레코드 확인
                 existing = (
@@ -191,29 +208,33 @@ def seed_certificates_mariadb(
                 if existing:
                     # 기존 자격증에 카테고리 추가
                     current_categories = existing.categories or []
+                    added_any = False
 
-                    # 이미 같은 카테고리가 있는지 확인
-                    has_category = any(
-                        cat.get("code") == code or cat.get("name") == category_name
-                        for cat in current_categories
-                    )
+                    for new_cat in input_categories:
+                        code = new_cat.get("code", "")
+                        name = new_cat.get("name", "")
 
-                    if has_category:
-                        # 이미 같은 카테고리 존재 → 건너뜀
-                        batch_skipped += 1
-                    else:
-                        # 새 카테고리 추가
-                        new_category = {"code": code, "name": category_name}
-                        current_categories.append(new_category)
+                        # 이미 같은 카테고리가 있는지 확인
+                        has_category = any(
+                            cat.get("code") == code or cat.get("name") == name
+                            for cat in current_categories
+                        )
+
+                        if not has_category:
+                            # 새 카테고리 추가
+                            current_categories.append({"code": code, "name": name})
+                            added_any = True
+
+                    if added_any:
                         existing.categories = current_categories
                         batch_category_added += 1
+                    else:
+                        batch_skipped += 1
                 else:
                     # 새 자격증 삽입 (categories 배열로 초기화)
                     new_cert = Certificate(
                         id=str(uuid.uuid4()),
-                        code=code,
-                        category=category_name,
-                        categories=[{"code": code, "name": category_name}],
+                        categories=input_categories,
                         series=cert_data.get("series"),
                         title=title,
                         raw_id=cert_data["raw_id"],
@@ -350,7 +371,7 @@ def main():
                 print(f"\n'{category_name}' 카테고리 데이터를 삭제합니다...")
             else:
                 print("\n기존 certificates 데이터를 삭제합니다...")
-            deleted = clear_certificates_mariadb(session, category_name)
+            deleted = clear_certificates_mariadb(session, category_name=category_name)
             print(f"{deleted}건 삭제 완료")
 
         print(f"\n{len(certificates)}건을 적재합니다...")

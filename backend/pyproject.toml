@@ -21,6 +21,8 @@ dependencies = [
     # MariaDB (SQLAlchemy + PyMySQL)
     "sqlalchemy>=2.0.0",
     "pymysql>=1.1.0",
+    # CLI utilities
+    "tqdm>=4.66.0",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +33,12 @@ dev = [
     "black>=24.0.0",
     "ruff>=0.1.0",
     "requests>=2.31.0",
+]
+# 로컬 임베딩 (BGE-M3) - 데이터 파이프라인용
+# 서버에서는 불필요 (OpenAI API 사용)
+local = [
+    "FlagEmbedding>=1.2.0",
+    "torch>=2.0.0",
 ]
 
 [tool.pytest.ini_options]

@@ -12,6 +12,7 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
+  SheetClose,
 } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
@@ -30,7 +31,7 @@ export function Header() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500">
             <GraduationCap className="h-5 w-5 text-slate-900" />
           </div>
-          <span className="hidden font-bold text-lg tracking-tight text-white sm:inline-block">
+          <span className="font-bold text-lg tracking-tight text-white">
             Certificate Master
           </span>
         </Link>
@@ -70,22 +71,22 @@ export function Header() {
               {navItems.map((item) => {
                 const Icon = item.icon
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-colors',
-                      pathname === item.href
-                        ? 'bg-slate-800 text-emerald-400'
-                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
-                    )}
-                  >
-                    <Icon className="h-5 w-5" />
-                    {item.label}
-                  </Link>
+                  <SheetClose asChild key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-colors',
+                        pathname === item.href
+                          ? 'bg-slate-800 text-emerald-400'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {item.label}
+                    </Link>
+                  </SheetClose>
                 )
               })}
-
             </nav>
           </SheetContent>
         </Sheet>

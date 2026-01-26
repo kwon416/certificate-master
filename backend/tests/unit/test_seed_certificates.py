@@ -23,8 +23,18 @@ from scripts.seed_certificates import (
 def sample_certificates():
     """테스트용 샘플 자격증 데이터."""
     return [
-        {"code": "S", "category": "국가전문자격", "series": "세무사", "title": "세무사", "raw_id": "S_세무사"},
-        {"code": "T", "category": "국가기술자격", "series": "정보처리", "title": "정보처리기사", "raw_id": "T_정보처리기사"},
+        {
+            "categories": [{"code": "S", "name": "국가전문자격"}],
+            "series": "세무사",
+            "title": "세무사",
+            "raw_id": "S_세무사"
+        },
+        {
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "series": "정보처리",
+            "title": "정보처리기사",
+            "raw_id": "T_정보처리기사"
+        },
     ]
 
 
@@ -193,7 +203,12 @@ class TestMariaDBIntegration:
     def test_seed_adds_category_to_existing(self, sample_certificates):
         """같은 title의 자격증에 다른 카테고리가 추가되는지 테스트."""
         test_certs = [
-            {**cert, "raw_id": f"TEST_CAT_{cert['raw_id']}", "title": f"TEST_CAT_{cert['title']}"}
+            {
+                "categories": cert["categories"],
+                "series": cert["series"],
+                "title": f"TEST_CAT_{cert['title']}",
+                "raw_id": f"TEST_CAT_{cert['raw_id']}"
+            }
             for cert in sample_certificates
         ]
 
@@ -202,13 +217,18 @@ class TestMariaDBIntegration:
             # 먼저 기존 테스트 데이터 정리
             clear_certificates_mariadb(session, raw_id_prefix="TEST_CAT_")
 
-            # 첫 번째 삽입 (국가기술자격)
+            # 첫 번째 삽입
             inserted, _, _, failed = seed_certificates_mariadb(session, test_certs)
             assert inserted == 2
 
             # 같은 title에 다른 카테고리로 삽입
             test_certs_new_category = [
-                {**cert, "code": "C", "category": "과정평가형자격", "raw_id": f"TEST_CAT_C_{cert['raw_id']}", "title": f"TEST_CAT_{cert['title']}"}
+                {
+                    "categories": [{"code": "C", "name": "과정평가형자격"}],
+                    "series": cert["series"],
+                    "title": f"TEST_CAT_{cert['title']}",
+                    "raw_id": f"TEST_CAT_C_{cert['raw_id']}"
+                }
                 for cert in sample_certificates
             ]
             inserted2, category_added, skipped, failed2 = seed_certificates_mariadb(session, test_certs_new_category)

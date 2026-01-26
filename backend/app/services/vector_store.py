@@ -3,13 +3,14 @@
 이 서비스는 의미 기반 유사도 검색을 위해 ChromaDB에서
 자격증 임베딩을 관리합니다.
 
-BGE-M3 임베딩을 사용하여 텍스트를 벡터로 변환합니다.
+임베딩 서비스는 외부에서 주입 가능합니다 (DI 패턴).
+기본값은 OpenAI EmbeddingService입니다.
 
 Supabase에서 MariaDB로 마이그레이션됨 (2026-01-21).
 """
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import chromadb
 from sqlalchemy.orm import Session
@@ -18,6 +19,9 @@ from app.core.config import get_settings
 from app.core.database import get_engine
 from app.models.certificate import Certificate
 from app.services.embedding_service import EmbeddingService
+
+if TYPE_CHECKING:
+    from app.services.embedding_protocol import EmbeddingServiceProtocol
 from app.utils.certificate_formatter import (
     format_certificate_text,
     build_certificate_metadata,
@@ -40,16 +44,26 @@ class VectorStoreService:
         NAMESPACE: 자격증 벡터 네임스페이스 (컬렉션 구분용).
         _client: ChromaDB HttpClient 인스턴스.
         _collection: ChromaDB 컬렉션 인스턴스.
-        embedding_service: EmbeddingService 인스턴스.
+        embedding_service: EmbeddingServiceProtocol 구현체 (DI 가능).
+        _session: 외부에서 주입된 SQLAlchemy 세션 (선택).
     """
 
     NAMESPACE = "certificates"
 
-    def __init__(self, max_retries: int = 3):
+    def __init__(
+        self,
+        max_retries: int = 3,
+        session: Optional[Session] = None,
+        embedding_service: Optional["EmbeddingServiceProtocol"] = None,
+    ):
         """벡터 스토어 서비스를 초기화합니다.
 
         Args:
             max_retries: 연결 실패 시 최대 재시도 횟수 (기본값: 3).
+            session: 외부에서 주입할 SQLAlchemy 세션 (선택).
+                     주입 시 해당 세션 사용, 미주입 시 내부에서 생성.
+            embedding_service: 외부에서 주입할 임베딩 서비스 (선택).
+                     주입 시 해당 서비스 사용, 미주입 시 OpenAI EmbeddingService 사용.
 
         Raises:
             ConnectionError: 최대 재시도 횟수 초과 시.
@@ -58,6 +72,7 @@ class VectorStoreService:
         self.host = settings.CHROMA_HOST
         self.port = settings.CHROMA_PORT
         self.collection_name = settings.CHROMA_COLLECTION_NAME
+        self._session = session  # 외부 주입 세션 저장
 
         # B2 수정: ChromaDB 연결 재시도 로직
         self._client = chromadb.HttpClient(
@@ -70,7 +85,22 @@ class VectorStoreService:
             name=self.collection_name,
             metadata={"hnsw:space": "cosine"}
         )
-        self.embedding_service = EmbeddingService()
+
+        # 임베딩 서비스 주입 (DI 패턴)
+        # None이면 기본 OpenAI EmbeddingService 사용
+        self.embedding_service = embedding_service or EmbeddingService()
+
+    def _get_session(self) -> tuple[Session, bool]:
+        """DB 세션을 반환합니다.
+
+        Returns:
+            (session, should_close) 튜플:
+            - session: SQLAlchemy 세션
+            - should_close: 사용 후 세션을 닫아야 하는지 여부
+        """
+        if self._session is not None:
+            return self._session, False  # 외부 주입 세션은 닫지 않음
+        return _get_db_session(), True  # 내부 생성 세션은 닫아야 함
 
     def _connect_with_retry(self, max_retries: int = 3):
         """ChromaDB 연결을 재시도 로직과 함께 수행합니다.
@@ -474,7 +504,7 @@ class VectorStoreService:
         Returns:
             성공 여부.
         """
-        session = _get_db_session()
+        session, should_close = self._get_session()
         try:
             cert = session.query(Certificate).filter(Certificate.id == cert_id).first()
             if cert:
@@ -486,7 +516,8 @@ class VectorStoreService:
             session.rollback()
             return False
         finally:
-            session.close()
+            if should_close:
+                session.close()
 
     def sync_vector_ids_to_db_batch(
         self,
@@ -505,7 +536,7 @@ class VectorStoreService:
             - not_found_ids: DB에서 찾을 수 없는 ID 목록
             - errors: 에러 메시지 목록
         """
-        session = _get_db_session()
+        session, should_close = self._get_session()
         success_count = 0
         not_found_ids = []
         errors = []
@@ -542,7 +573,8 @@ class VectorStoreService:
             errors.append(error_msg)
             success_count = 0
         finally:
-            session.close()
+            if should_close:
+                session.close()
 
         return {
             "success": success_count,
@@ -559,7 +591,7 @@ class VectorStoreService:
         Returns:
             성공 여부.
         """
-        session = _get_db_session()
+        session, should_close = self._get_session()
         try:
             cert = session.query(Certificate).filter(Certificate.id == cert_id).first()
             if cert:
@@ -571,7 +603,8 @@ class VectorStoreService:
             session.rollback()
             return False
         finally:
-            session.close()
+            if should_close:
+                session.close()
 
     def get_certificates_without_vector_id(self) -> list[dict]:
         """vector_id가 없는 (보강된) 자격증을 조회합니다.
@@ -579,7 +612,7 @@ class VectorStoreService:
         Returns:
             vector_id가 없고 overview가 있는 자격증 목록.
         """
-        session = _get_db_session()
+        session, should_close = self._get_session()
         try:
             results = (
                 session.query(Certificate)
@@ -589,7 +622,8 @@ class VectorStoreService:
             )
             return [cert.to_dict() for cert in results]
         finally:
-            session.close()
+            if should_close:
+                session.close()
 
     def get_certificates_with_vector_id(self) -> list[dict]:
         """vector_id가 있는 자격증을 조회합니다.
@@ -597,7 +631,7 @@ class VectorStoreService:
         Returns:
             vector_id가 있는 자격증 목록.
         """
-        session = _get_db_session()
+        session, should_close = self._get_session()
         try:
             results = (
                 session.query(Certificate)
@@ -606,7 +640,8 @@ class VectorStoreService:
             )
             return [cert.to_dict() for cert in results]
         finally:
-            session.close()
+            if should_close:
+                session.close()
 
     def upsert_certificate_with_sync(
         self,

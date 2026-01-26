@@ -34,10 +34,10 @@ def _render_embedding_preview(values: Optional[list]) -> str:
     return f"<p><strong>Embedding preview</strong>: {html.escape(preview + suffix)}</p>"
 
 
-def _render_vectors_table(vectors: list[dict], limit: int, offset: int, search: str) -> str:
+def _render_vectors_table(vectors: list[dict], limit: int, offset: int, search: str, selected_id: str = "") -> str:
     """벡터 리스트 테이블 HTML을 생성합니다."""
     if not vectors:
-        return "<tr><td colspan='4'>No vectors found</td></tr>"
+        return "<tr><td colspan='3'>No vectors found</td></tr>"
 
     search_param = f"&q={html.escape(search)}" if search else ""
     rows = []
@@ -46,12 +46,13 @@ def _render_vectors_table(vectors: list[dict], limit: int, offset: int, search: 
         metadata = vector.get("metadata", {}) or {}
         title = html.escape(str(metadata.get("title", "")))
         category = html.escape(str(metadata.get("category", "")))
+        row_url = f"/chroma?id={vector_id}&limit={limit}&offset={offset}{search_param}"
+        is_selected = "selected" if vector_id == selected_id else ""
         rows.append(
-            "<tr>"
-            f"<td><code>{vector_id[:12]}...</code></td>"
+            f"<tr class=\"clickable-row {is_selected}\" onclick=\"window.location.href='{row_url}'\">"
+            f"<td><code>{vector_id}</code></td>"
             f"<td>{title}</td>"
             f"<td>{category}</td>"
-            f"<td><a href=\"/chroma?id={vector_id}&limit={limit}&offset={offset}{search_param}\">View</a></td>"
             "</tr>"
         )
     return "\n".join(rows)
@@ -80,7 +81,7 @@ def _render_detail_section(detail: Optional[dict]) -> str:
         <p><strong>Study Period</strong>: {study_days}일</p>
         <p><strong>Vector size</strong>: {len(values) if values else 0}</p>
         {_render_embedding_preview(values)}
-        <details>
+        <details open>
             <summary><strong>Full Metadata (JSON)</strong></summary>
             <pre>{metadata_html}</pre>
         </details>
@@ -291,6 +292,12 @@ async def chroma_dashboard(
             tr:hover td {{
                 background: #0b1224;
             }}
+            tr.clickable-row {{
+                cursor: pointer;
+            }}
+            tr.clickable-row:hover td {{
+                background: #1e3a5f;
+            }}
             code {{
                 background: #0b1224;
                 padding: 2px 6px;
@@ -427,7 +434,6 @@ async def chroma_dashboard(
                             <th>ID</th>
                             <th>Title</th>
                             <th>Category</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>

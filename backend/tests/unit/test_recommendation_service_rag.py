@@ -80,8 +80,7 @@ class TestRAGRecommendationService:
         cert1.to_dict.return_value = {
             "id": "cert-001",
             "raw_id": "T_정보처리기사",
-            "code": "T",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보기술",
             "title": "정보처리기사",
             "overview": "소프트웨어 개발 및 IT 분야 전문가",
@@ -95,8 +94,7 @@ class TestRAGRecommendationService:
         cert2.to_dict.return_value = {
             "id": "cert-002",
             "raw_id": "T_네트워크관리사",
-            "code": "T",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보기술",
             "title": "네트워크관리사",
             "overview": "네트워크 구축 및 관리 전문가",
@@ -110,8 +108,7 @@ class TestRAGRecommendationService:
         cert3.to_dict.return_value = {
             "id": "cert-003",
             "raw_id": "T_컴퓨터활용능력",
-            "code": "T",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보기술",
             "title": "컴퓨터활용능력",
             "overview": "사무 자동화 능력",
@@ -218,7 +215,9 @@ class TestRAGRecommendationService:
         assert response.recommendations[0].certificate.title == "정보처리기사"
 
         for rec in response.recommendations:
-            assert rec.qualification_category == rec.certificate.category
+            # qualification_category should match first category name
+            expected_category = rec.certificate.categories[0].name if rec.certificate.categories else "기타"
+            assert rec.qualification_category == expected_category
             assert rec.match_score >= 50
 
     @pytest.mark.asyncio
@@ -454,9 +453,8 @@ class TestRAGRecommendationService:
         cert_short.to_dict.return_value = {
             "id": "cert-short",
             "raw_id": "T_단기자격증",
-            "code": "T",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "title": "단기 자격증",
-            "category": "국가기술자격",
             "series": "IT",
             "overview": "단기 준비 자격증입니다.",
             "study_period_days": 60,
@@ -468,9 +466,8 @@ class TestRAGRecommendationService:
         cert_long.to_dict.return_value = {
             "id": "cert-long",
             "raw_id": "T_장기자격증",
-            "code": "T",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "title": "장기 자격증",
-            "category": "국가기술자격",
             "series": "IT",
             "overview": "장기 준비 자격증입니다.",
             "study_period_days": 365,

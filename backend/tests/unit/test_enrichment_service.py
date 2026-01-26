@@ -45,7 +45,7 @@ class TestEnrichmentServiceMariaDB:
         try:
             service = get_enrichment_service(session)
             # 필수 서비스들
-            assert hasattr(service, 'brave')
+            assert hasattr(service, 'search')  # brave → search (추상화)
             assert hasattr(service, 'llm')
         finally:
             session.close()
@@ -60,16 +60,18 @@ class TestEnrichmentServiceMariaDB:
         mock_cert = MagicMock(spec=Certificate)
         mock_session.query.return_value.filter.return_value.first.return_value = mock_cert
 
-        # Mock brave and llm services
-        with patch('app.services.enrichment_service.BraveSearchService') as MockBrave, \
+        # Mock search and llm services
+        with patch('app.services.enrichment_service.get_search_service') as MockGetSearch, \
              patch('app.services.enrichment_service.LLMService') as MockLLM:
 
-            mock_brave_instance = MockBrave.return_value
-            mock_brave_instance.search_certificate_comprehensive = AsyncMock(return_value={
+            mock_search_instance = MagicMock()
+            mock_search_instance.provider_name = "brave"
+            mock_search_instance.search_certificate_comprehensive = AsyncMock(return_value={
                 'general': [], 'statistics': [], 'career': [], 'reviews': [],
                 'study_methods': [], 'books': [], 'lectures': [], 'official': []
             })
-            mock_brave_instance.format_search_results_for_llm.return_value = "test context"
+            mock_search_instance.format_search_results_for_llm.return_value = "test context"
+            MockGetSearch.return_value = mock_search_instance
 
             mock_llm_instance = MockLLM.return_value
             mock_enrichment = MagicMock()
@@ -108,16 +110,18 @@ class TestEnrichmentServiceErrorHandling:
         mock_session = MagicMock(spec=Session)
         mock_session.query.return_value.filter.return_value.first.return_value = None
 
-        with patch('app.services.enrichment_service.BraveSearchService') as MockBrave, \
+        with patch('app.services.enrichment_service.get_search_service') as MockGetSearch, \
              patch('app.services.enrichment_service.LLMService') as MockLLM:
 
-            # Mock brave search
-            mock_brave_instance = MockBrave.return_value
-            mock_brave_instance.search_certificate_comprehensive = AsyncMock(return_value={
+            # Mock search service
+            mock_search_instance = MagicMock()
+            mock_search_instance.provider_name = "brave"
+            mock_search_instance.search_certificate_comprehensive = AsyncMock(return_value={
                 'general': [], 'statistics': [], 'career': [], 'reviews': [],
                 'study_methods': [], 'books': [], 'lectures': [], 'official': []
             })
-            mock_brave_instance.format_search_results_for_llm.return_value = "test context"
+            mock_search_instance.format_search_results_for_llm.return_value = "test context"
+            MockGetSearch.return_value = mock_search_instance
 
             # Mock LLM
             mock_llm_instance = MockLLM.return_value

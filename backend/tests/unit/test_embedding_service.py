@@ -31,7 +31,7 @@ class TestEmbeddingService:
 
         cert = {
             "title": "정보처리기사",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보처리",
             "overview": "IT 분야의 대표적인 국가자격증입니다.",
             "difficulty": 3,
@@ -55,7 +55,7 @@ class TestEmbeddingService:
 
         cert = {
             "title": "정보처리기사",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "overview": "IT 자격증",
             "career_info": {
                 "use_cases": ["소프트웨어 개발", "시스템 분석"],
@@ -76,7 +76,7 @@ class TestEmbeddingService:
 
         cert = {
             "title": "정보처리기사",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "overview": "IT 자격증",
             "exam_info": {
                 "subjects": ["소프트웨어 설계", "데이터베이스", "운영체제"],
@@ -95,7 +95,7 @@ class TestEmbeddingService:
 
         cert = {
             "title": "테스트 자격증",
-            "category": "테스트",
+            "categories": [{"code": "T", "name": "테스트"}],
         }
 
         result = service.format_certificate_for_embedding(cert)
@@ -115,7 +115,7 @@ class TestFormatCertificateForEmbeddingEnhanced:
 
         cert = {
             "title": "관세사",
-            "category": "국가전문자격",
+            "categories": [{"code": "S", "name": "국가전문자격"}],
             "series": "관세사",
             "overview": "관세사는 무역 관련 전문 자격증입니다.",
             "difficulty": 5,
@@ -147,7 +147,7 @@ class TestFormatCertificateForEmbeddingEnhanced:
 
         cert = {
             "title": "관세사",
-            "category": "국가전문자격",
+            "categories": [{"code": "S", "name": "국가전문자격"}],
             "overview": "관세사 시험",
             "exam_info": {
                 "subjects": ["관세법개론", "무역영어", "내국소비세법"],
@@ -178,7 +178,7 @@ class TestFormatCertificateForEmbeddingEnhanced:
 
         cert = {
             "title": "관세사",
-            "category": "국가전문자격",
+            "categories": [{"code": "S", "name": "국가전문자격"}],
             "overview": "관세사 시험",
             "user_reviews": {
                 "summary": "관세사 시험은 매우 높은 난이도로 알려져 있습니다.",
@@ -207,7 +207,7 @@ class TestFormatCertificateForEmbeddingEnhanced:
 
         cert = {
             "title": "관세사",
-            "category": "국가전문자격",
+            "categories": [{"code": "S", "name": "국가전문자격"}],
             "overview": "관세사 시험",
             "study_guide": {
                 "study_methods": [
@@ -241,7 +241,7 @@ class TestFormatCertificateForEmbeddingEnhanced:
 
         cert = {
             "title": "정보처리기사",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보처리",
             "overview": "IT 분야의 대표적인 국가자격증입니다.",
             "difficulty": 3,

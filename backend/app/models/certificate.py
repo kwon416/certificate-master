@@ -2,14 +2,32 @@
 
 자격증 정보를 저장하는 테이블의 ORM 모델.
 """
+import json
 import uuid
 
-from sqlalchemy import Column, DateTime, Float, Integer, String, Text
-from sqlalchemy.dialects.mysql import JSON
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text, TypeDecorator
+from sqlalchemy.dialects.mysql import JSON as MySQLJSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.models.base import Base
+
+
+class UnicodeJSON(TypeDecorator):
+    """한글 등 유니코드를 이스케이프하지 않고 저장하는 JSON 타입."""
+
+    impl = MySQLJSON
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        """Python -> DB: ensure_ascii=False로 직렬화."""
+        if value is not None:
+            return json.loads(json.dumps(value, ensure_ascii=False))
+        return value
+
+    def process_result_value(self, value, dialect):
+        """DB -> Python: 그대로 반환."""
+        return value
 
 
 class Certificate(Base):
@@ -17,8 +35,7 @@ class Certificate(Base):
 
     Attributes:
         id: 고유 식별자 (UUID)
-        code: 자격증 코드 (T: 기술, S: 전문 등)
-        category: 자격증 분류 (국가기술자격, 국가전문자격 등)
+        categories: 자격증 분류 목록 [{code, name}] - 같은 자격증이 여러 카테고리에 속할 수 있음
         series: 자격증 시리즈 (정보처리 등)
         title: 자격증명
         raw_id: 원본 식별자 (코드_자격증명)
@@ -46,21 +63,10 @@ class Certificate(Base):
         default=lambda: str(uuid.uuid4()),
         comment="고유 식별자 (UUID)"
     )
-    code = Column(
-        String(10),
-        nullable=False,
-        comment="자격증 코드 (S: 국가전문자격, T: 국가기술자격, Q: 과정평가형, W: 일학습병행)"
-    )
-    category = Column(
-        String(100),
-        nullable=False,
-        comment="자격증 분류 (국가기술자격, 국가전문자격, 과정평가형자격, 일학습병행자격) - deprecated, categories 사용 권장"
-    )
     categories = Column(
-        JSON,
-        nullable=True,
-        default=list,
-        comment="자격증 분류 목록 [{code, name}] - 같은 자격증이 여러 카테고리에 속할 수 있음"
+        UnicodeJSON,
+        nullable=False,
+        comment="자격증 분류 목록 [{code, name}]"
     )
     series = Column(
         String(200),
@@ -96,37 +102,37 @@ class Certificate(Base):
         comment="권장 학습 기간 (일 단위)"
     )
     recommended_lectures = Column(
-        JSON,
+        UnicodeJSON,
         nullable=True,
         default=list,
         comment="추천 강의 목록 [{platform, title, url, instructor, price, relevance_score}]"
     )
     exam_info = Column(
-        JSON,
+        UnicodeJSON,
         nullable=True,
         default=dict,
         comment="시험 정보 {subjects, exam_type, passing_criteria, total_fee, schedule_link}"
     )
     career_info = Column(
-        JSON,
+        UnicodeJSON,
         nullable=True,
         default=dict,
         comment="취업/진로 정보 {use_cases, related_jobs, average_salary, job_prospects, industry}"
     )
     user_reviews = Column(
-        JSON,
+        UnicodeJSON,
         nullable=True,
         default=dict,
         comment="사용자 후기 요약 {summary, difficulty_feedback, study_tips}"
     )
     official_sources = Column(
-        JSON,
+        UnicodeJSON,
         nullable=True,
         default=dict,
         comment="공식 출처 {official_site, issuing_organization, schedule_page}"
     )
     study_guide = Column(
-        JSON,
+        UnicodeJSON,
         nullable=True,
         default=dict,
         comment="학습 가이드 {study_methods, learning_sequence, time_allocation, success_tips, recommended_books}"
@@ -168,8 +174,6 @@ class Certificate(Base):
         """
         return {
             "id": self.id,
-            "code": self.code,
-            "category": self.category,
             "categories": self.categories or [],
             "series": self.series,
             "title": self.title,

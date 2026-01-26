@@ -185,8 +185,7 @@ class TestCertificateSchema:
         cert = Certificate(
             id="test-uuid",
             raw_id="S_테스트자격증",
-            code="S",
-            category="국가전문자격",
+            categories=[{"code": "S", "name": "국가전문자격"}],
             series="테스트",
             title="테스트자격증",
             created_at=datetime.now(timezone.utc),
@@ -195,6 +194,8 @@ class TestCertificateSchema:
         assert cert.id == "test-uuid"
         assert cert.exam_info == {}
         assert cert.recommended_lectures == []
+        assert len(cert.categories) == 1
+        assert cert.categories[0].code == "S"
 
     def test_certificate_with_enrichment(self):
         """Test certificate with enriched data."""
@@ -203,8 +204,7 @@ class TestCertificateSchema:
         cert = Certificate(
             id="test-uuid",
             raw_id="S_테스트",
-            code="S",
-            category="국가전문자격",
+            categories=[{"code": "S", "name": "국가전문자격"}],
             series="테스트",
             title="테스트자격증",
             overview="테스트 개요",

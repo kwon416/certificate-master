@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/sheet'
 import { useSearchStore } from '@/stores/search-store'
 import { certificatesAPI } from '@/lib/api'
+import type { CategoryInfo } from '@/lib/api/types'
 
 const studyPeriods = [
   { value: 'all', label: '전체' },
@@ -37,7 +38,7 @@ interface SearchFiltersProps {
 export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
   const { filters, setFilters, resetFilters } = useSearchStore()
   const [isOpen, setIsOpen] = useState(false)
-  const [categories, setCategories] = useState<string[]>([])
+  const [categoryList, setCategoryList] = useState<CategoryInfo[]>([])
   const [availableSeries, setAvailableSeries] = useState<string[]>([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(true)
   const [isLoadingSeries, setIsLoadingSeries] = useState(false)
@@ -47,7 +48,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
     const loadCategories = async () => {
       try {
         const cats = await certificatesAPI.getCategories()
-        setCategories(cats)
+        setCategoryList(cats)
       } catch (error) {
         console.error('Failed to load categories:', error)
       } finally {
@@ -60,17 +61,19 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
   // Load series when category changes
   useEffect(() => {
     const loadSeries = async () => {
-      if (!filters.category) {
+      const selectedCategory = filters.categories?.[0]
+      if (!selectedCategory) {
         setAvailableSeries([])
         return
       }
 
       setIsLoadingSeries(true)
       try {
-        const data = await certificatesAPI.getSeries(filters.category)
+        // 새 API: category_name과 category_code 사용
+        const data = await certificatesAPI.getSeries(selectedCategory, filters.categoryCode || undefined)
 
         // Find series for selected category
-        const categoryData = data.find(d => d.category === filters.category)
+        const categoryData = data.find(d => d.category_name === selectedCategory)
         setAvailableSeries(categoryData?.series || [])
       } catch (error) {
         console.error('Failed to load series:', error)
@@ -80,7 +83,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       }
     }
     loadSeries()
-  }, [filters.category])
+  }, [filters.categories, filters.categoryCode])
 
   const handleDifficultyChange = (value: number[]) => {
     if (value.length === 2) {
@@ -90,10 +93,21 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
   }
 
   const handleCategoryChange = (value: string) => {
-    setFilters({ 
-      category: value === 'all' ? null : value,
-      series: null // Reset series when category changes
-    })
+    if (value === 'all') {
+      setFilters({
+        categories: null,
+        categoryCode: null,
+        series: null,
+      })
+    } else {
+      // 선택된 카테고리의 코드 찾기
+      const selectedCat = categoryList.find(c => c.name === value)
+      setFilters({
+        categories: [value],
+        categoryCode: selectedCat?.code || null,
+        series: null,
+      })
+    }
     onFilterChange?.()
   }
 
@@ -114,7 +128,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
 
   const activeFilterCount = [
     filters.difficulty[0] !== 1 || filters.difficulty[1] !== 5,
-    filters.category !== null,
+    filters.categories !== null && filters.categories.length > 0,
     filters.series !== null,
     filters.studyPeriod !== null,
   ].filter(Boolean).length
@@ -130,7 +144,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
           </Badge>
         </div>
         <Select
-          value={filters.category || 'all'}
+          value={filters.categories?.[0] || 'all'}
           onValueChange={handleCategoryChange}
           disabled={isLoadingCategories}
         >
@@ -144,13 +158,13 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
             >
               전체
             </SelectItem>
-            {categories.map((category) => (
+            {categoryList.map((cat) => (
               <SelectItem
-                key={category}
-                value={category}
+                key={cat.code}
+                value={cat.name}
                 className="text-slate-200 focus:bg-slate-700 focus:text-white"
               >
-                {category}
+                {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -158,7 +172,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       </div>
 
       {/* Series Filter (Level 2 - only show when category selected) */}
-      {filters.category && (
+      {filters.categories && filters.categories.length > 0 && (
         <div className="space-y-3 pl-4 border-l-2 border-emerald-500/30">
           <div className="flex items-center gap-2">
             <ChevronRight className="h-4 w-4 text-emerald-400" />
@@ -265,9 +279,9 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
         <div className="pt-4 border-t border-slate-800">
           <div className="text-xs text-slate-500 mb-2">적용된 필터</div>
           <div className="flex flex-wrap gap-2">
-            {filters.category && (
+            {filters.categories && filters.categories.length > 0 && (
               <Badge variant="secondary" className="bg-emerald-900/30 text-emerald-400">
-                {filters.category}
+                {filters.categories[0]}
               </Badge>
             )}
             {filters.series && (

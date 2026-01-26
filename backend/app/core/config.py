@@ -87,6 +87,21 @@ class Settings(BaseSettings):
     # Brave Search Configuration (Enrich용)
     BRAVE_SEARCH_RESULTS_PER_CATEGORY: int = 5  # 카테고리당 검색 결과 수 (기본 10 → 5)
 
+    # Embedding Provider Configuration
+    # "openai": OpenAI API 사용 (서버용, 기본값)
+    # "local": BGE-M3 로컬 모델 사용 (파이프라인용, FlagEmbedding 필요)
+    EMBEDDING_PROVIDER: str = "openai"
+
+    # Search Provider Configuration
+    # "brave": Brave Search API 사용 (기본값, 유료)
+    # "searxng": SearXNG 메타 검색 엔진 사용 (오픈소스, 무료)
+    SEARCH_PROVIDER: str = "brave"
+
+    # SearXNG Configuration (오픈소스 검색 엔진)
+    # Docker: docker run -d -p 8888:8080 searxng/searxng
+    SEARXNG_BASE_URL: str = "http://localhost:8888"
+    SEARXNG_TIMEOUT: float = 30.0
+
     # Application Settings
     ENVIRONMENT: str = "development"
     DEBUG: bool = True

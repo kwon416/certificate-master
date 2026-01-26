@@ -20,15 +20,16 @@ class FakeVectorStoreService:
             "total_vectors": 2,
         }
 
-    def list_vectors(self, limit: int, offset: int, include_embeddings: bool = False):
+    def list_vectors(self, limit: int, offset: int, include_embeddings: bool = False, where: dict = None):
         self.list_kwargs = {
             "limit": limit,
             "offset": offset,
             "include_embeddings": include_embeddings,
+            "where": where,
         }
         return [
-            {"id": "vec-1", "metadata": {"title": "정보처리기사", "category": "국가기술자격"}},
-            {"id": "vec-2", "metadata": {"title": "네트워크보안", "category": "민간자격"}},
+            {"id": "vec-1", "metadata": {"title": "정보처리기사", "categories": "국가기술자격"}},
+            {"id": "vec-2", "metadata": {"title": "네트워크보안", "categories": "민간자격"}},
         ]
 
     def get_by_id(self, vector_id: str):
@@ -37,13 +38,13 @@ class FakeVectorStoreService:
             return {
                 "id": "vec-1",
                 "values": [0.1, 0.2],
-                "metadata": {"title": "정보처리기사", "category": "국가기술자격"},
+                "metadata": {"title": "정보처리기사", "categories": "국가기술자격"},
             }
         if vector_id == "vec-2":
             return {
                 "id": "vec-2",
                 "values": [0.3, 0.4],
-                "metadata": {"title": "네트워크보안", "category": "민간자격"},
+                "metadata": {"title": "네트워크보안", "categories": "민간자격"},
             }
         return None
 
@@ -61,7 +62,7 @@ def test_chroma_page_renders_vectors_and_details(client: TestClient):
     assert response.status_code == 200
     body = response.text
 
-    assert "Chroma Collection" in body
+    assert "ChromaDB Inspector" in body
     assert "vec-1" in body
     assert "정보처리기사" in body
     assert "vec-2" in body
@@ -70,5 +71,6 @@ def test_chroma_page_renders_vectors_and_details(client: TestClient):
         "limit": 5,
         "offset": 10,
         "include_embeddings": False,
+        "where": None,
     }
     assert fake_service.requested_ids[0] == "vec-2"

@@ -14,7 +14,7 @@ class TestCertificateFormatter:
 
         cert = {
             "title": "정보처리기사",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보처리",
             "overview": "IT 분야의 대표 자격증",
             "difficulty": 3,
@@ -36,7 +36,7 @@ class TestCertificateFormatter:
 
         cert = {
             "title": "정보처리기사",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "career_info": {
                 "industry": ["IT", "소프트웨어"],
                 "use_cases": ["개발", "운영"],
@@ -60,7 +60,7 @@ class TestCertificateFormatter:
 
         cert = {
             "title": "정보처리기사",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "exam_info": {
                 "exam_type": "필기+실기",
                 "subjects": ["소프트웨어설계", "데이터베이스"],
@@ -80,7 +80,7 @@ class TestCertificateFormatter:
 
         cert = {
             "title": "테스트 자격증",
-            "category": "테스트",
+            "categories": [{"code": "T", "name": "테스트"}],
             "career_info": None,
             "exam_info": {},
             "user_reviews": None,
@@ -101,7 +101,7 @@ class TestCertificateFormatter:
         cert = {
             "id": "cert-123",
             "title": "정보처리기사",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보처리",
             "difficulty": 3,
             "study_period_days": 90,
@@ -118,7 +118,7 @@ class TestCertificateFormatter:
         metadata = build_certificate_metadata(cert)
 
         assert metadata["title"] == "정보처리기사"
-        assert metadata["category"] == "국가기술자격"
+        assert metadata["categories"] == "국가기술자격"
         assert metadata["series"] == "정보처리"
         assert metadata["difficulty"] == 3
         assert metadata["study_period_days"] == 90
@@ -138,7 +138,7 @@ class TestFormatterIntegration:
 
         cert = {
             "title": "테스트 자격증",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "overview": "테스트 개요",
         }
 
@@ -172,7 +172,7 @@ class TestFormatterIntegration:
                 cert = {
                     "id": "cert-123",
                     "title": "테스트 자격증",
-                    "category": "국가기술자격",
+                    "categories": [{"code": "T", "name": "국가기술자격"}],
                     "series": "정보처리",
                     "overview": "테스트 개요",
                     "difficulty": 3,

@@ -52,10 +52,10 @@ export function WizardStep({
 }: WizardStepProps) {
   if (type === 'slider') {
     return (
-      <div className="space-y-6">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{title}</h2>
-          <p className="text-slate-400">{description}</p>
+      <div className="space-y-4 md:space-y-6">
+        <div className="text-center mb-4 md:mb-8">
+          <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
+          <p className="text-sm md:text-base text-slate-400">{description}</p>
         </div>
 
         <TimeSlider
@@ -71,10 +71,10 @@ export function WizardStep({
 
   if (type === 'input') {
     return (
-      <div className="space-y-6">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{title}</h2>
-          <p className="text-slate-400">{description}</p>
+      <div className="space-y-4 md:space-y-6">
+        <div className="text-center mb-4 md:mb-8">
+          <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
+          <p className="text-sm md:text-base text-slate-400">{description}</p>
         </div>
 
         <div className="max-w-xl mx-auto space-y-3">
@@ -85,7 +85,7 @@ export function WizardStep({
               const nextValue = event.target.value
               onAnswer(nextValue.trim() ? nextValue : null)
             }}
-            className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+            className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500 text-base"
           />
         </div>
       </div>
@@ -96,10 +96,10 @@ export function WizardStep({
     const timeUnspecified = currentAnswer === '-1'
 
     return (
-      <div className="space-y-10">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{title}</h2>
-          <p className="text-slate-400">{description}</p>
+      <div className="space-y-6 md:space-y-10">
+        <div className="text-center mb-4 md:mb-8">
+          <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
+          <p className="text-sm md:text-base text-slate-400">{description}</p>
         </div>
 
         <div className="space-y-4">
@@ -119,12 +119,12 @@ export function WizardStep({
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-white">목표 기간</h3>
-            <p className="text-sm text-slate-400">언제까지 취득하고 싶으세요?</p>
+            <h3 className="text-base md:text-lg font-semibold text-white">목표 기간</h3>
+            <p className="text-xs md:text-sm text-slate-400">언제까지 취득하고 싶으세요?</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
             {secondaryOptions?.map((option) => {
               if (typeof option === 'string') {
                 return (
@@ -154,13 +154,13 @@ export function WizardStep({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{title}</h2>
-        <p className="text-slate-400">{description}</p>
+    <div className="space-y-4 md:space-y-6">
+      <div className="text-center mb-4 md:mb-8">
+        <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
+        <p className="text-sm md:text-base text-slate-400">{description}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 max-h-[50vh] md:max-h-none overflow-y-auto md:overflow-visible pr-1 md:pr-0">
         {options?.map((option) => {
           // Handle both string and FieldOption types
           if (typeof option === 'string') {

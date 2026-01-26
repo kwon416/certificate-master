@@ -29,11 +29,11 @@ export function MatchScoreBadge({ score }: MatchScoreBadgeProps) {
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium',
+        'inline-flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full border text-xs md:text-sm font-medium',
         getColor(score)
       )}
     >
-      <span className="text-lg font-bold">{score}%</span>
+      <span className="text-base md:text-lg font-bold">{score}%</span>
       <span>{getLabel(score)}</span>
     </div>
   )

@@ -57,10 +57,15 @@ T,국가기술자격,정보처리,정보처리기사
 
         result = parse_csv_to_json(temp_csv_file)
 
-        required_fields = ["code", "category", "series", "title", "raw_id"]
+        required_fields = ["categories", "series", "title", "raw_id"]
         for cert in result:
             for field in required_fields:
                 assert field in cert, f"Missing field: {field}"
+            # categories 구조 검증
+            assert isinstance(cert["categories"], list)
+            assert len(cert["categories"]) > 0
+            assert "code" in cert["categories"][0]
+            assert "name" in cert["categories"][0]
 
     def test_parse_csv_first_certificate_values(self, temp_csv_file: Path) -> None:
         """Test that first certificate has correct values."""
@@ -69,8 +74,8 @@ T,국가기술자격,정보처리,정보처리기사
         result = parse_csv_to_json(temp_csv_file)
 
         first_cert = result[0]
-        assert first_cert["code"] == "S"
-        assert first_cert["category"] == "국가전문자격"
+        assert first_cert["categories"][0]["code"] == "S"
+        assert first_cert["categories"][0]["name"] == "국가전문자격"
         assert first_cert["series"] == "세무사"
         assert first_cert["title"] == "세무사"
         assert first_cert["raw_id"] == "S_세무사"
@@ -82,7 +87,8 @@ T,국가기술자격,정보처리,정보처리기사
         result = parse_csv_to_json(temp_csv_file)
 
         for cert in result:
-            expected_raw_id = f"{cert['code']}_{cert['title']}"
+            code = cert["categories"][0]["code"]
+            expected_raw_id = f"{code}_{cert['title']}"
             assert cert["raw_id"] == expected_raw_id
 
     def test_save_to_json_creates_file(self, temp_csv_file: Path) -> None:
@@ -143,9 +149,72 @@ S, 국가전문자격 , 세무사 , 세무사
             result = parse_csv_to_json(temp_path)
             cert = result[0]
 
-            assert cert["category"] == "국가전문자격"
+            assert cert["categories"][0]["name"] == "국가전문자격"
             assert cert["series"] == "세무사"
             assert cert["title"] == "세무사"
+        finally:
+            if temp_path.exists():
+                temp_path.unlink()
+
+    def test_parse_csv_merges_duplicate_titles(self) -> None:
+        """Test that certificates with same title are merged with multiple categories."""
+        from scripts.parse_csv import parse_csv_to_json
+
+        # 같은 종목명(정보처리기사)이 두 개의 자격구분을 가짐
+        csv_content = """자격구분코드,자격구분명,계열명,종목명
+T,국가기술자격,정보처리,정보처리기사
+C,과정평가형자격,정보처리,정보처리기사
+S,국가전문자격,세무사,세무사
+"""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".csv", delete=False, encoding="utf-8-sig"
+        ) as f:
+            f.write(csv_content)
+            temp_path = Path(f.name)
+
+        try:
+            result = parse_csv_to_json(temp_path)
+
+            # 중복이 병합되어 2개만 있어야 함
+            assert len(result) == 2
+
+            # 정보처리기사는 2개의 카테고리를 가져야 함
+            info_cert = next(c for c in result if c["title"] == "정보처리기사")
+            assert len(info_cert["categories"]) == 2
+            assert {"code": "T", "name": "국가기술자격"} in info_cert["categories"]
+            assert {"code": "C", "name": "과정평가형자격"} in info_cert["categories"]
+
+            # raw_id는 첫 번째 카테고리 코드 사용
+            assert info_cert["raw_id"] == "T_정보처리기사"
+
+            # 세무사는 1개의 카테고리만 가져야 함
+            tax_cert = next(c for c in result if c["title"] == "세무사")
+            assert len(tax_cert["categories"]) == 1
+        finally:
+            if temp_path.exists():
+                temp_path.unlink()
+
+    def test_parse_csv_no_duplicate_categories(self) -> None:
+        """Test that same category is not added twice for same title."""
+        from scripts.parse_csv import parse_csv_to_json
+
+        # 같은 종목명과 같은 카테고리가 중복으로 있는 경우
+        csv_content = """자격구분코드,자격구분명,계열명,종목명
+T,국가기술자격,정보처리,정보처리기사
+T,국가기술자격,정보처리,정보처리기사
+"""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".csv", delete=False, encoding="utf-8-sig"
+        ) as f:
+            f.write(csv_content)
+            temp_path = Path(f.name)
+
+        try:
+            result = parse_csv_to_json(temp_path)
+
+            # 완전히 동일한 행은 1개로 병합
+            assert len(result) == 1
+            assert len(result[0]["categories"]) == 1
         finally:
             if temp_path.exists():
                 temp_path.unlink()

@@ -21,17 +21,33 @@ export interface Feasibility {
   estimated_days: number
 }
 
+export interface QuickStats {
+  passing_rate: number | null
+  average_salary: string | null
+  exam_fee: string | null
+  exam_type: string | null
+}
+
+export interface StudyInsights {
+  study_tips: string[]
+  success_tips: string[]
+  difficulty_feedback: string | null
+}
+
 export interface RecommendedCertificate {
   certificate: Certificate
   match_score: number
   recommendation_reason: string
   key_points: string[]
   feasibility: Feasibility
+  quick_stats?: QuickStats
+  study_insights?: StudyInsights
 }
 
 export interface RecommendationResponse {
   recommendations: RecommendedCertificate[]
   query_summary: string
+  user_summary?: string | null  // 사용자가 입력한 원본 요청 문장
   total_matched: number
 }
 

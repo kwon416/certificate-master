@@ -518,7 +518,7 @@ class TestVectorStoreServiceFormatRecord:
                 cert = {
                     "id": "cert-123",
                     "title": "정보처리기사",
-                    "category": "국가기술자격",
+                    "categories": [{"code": "T", "name": "국가기술자격"}],
                     "series": "정보처리",
                     "overview": "IT 분야의 대표 자격증",
                     "difficulty": 3,
@@ -538,7 +538,7 @@ class TestVectorStoreServiceFormatRecord:
                 assert "chunk_text" in record
                 assert "정보처리기사" in record["chunk_text"]
                 assert record["title"] == "정보처리기사"
-                assert record["category"] == "국가기술자격"
+                assert record["categories"] == "국가기술자격"
 
 
 class TestVectorStoreUpsertVerification:

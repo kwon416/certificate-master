@@ -154,6 +154,44 @@ class Feasibility(BaseModel):
     )
 
 
+class QuickStats(BaseModel):
+    """핵심 통계 정보."""
+
+    passing_rate: float | None = Field(
+        default=None,
+        description="합격률 (%)",
+    )
+    average_salary: str | None = Field(
+        default=None,
+        description="평균 연봉",
+    )
+    exam_fee: str | None = Field(
+        default=None,
+        description="응시료",
+    )
+    exam_type: str | None = Field(
+        default=None,
+        description="시험 유형 (필기/실기 등)",
+    )
+
+
+class StudyInsights(BaseModel):
+    """학습 인사이트."""
+
+    study_tips: list[str] = Field(
+        default_factory=list,
+        description="학습 팁 (최대 3개)",
+    )
+    success_tips: list[str] = Field(
+        default_factory=list,
+        description="합격 팁 (최대 2개)",
+    )
+    difficulty_feedback: str | None = Field(
+        default=None,
+        description="실제 난이도 피드백",
+    )
+
+
 class RecommendedCertificate(BaseModel):
     """추천된 자격증 정보."""
 
@@ -177,11 +215,19 @@ class RecommendedCertificate(BaseModel):
     )
     key_points: list[str] = Field(
         default_factory=list,
-        description="핵심 추천 포인트 (3개)",
+        description="핵심 추천 포인트 (최대 5개)",
     )
     feasibility: Feasibility = Field(
         ...,
         description="준비 가능성 정보",
+    )
+    quick_stats: QuickStats = Field(
+        default_factory=QuickStats,
+        description="핵심 통계 정보 (합격률, 연봉, 응시료 등)",
+    )
+    study_insights: StudyInsights = Field(
+        default_factory=StudyInsights,
+        description="학습 인사이트 (학습 팁, 합격 팁 등)",
     )
 
 
@@ -195,6 +241,10 @@ class RecommendationResponse(BaseModel):
     query_summary: str = Field(
         ...,
         description="사용자 요청 요약 (예: 'IT 분야 취업 준비를 위한 자격증 추천')",
+    )
+    user_summary: str | None = Field(
+        default=None,
+        description="사용자가 입력한 원본 요청 문장 (선택)",
     )
     total_matched: int = Field(
         ...,

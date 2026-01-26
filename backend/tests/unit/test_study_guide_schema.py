@@ -164,8 +164,7 @@ class TestStudyGuideSchema:
         data = {
             "id": "123e4567-e89b-12d3-a456-426614174000",
             "raw_id": "T_정보처리기사",
-            "code": "T",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보기술",
             "title": "정보처리기사",
             "created_at": datetime.now(),

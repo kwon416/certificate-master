@@ -74,7 +74,7 @@ class TestVectorStoreServiceIntegrated:
                 cert = {
                     "id": "uuid-123",
                     "title": "정보처리기사",
-                    "category": "국가기술자격",
+                    "categories": [{"code": "T", "name": "국가기술자격"}],
                     "series": "정보처리",
                     "overview": "IT 분야의 대표적인 자격증입니다.",
                     "difficulty": 3,
@@ -88,7 +88,7 @@ class TestVectorStoreServiceIntegrated:
                 assert "정보처리기사" in record["chunk_text"]
                 assert "IT 분야" in record["chunk_text"]
                 assert record["title"] == "정보처리기사"
-                assert record["category"] == "국가기술자격"
+                assert record["categories"] == "국가기술자격"
 
     def test_format_record_with_career_info(self):
         """진로 정보가 포함된 자격증 포맷 테스트."""
@@ -110,7 +110,7 @@ class TestVectorStoreServiceIntegrated:
                 cert = {
                     "id": "uuid-456",
                     "title": "관세사",
-                    "category": "국가전문자격",
+                    "categories": [{"code": "S", "name": "국가전문자격"}],
                     "overview": "무역 전문 자격증",
                     "career_info": {
                         "industry": ["무역", "물류"],
@@ -155,13 +155,13 @@ class TestVectorStoreServiceIntegrated:
                         {
                             "id": "cert-001",
                             "title": "정보처리기사",
-                            "category": "국가기술자격",
+                            "categories": [{"code": "T", "name": "국가기술자격"}],
                             "overview": "IT 자격증",
                         },
                         {
                             "id": "cert-002",
                             "title": "관세사",
-                            "category": "국가전문자격",
+                            "categories": [{"code": "S", "name": "국가전문자격"}],
                             "overview": "무역 자격증",
                         },
                     ]
@@ -179,19 +179,18 @@ class TestEmbeddingServiceSimplified:
 
     def test_format_certificate_text_only(self):
         """텍스트 포맷팅만 테스트."""
-        with patch("app.services.embedding_service.BGEM3FlagModel"):
-            from app.services.embedding_service import EmbeddingService
+        from app.services.embedding_service import EmbeddingService
 
-            # api_key 없이 초기화 가능해야 함
-            service = EmbeddingService(api_key=None)
+        # api_key 없이 초기화 가능해야 함
+        service = EmbeddingService(api_key=None)
 
-            cert = {
-                "title": "정보처리기사",
-                "category": "국가기술자격",
-                "overview": "IT 자격증",
-            }
+        cert = {
+            "title": "정보처리기사",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "overview": "IT 자격증",
+        }
 
-            result = service.format_certificate_for_embedding(cert)
+        result = service.format_certificate_for_embedding(cert)
 
-            assert "정보처리기사" in result
-            assert "국가기술자격" in result
+        assert "정보처리기사" in result
+        assert "국가기술자격" in result

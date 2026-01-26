@@ -27,23 +27,21 @@ router = APIRouter()
 async def search_certificates(
     db: DBSession,
     q: Optional[str] = Query(None, description="검색 키워드"),
-    category: Optional[str] = Query(None, description="자격구분명 필터 (deprecated, categories 사용 권장)"),
     categories: Optional[list[str]] = Query(None, description="자격구분명 필터 (여러 개 가능)"),
+    category_codes: Optional[list[str]] = Query(None, description="자격구분코드 필터 (여러 개 가능)"),
     series: Optional[str] = Query(None, description="계열명 필터"),
-    code: Optional[str] = Query(None, description="자격구분코드 필터"),
     page: int = Query(1, ge=1, description="페이지 번호"),
     page_size: int = Query(20, ge=1, le=100, description="페이지 크기"),
 ):
     """자격증 검색 (필터링 지원).
 
-    키워드, 카테고리, 계열, 코드로 필터링하여 자격증을 검색합니다.
+    키워드, 카테고리, 계열로 필터링하여 자격증을 검색합니다.
 
     Args:
         q: 검색 키워드 (제목, 계열명에서 검색)
-        category: 자격구분명 필터 (예: 국가전문자격) - deprecated
         categories: 자격구분명 필터 목록 (예: ["국가기술자격", "과정평가형자격"])
+        category_codes: 자격구분코드 필터 목록 (예: ["S", "T"])
         series: 계열명 필터 (예: 정보기술)
-        code: 자격구분코드 필터 (예: S, T, Q)
         page: 페이지 번호 (기본 1)
         page_size: 페이지 크기 (기본 20)
 
@@ -80,25 +78,23 @@ async def search_certificates(
             )
         if category_conditions:
             query = query.filter(or_(*category_conditions))
-    elif category:
-        # 기존 category 필드로 필터링 (하위 호환성)
-        # 또는 categories JSON에서 검색
-        query = query.filter(
-            or_(
-                CertificateModel.category == category,
+
+    # 카테고리 코드 필터링
+    if category_codes:
+        code_conditions = []
+        for code in category_codes:
+            code_conditions.append(
                 func.json_contains(
                     CertificateModel.categories,
-                    func.json_quote(category),
-                    text("'$[*].name'")
+                    func.json_quote(code),
+                    text("'$[*].code'")
                 )
             )
-        )
+        if code_conditions:
+            query = query.filter(or_(*code_conditions))
 
     if series:
         query = query.filter(CertificateModel.series == series)
-
-    if code:
-        query = query.filter(CertificateModel.code == code)
 
     # Get total count
     total = query.count()
@@ -159,7 +155,6 @@ async def autocomplete_certificates(
         AutocompleteResult(
             id=item.id,
             title=item.title,
-            category=item.category,
             categories=[CategoryInfo(**cat) for cat in (item.categories or [])],
             series=item.series,
         )
@@ -167,56 +162,119 @@ async def autocomplete_certificates(
     ]
 
 
-@router.get("/categories", response_model=list[str])
+@router.get("/categories", response_model=list[CategoryInfo])
 async def get_categories(db: DBSession):
     """모든 자격증 카테고리 조회.
 
-    데이터베이스에 있는 고유한 자격증 카테고리 목록을 반환합니다.
+    categories JSON 배열에서 고유한 카테고리 목록을 추출합니다.
 
     Returns:
-        list[str]: 카테고리명 목록 (정렬됨).
+        list[CategoryInfo]: 카테고리 목록 (code, name 포함, 정렬됨).
     """
-    results = db.query(CertificateModel.category).distinct().all()
+    from sqlalchemy import text
 
-    # Extract unique categories
-    categories = sorted(item[0] for item in results)
-    return categories
+    # JSON_TABLE을 사용하여 categories 배열에서 고유 카테고리 추출
+    result = db.execute(text("""
+        SELECT DISTINCT
+            JSON_UNQUOTE(JSON_EXTRACT(cat.value, '$.code')) as code,
+            JSON_UNQUOTE(JSON_EXTRACT(cat.value, '$.name')) as name
+        FROM certificates,
+             JSON_TABLE(categories, '$[*]' COLUMNS (value JSON PATH '$')) as cat
+        ORDER BY name
+    """))
+
+    return [CategoryInfo(code=row.code, name=row.name) for row in result.fetchall()]
 
 
 @router.get("/series", response_model=list[SeriesByCategory])
 async def get_series_by_category(
     db: DBSession,
-    category: Optional[str] = Query(None, description="카테고리 필터"),
+    category_name: Optional[str] = Query(None, description="자격구분명 필터"),
+    category_code: Optional[str] = Query(None, description="자격구분코드 필터"),
 ):
     """자격증 계열 목록 조회 (카테고리별 필터링 지원).
 
-    자격증 계열 목록을 카테고리별로 그룹화하여 반환합니다.
+    categories JSON 배열에서 계열 목록을 카테고리별로 그룹화하여 반환합니다.
 
     Args:
-        category: 카테고리 필터 (선택사항)
+        category_name: 자격구분명 필터 (선택사항)
+        category_code: 자격구분코드 필터 (선택사항)
 
     Returns:
         list[SeriesByCategory]: 카테고리별 계열 목록.
     """
-    query = db.query(CertificateModel.category, CertificateModel.series)
+    from sqlalchemy import text, func
 
-    if category:
-        query = query.filter(CertificateModel.category == category)
+    # JSON_TABLE로 categories 배열 펼치기
+    if category_name or category_code:
+        # 특정 카테고리만 필터링
+        query = db.query(
+            CertificateModel.categories,
+            CertificateModel.series
+        )
 
-    results = query.all()
+        if category_name:
+            query = query.filter(
+                func.json_contains(
+                    CertificateModel.categories,
+                    func.json_quote(category_name),
+                    text("'$[*].name'")
+                )
+            )
 
-    # Group series by category
-    series_map: dict[str, set] = {}
-    for cat, ser in results:
-        if ser:
-            if cat not in series_map:
-                series_map[cat] = set()
-            series_map[cat].add(ser)
+        if category_code:
+            query = query.filter(
+                func.json_contains(
+                    CertificateModel.categories,
+                    func.json_quote(category_code),
+                    text("'$[*].code'")
+                )
+            )
+
+        results = query.all()
+
+        # Group series by category
+        series_map: dict[tuple[str, str], set] = {}  # (code, name) -> set of series
+        for categories_json, ser in results:
+            if ser and categories_json:
+                for cat in categories_json:
+                    cat_code = cat.get("code", "")
+                    cat_name = cat.get("name", "")
+                    # 필터 조건에 맞는 카테고리만 추가
+                    if category_name and cat_name != category_name:
+                        continue
+                    if category_code and cat_code != category_code:
+                        continue
+                    key = (cat_code, cat_name)
+                    if key not in series_map:
+                        series_map[key] = set()
+                    series_map[key].add(ser)
+    else:
+        # 전체 카테고리
+        results = db.query(
+            CertificateModel.categories,
+            CertificateModel.series
+        ).all()
+
+        series_map: dict[tuple[str, str], set] = {}
+        for categories_json, ser in results:
+            if ser and categories_json:
+                for cat in categories_json:
+                    cat_code = cat.get("code", "")
+                    cat_name = cat.get("name", "")
+                    key = (cat_code, cat_name)
+                    if key not in series_map:
+                        series_map[key] = set()
+                    series_map[key].add(ser)
 
     # Format result
     result = []
-    for cat, series_set in sorted(series_map.items()):
-        result.append(SeriesByCategory(category=cat, series=sorted(list(series_set))))
+    for (code, name), series_set in sorted(series_map.items(), key=lambda x: x[1]):
+        result.append(SeriesByCategory(
+            category_code=code,
+            category_name=name,
+            series=sorted(list(series_set))
+        ))
 
     return result
 

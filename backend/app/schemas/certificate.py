@@ -18,9 +18,7 @@ class CategoryInfo(BaseModel):
 class CertificateBase(BaseModel):
     """Base schema for Certificate with common fields."""
 
-    code: str = Field(..., description="자격구분코드 (S, T, Q 등) - deprecated")
-    category: str = Field(..., description="자격구분명 (국가전문자격, 국가기술자격 등) - deprecated")
-    categories: list[CategoryInfo] = Field(default_factory=list, description="자격증이 속한 카테고리 목록")
+    categories: list[CategoryInfo] = Field(..., description="자격증이 속한 카테고리 목록")
     series: Optional[str] = Field(None, description="계열명")
     title: str = Field(..., description="종목명 (자격증 이름)")
 
@@ -30,15 +28,15 @@ class AutocompleteResult(BaseModel):
 
     id: str = Field(..., description="자격증 ID")
     title: str = Field(..., description="자격증 제목")
-    category: str = Field(..., description="자격구분 - deprecated")
-    categories: list[CategoryInfo] = Field(default_factory=list, description="자격증이 속한 카테고리 목록")
+    categories: list[CategoryInfo] = Field(..., description="자격증이 속한 카테고리 목록")
     series: Optional[str] = Field(None, description="계열명")
 
 
 class SeriesByCategory(BaseModel):
     """Schema for series grouped by category."""
-    
-    category: str = Field(..., description="자격구분")
+
+    category_name: str = Field(..., description="자격구분명")
+    category_code: str = Field(..., description="자격구분코드")
     series: list[str] = Field(..., description="계열 목록")
 
 
@@ -260,8 +258,8 @@ class CertificateSearchParams(BaseModel):
     """Schema for certificate search query parameters."""
 
     q: Optional[str] = Field(None, description="검색 키워드")
-    category: Optional[str] = Field(None, description="자격구분명 필터")
-    code: Optional[str] = Field(None, description="자격구분코드 필터")
+    categories: Optional[list[str]] = Field(None, description="자격구분명 필터 (여러 개 가능)")
+    category_codes: Optional[list[str]] = Field(None, description="자격구분코드 필터 (여러 개 가능)")
     difficulty_min: Optional[int] = Field(None, ge=1, le=5, description="최소 난이도")
     difficulty_max: Optional[int] = Field(None, ge=1, le=5, description="최대 난이도")
     page: int = Field(1, ge=1, description="페이지 번호")

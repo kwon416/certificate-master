@@ -1,38 +1,54 @@
-"""Brave Search API 통합 서비스.
+"""SearXNG 메타 검색 엔진 통합 서비스.
 
-이 모듈은 다중 쿼리 전략을 강화해 Brave Search API로 자격증 정보를
-검색하는 기능을 제공합니다.
+이 모듈은 SearXNG을 사용하여 자격증 정보를 검색하는 기능을 제공합니다.
+SearXNG은 오픈소스 메타 검색 엔진으로, Brave Search API의 무료 대안입니다.
+
+설치:
+    docker run -d -p 8888:8080 searxng/searxng
+
+사용법:
+    SEARCH_PROVIDER=searxng uv run python -m scripts.data_pipeline
 """
-import httpx
 import asyncio
+import logging
 from typing import Optional
+
+import httpx
 
 from app.core.config import get_settings
 
+logger = logging.getLogger(__name__)
 
-class BraveSearchService:
-    """다중 쿼리를 지원하는 Brave Search API 통합 서비스.
+
+class SearXNGSearchService:
+    """SearXNG 메타 검색 엔진 통합 서비스.
 
     SearchServiceProtocol을 구현합니다.
+    Brave Search API와 호환되는 결과 형식을 반환합니다.
     """
 
-    def __init__(self, api_key: Optional[str] = None):
-        """Brave Search 서비스를 초기화합니다.
+    def __init__(
+        self,
+        base_url: Optional[str] = None,
+        timeout: Optional[float] = None,
+    ):
+        """SearXNG 검색 서비스를 초기화합니다.
 
         Args:
-            api_key: Brave API 키. 제공되지 않으면 설정 값을 사용합니다.
+            base_url: SearXNG 서버 URL. 제공되지 않으면 설정 값을 사용합니다.
+            timeout: 요청 타임아웃(초). 제공되지 않으면 설정 값을 사용합니다.
         """
         settings = get_settings()
-        self.api_key = api_key or settings.BRAVE_API_KEY
-        self.base_url = "https://api.search.brave.com/res/v1/web/search"
-        self._provider_name = "brave"
+        self.base_url = base_url or settings.SEARXNG_BASE_URL
+        self.timeout = timeout or settings.SEARXNG_TIMEOUT
+        self._provider_name = "searxng"
 
     @property
     def provider_name(self) -> str:
         """검색 서비스 제공자 이름을 반환합니다.
 
         Returns:
-            제공자 이름 ("brave").
+            제공자 이름 ("searxng").
         """
         return self._provider_name
 
@@ -43,7 +59,7 @@ class BraveSearchService:
         country: str = "KR",
         search_lang: str = "ko",
     ) -> dict:
-        """Brave API로 검색합니다.
+        """SearXNG으로 검색합니다.
 
         Args:
             query: 검색 질의 문자열.
@@ -52,36 +68,116 @@ class BraveSearchService:
             search_lang: 검색 언어(기본값: ko).
 
         Returns:
-            검색 결과를 담은 딕셔너리.
+            Brave API 호환 형식의 검색 결과 딕셔너리:
+            {
+                "web": {
+                    "results": [...]
+                }
+            }
 
         Raises:
             httpx.HTTPError: API 요청이 실패한 경우.
         """
-        if not self.api_key:
-            raise ValueError("BRAVE_API_KEY not configured")
-
-        headers = {
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-            "X-Subscription-Token": self.api_key,
+        # SearXNG 언어 코드 매핑
+        language_map = {
+            "ko": "ko-KR",
+            "en": "en-US",
+            "ja": "ja-JP",
+            "zh": "zh-CN",
         }
+        language = language_map.get(search_lang, f"{search_lang}-{country}")
 
         params = {
             "q": query,
-            "count": count,
-            "country": country,
-            "search_lang": search_lang,
+            "format": "json",
+            "language": language,
+            "pageno": 1,
+            "safesearch": 0,
+            "categories": "general",
         }
 
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                self.base_url,
-                headers=headers,
+                f"{self.base_url}/search",
                 params=params,
-                timeout=30.0,
+                timeout=self.timeout,
             )
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+
+        # SearXNG 결과를 Brave API 형식으로 변환
+        results = data.get("results", [])[:count]
+        brave_format_results = []
+
+        for result in results:
+            brave_format_results.append({
+                "title": result.get("title", ""),
+                "url": result.get("url", ""),
+                "description": result.get("content", ""),
+                "age": self._parse_publish_date(result.get("publishedDate", "")),
+                "language": search_lang,
+            })
+
+        return {
+            "web": {
+                "results": brave_format_results,
+            }
+        }
+
+    def _parse_publish_date(self, date_str: str) -> str:
+        """발행일을 상대적 시간 문자열로 변환합니다.
+
+        Args:
+            date_str: ISO 형식 또는 기타 날짜 문자열.
+
+        Returns:
+            "2 days ago" 같은 상대적 시간 문자열.
+        """
+        if not date_str:
+            return ""
+
+        try:
+            from datetime import datetime, timezone
+
+            # ISO 형식 파싱 시도
+            if "T" in date_str:
+                dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            else:
+                # 다른 형식 시도
+                for fmt in ["%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y"]:
+                    try:
+                        dt = datetime.strptime(date_str, fmt).replace(
+                            tzinfo=timezone.utc
+                        )
+                        break
+                    except ValueError:
+                        continue
+                else:
+                    return date_str
+
+            now = datetime.now(timezone.utc)
+            diff = now - dt
+
+            if diff.days == 0:
+                if diff.seconds < 3600:
+                    return f"{diff.seconds // 60} minutes ago"
+                return f"{diff.seconds // 3600} hours ago"
+            elif diff.days == 1:
+                return "1 day ago"
+            elif diff.days < 7:
+                return f"{diff.days} days ago"
+            elif diff.days < 30:
+                weeks = diff.days // 7
+                return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+            elif diff.days < 365:
+                months = diff.days // 30
+                return f"{months} month{'s' if months > 1 else ''} ago"
+            else:
+                years = diff.days // 365
+                return f"{years} year{'s' if years > 1 else ''} ago"
+
+        except Exception:
+            return date_str
 
     async def search_certificate_comprehensive(
         self, certificate_title: str
@@ -92,25 +188,13 @@ class BraveSearchService:
             certificate_title: 자격증 한글명.
 
         Returns:
-            카테고리별 검색 결과 딕셔너리:
-            - general: 시험 기본 정보
-            - statistics: 합격률 추이 및 준비기간 분포
-            - career: 진로 및 활용 정보
-            - reviews: 합격 후기 및 팁
-            - study_methods: 학습 방법 및 계획
-            - books: 추천 교재
-            - lectures: 추천 강의
-            - official: 공식 출처
-
-        Note:
-            속도 제한을 피하기 위해 1.0초 지연을 두고 8개 쿼리를
-            순차적으로 실행합니다(무료 티어: 초당 1회).
+            카테고리별 검색 결과 딕셔너리.
         """
         settings = get_settings()
         queries = self._build_comprehensive_queries(certificate_title)
         return await self._run_categorized_queries(
             queries,
-            delay_seconds=1.0,
+            delay_seconds=0.5,  # SearXNG은 로컬이므로 짧은 지연
             default_count=settings.BRAVE_SEARCH_RESULTS_PER_CATEGORY,
         )
 
@@ -118,7 +202,7 @@ class BraveSearchService:
         self,
         certificate_title: str,
         *,
-        delay_seconds: float = 1.0,
+        delay_seconds: float = 0.5,
     ) -> dict[str, list[dict]]:
         """학습 계획 프롬프트 보강용 정보를 검색합니다.
 
@@ -145,7 +229,7 @@ class BraveSearchService:
         """검색 결과를 추출해 구조화합니다.
 
         Args:
-            api_response: Brave의 원본 API 응답.
+            api_response: Brave 호환 형식의 API 응답.
             keyword_hints: 관련성 점수 가중치를 위한 선택 키워드.
 
         Returns:
@@ -157,10 +241,10 @@ class BraveSearchService:
         extracted = []
         for result in web_results:
             url = result.get("url", "")
-            
+
             # Calculate URL quality score
             url_score = self._calculate_url_quality(url)
-            
+
             # Extract recency (newer is better)
             age = result.get("age", "")
             recency_score = self._calculate_recency_score(age)
@@ -177,13 +261,13 @@ class BraveSearchService:
                     "description": result.get("description", ""),
                     "age": age,
                     "language": result.get("language", "ko"),
-                    "url_quality": url_score,  # 0-100
-                    "recency_score": recency_score,  # 0-100
-                    "keyword_score": keyword_score,  # 0-100
+                    "url_quality": url_score,
+                    "recency_score": recency_score,
+                    "keyword_score": keyword_score,
                 }
             )
 
-        # Sort by combined score (url_quality + recency + keyword relevance)
+        # Sort by combined score
         if hints:
             extracted.sort(
                 key=lambda x: (
@@ -200,87 +284,99 @@ class BraveSearchService:
             )
 
         return extracted
-    
+
     def _calculate_url_quality(self, url: str) -> int:
         """출처 유형을 기준으로 URL 품질 점수를 계산합니다.
 
         Args:
-            url: URL 문자열
+            url: URL 문자열.
 
         Returns:
-            품질 점수 0-100
+            품질 점수 0-100.
         """
         url_lower = url.lower()
-        
+
         # Official government/certification sites (highest priority)
-        if any(domain in url_lower for domain in [
-            "q-net.or.kr",  # 큐넷
-            ".go.kr",  # 정부 사이트
-            "korcham.net",  # 대한상공회의소
-            "hrdkorea.or.kr",  # 한국산업인력공단
-        ]):
+        if any(
+            domain in url_lower
+            for domain in [
+                "q-net.or.kr",
+                ".go.kr",
+                "korcham.net",
+                "hrdkorea.or.kr",
+            ]
+        ):
             return 100
-        
+
         # Official education platforms (high priority)
-        if any(domain in url_lower for domain in [
-            "eduwill.net",  # 에듀윌
-            "hackers.com",  # 해커스
-            "sdedu.co.kr",  # 시대에듀
-            "ekac.or.kr",  # 한국회계평가원
-        ]):
+        if any(
+            domain in url_lower
+            for domain in [
+                "eduwill.net",
+                "hackers.com",
+                "sdedu.co.kr",
+                "ekac.or.kr",
+            ]
+        ):
             return 90
-        
+
         # News sites (medium-high priority)
-        if any(domain in url_lower for domain in [
-            "naver.com/news",
-            "daum.net/news",
-            "chosun.com",
-            "joongang.co.kr",
-            "hani.co.kr",
-        ]):
+        if any(
+            domain in url_lower
+            for domain in [
+                "naver.com/news",
+                "daum.net/news",
+                "chosun.com",
+                "joongang.co.kr",
+                "hani.co.kr",
+            ]
+        ):
             return 75
-        
+
         # Educational institutions (medium priority)
-        if any(domain in url_lower for domain in [
-            ".ac.kr",  # 대학
-            ".edu",
-        ]):
+        if any(domain in url_lower for domain in [".ac.kr", ".edu"]):
             return 70
-        
+
         # Community sites (lower priority, but useful for reviews)
-        if any(domain in url_lower for domain in [
-            "naver.com/cafe",
-            "blog.naver.com",
-            "tistory.com",
-            "brunch.co.kr",
-        ]):
+        if any(
+            domain in url_lower
+            for domain in [
+                "naver.com/cafe",
+                "blog.naver.com",
+                "tistory.com",
+                "brunch.co.kr",
+            ]
+        ):
             return 50
-        
+
         # Forum/Community (lowest priority)
-        if any(domain in url_lower for domain in [
-            "dcinside.com",
-            "clien.net",
-            "todayhumor.co.kr",
-        ]):
+        if any(
+            domain in url_lower
+            for domain in [
+                "dcinside.com",
+                "clien.net",
+                "todayhumor.co.kr",
+            ]
+        ):
             return 40
-        
+
         # Unknown sources
         return 60
-    
+
     def _calculate_recency_score(self, age: str) -> int:
         """기간 문자열로 최신성 점수를 계산합니다.
 
         Args:
-            age: "2 months ago", "1 year ago" 같은 기간 문자열
+            age: "2 months ago" 같은 기간 문자열.
 
         Returns:
-            최신성 점수 0-100 (100 = 가장 최신)
+            최신성 점수 0-100.
         """
         if not age:
-            return 50  # Unknown, assume medium
-        
+            return 50
+
         age_lower = age.lower()
-        
+
         # Very recent
         if any(term in age_lower for term in ["hour", "시간", "minute", "분"]):
             return 100
@@ -288,25 +384,49 @@ class BraveSearchService:
             return 95
         if "week" in age_lower or "주" in age_lower:
             return 85
-        
+
         # Recent
         if "month" in age_lower or "개월" in age_lower or "달" in age_lower:
-            # Try to extract number
             try:
-                months = int(''.join(filter(str.isdigit, age_lower)))
-                return max(40, 80 - (months * 10))  # 1 month=70, 2=60, 3=50...
-            except:
+                months = int("".join(filter(str.isdigit, age_lower)))
+                return max(40, 80 - (months * 10))
+            except ValueError:
                 return 60
-        
+
         # Old
         if "year" in age_lower or "년" in age_lower:
             try:
-                years = int(''.join(filter(str.isdigit, age_lower)))
-                return max(10, 50 - (years * 15))  # 1 year=35, 2=20, 3=5...
-            except:
+                years = int("".join(filter(str.isdigit, age_lower)))
+                return max(10, 50 - (years * 15))
+            except ValueError:
                 return 30
-        
+
         return 50
+
+    def _calculate_keyword_score(self, text: str, keywords: list[str]) -> int:
+        """힌트 키워드 일치 기반으로 관련성 점수를 계산합니다.
+
+        Args:
+            text: 검색할 텍스트.
+            keywords: 힌트 키워드 목록.
+
+        Returns:
+            관련성 점수 0-100.
+        """
+        if not text or not keywords:
+            return 0
+
+        text_lower = text.lower()
+        hits = 0
+        for keyword in keywords:
+            keyword_lower = keyword.lower().strip()
+            if keyword_lower and keyword_lower in text_lower:
+                hits += 1
+
+        if hits == 0:
+            return 0
+
+        return min(100, int(100 * hits / max(len(keywords), 1)))
 
     def format_search_results_for_llm(
         self,
@@ -348,28 +468,27 @@ class BraveSearchService:
                 output += f"[{category_key.upper()}-{idx}]\n"
                 output += f"제목: {result['title']}\n"
                 output += f"URL: {result['url']}\n"
-                
-                # Add quality indicators
-                url_quality = result.get('url_quality', 0)
+
+                url_quality = result.get("url_quality", 0)
                 if url_quality >= 90:
-                    output += f"출처: 공식 사이트 [***]\n"
+                    output += "출처: 공식 사이트 [***]\n"
                 elif url_quality >= 70:
-                    output += f"출처: 신뢰할 수 있는 사이트 [**]\n"
+                    output += "출처: 신뢰할 수 있는 사이트 [**]\n"
                 elif url_quality >= 50:
-                    output += f"출처: 참고용 [*]\n"
-                
+                    output += "출처: 참고용 [*]\n"
+
                 output += f"내용: {result['description']}\n"
-                
+
                 if result.get("age"):
                     output += f"최근성: {result['age']}"
-                    recency = result.get('recency_score', 0)
+                    recency = result.get("recency_score", 0)
                     if recency >= 80:
                         output += " (최신 정보)\n"
                     elif recency < 40:
                         output += " (오래된 정보 주의)\n"
                     else:
                         output += "\n"
-                
+
                 output += "\n"
 
         output += "=== 검색 종료 ===\n"
@@ -379,7 +498,14 @@ class BraveSearchService:
         return output
 
     def _build_comprehensive_queries(self, certificate_title: str) -> dict[str, dict]:
-        """자격증 보강용 확장 쿼리를 생성합니다."""
+        """자격증 보강용 확장 쿼리를 생성합니다.
+
+        Args:
+            certificate_title: 자격증 한글명.
+
+        Returns:
+            카테고리별 쿼리 딕셔너리.
+        """
         return {
             "general": {
                 "query": f"{certificate_title} 자격증 시험 과목 합격기준 응시료",
@@ -394,19 +520,19 @@ class BraveSearchService:
                 "keywords": ["연봉", "취업", "전망", "직무", "커리어"],
             },
             "reviews": {
-                "query": f"{certificate_title} 자격증 합격 후기 공부법 난이도 팁 경험담 몇개월 공부 준비기간",
+                "query": f"{certificate_title} 자격증 합격 후기 공부법 난이도 팁",
                 "keywords": ["합격 후기", "공부법", "난이도", "팁", "경험담"],
             },
             "study_methods": {
-                "query": f"{certificate_title} 자격증 공부 순서 학습 계획 단계별 공부 방법 교재 추천 시간 배분",
+                "query": f"{certificate_title} 자격증 공부 순서 학습 계획 단계별",
                 "keywords": ["공부 순서", "학습 계획", "단계", "시간 배분", "교재"],
             },
             "books": {
-                "query": f"{certificate_title} 자격증 추천 교재 교재명 출판사 수험서",
+                "query": f"{certificate_title} 자격증 추천 교재 교재명 출판사",
                 "keywords": ["교재", "수험서", "추천", "출판사"],
             },
             "lectures": {
-                "query": f"{certificate_title} 자격증 인강 추천 강의 에듀윌 해커스 시대에듀",
+                "query": f"{certificate_title} 자격증 인강 추천 강의",
                 "keywords": ["인강", "강의", "커리큘럼", "수강"],
             },
             "official": {
@@ -416,42 +542,49 @@ class BraveSearchService:
         }
 
     def _build_study_plan_queries(self, certificate_title: str) -> dict[str, dict]:
-        """학습 계획 관련 신호 수집 쿼리를 생성합니다."""
+        """학습 계획 관련 신호 수집 쿼리를 생성합니다.
+
+        Args:
+            certificate_title: 자격증 한글명.
+
+        Returns:
+            카테고리별 쿼리 딕셔너리.
+        """
         return {
             "exam_schedule": {
-                "query": f"{certificate_title} 시험 일정 접수 기간 시행계획 공고",
+                "query": f"{certificate_title} 시험 일정 접수 기간",
                 "keywords": ["시험 일정", "접수 기간", "시행계획", "공고", "시험일"],
             },
             "exam_structure": {
-                "query": f"{certificate_title} 과목 배점 문항 수 시험 시간 합격 기준",
+                "query": f"{certificate_title} 과목 배점 문항 수 시험 시간",
                 "keywords": ["과목", "배점", "문항", "시험 시간", "합격 기준"],
             },
             "pass_rate": {
-                "query": f"{certificate_title} 합격률 응시자 수 통계 최근",
+                "query": f"{certificate_title} 합격률 응시자 수 통계",
                 "keywords": ["합격률", "응시자", "통계", "추이"],
             },
             "study_period": {
-                "query": f"{certificate_title} 준비기간 평균 공부기간 몇개월",
+                "query": f"{certificate_title} 준비기간 평균 공부기간",
                 "keywords": ["준비기간", "공부기간", "평균", "개월"],
             },
             "study_plan_examples": {
-                "query": f"{certificate_title} 합격 수기 공부 계획 주차별 학습 계획 시간표",
+                "query": f"{certificate_title} 합격 수기 공부 계획 주차별",
                 "keywords": ["합격 수기", "공부 계획", "주차별", "시간표"],
             },
             "learning_sequence": {
-                "query": f"{certificate_title} 공부 순서 학습 순서 커리큘럼 단계별",
+                "query": f"{certificate_title} 공부 순서 학습 순서 커리큘럼",
                 "keywords": ["공부 순서", "학습 순서", "커리큘럼", "단계"],
             },
             "time_allocation": {
-                "query": f"{certificate_title} 이론 실전 복습 시간 배분 비율",
+                "query": f"{certificate_title} 이론 실전 복습 시간 배분",
                 "keywords": ["이론", "실전", "복습", "시간 배분", "비율"],
             },
             "weak_subjects": {
-                "query": f"{certificate_title} 과목별 난이도 취약 과목 고득점 전략",
+                "query": f"{certificate_title} 과목별 난이도 취약 과목",
                 "keywords": ["과목별", "난이도", "취약", "전략"],
             },
             "mock_exams": {
-                "query": f"{certificate_title} 기출문제 모의고사 오답노트 반복 학습",
+                "query": f"{certificate_title} 기출문제 모의고사 오답노트",
                 "keywords": ["기출문제", "모의고사", "오답노트", "반복"],
             },
             "official": {
@@ -467,7 +600,16 @@ class BraveSearchService:
         delay_seconds: float,
         default_count: int = 10,
     ) -> dict[str, list[dict]]:
-        """선택 키워드 힌트를 적용해 카테고리별 쿼리를 실행합니다."""
+        """선택 키워드 힌트를 적용해 카테고리별 쿼리를 실행합니다.
+
+        Args:
+            queries: 카테고리별 쿼리 딕셔너리.
+            delay_seconds: 쿼리 간 지연 시간.
+            default_count: 기본 결과 수.
+
+        Returns:
+            카테고리별 검색 결과 딕셔너리.
+        """
         results = {}
 
         for category, payload in queries.items():
@@ -476,15 +618,15 @@ class BraveSearchService:
             keywords = payload.get("keywords", [])
 
             try:
-                print(f"  Searching {category}...", end=" ")
+                logger.info(f"Searching {category}...")
                 search_result = await self.search(query, count=query_count)
                 results[category] = self._extract_results(
                     search_result,
                     keyword_hints=keywords,
                 )
-                print(f"{len(results[category])} results")
+                logger.info(f"  {len(results[category])} results")
             except Exception as e:
-                print(f"Error: {e}")
+                logger.error(f"Search error for {category}: {e}")
                 results[category] = []
 
             if delay_seconds > 0:
@@ -492,36 +634,18 @@ class BraveSearchService:
 
         return results
 
-    def _calculate_keyword_score(self, text: str, keywords: list[str]) -> int:
-        """힌트 키워드 일치 기반으로 관련성 점수를 계산합니다."""
-        if not text or not keywords:
-            return 0
-
-        text_lower = text.lower()
-        hits = 0
-        for keyword in keywords:
-            keyword_lower = keyword.lower().strip()
-            if keyword_lower and keyword_lower in text_lower:
-                hits += 1
-
-        if hits == 0:
-            return 0
-
-        return min(100, int(100 * hits / max(len(keywords), 1)))
-
-
 
 # Singleton instance
-_brave_service: Optional[BraveSearchService] = None
+_searxng_service: Optional[SearXNGSearchService] = None
 
 
-def get_brave_service() -> BraveSearchService:
-    """싱글턴 Brave Search 서비스 인스턴스를 반환합니다.
+def get_searxng_service() -> SearXNGSearchService:
+    """싱글턴 SearXNG Search 서비스 인스턴스를 반환합니다.
 
     Returns:
-        BraveSearchService 인스턴스.
+        SearXNGSearchService 인스턴스.
     """
-    global _brave_service
-    if _brave_service is None:
-        _brave_service = BraveSearchService()
-    return _brave_service
+    global _searxng_service
+    if _searxng_service is None:
+        _searxng_service = SearXNGSearchService()
+    return _searxng_service

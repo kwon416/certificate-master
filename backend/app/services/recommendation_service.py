@@ -17,6 +17,8 @@ from app.schemas.recommendation import (
     RecommendedCertificate,
     RecommendationResponse,
     Feasibility,
+    QuickStats,
+    StudyInsights,
 )
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_store import VectorStoreService
@@ -112,6 +114,7 @@ class RecommendationService:
             return RecommendationResponse(
                 recommendations=[],
                 query_summary=self._generate_query_summary(request),
+                user_summary=request.user_summary,
                 total_matched=0,
             )
 
@@ -136,6 +139,7 @@ class RecommendationService:
             return RecommendationResponse(
                 recommendations=[],
                 query_summary=self._generate_query_summary(request),
+                user_summary=request.user_summary,
                 total_matched=0,
             )
 
@@ -150,6 +154,7 @@ class RecommendationService:
         return RecommendationResponse(
             recommendations=recommendations,  # Already filtered and sorted
             query_summary=query_summary,
+            user_summary=request.user_summary,  # 사용자 원본 요청 전달
             total_matched=len(filtered_results),
         )
 
@@ -214,8 +219,7 @@ class RecommendationService:
     ) -> str:
         """자격증 추천 사유를 생성합니다.
 
-        1단계: 템플릿 기반 사유.
-        3단계+: LLM 기반 개인화 사유.
+        분야 연관성, 진로 전망, 목적 기반으로 설득력 있는 추천 사유를 생성합니다.
 
         Args:
             cert: 자격증 객체.
@@ -226,53 +230,69 @@ class RecommendationService:
         """
         parts = []
 
-        # Intent + domain alignment
+        # 1. 분야 연관성 + 인정도
         if request.interest_domains:
             domain_text = ", ".join(request.interest_domains[:2])
-            parts.append(f"{domain_text} 분야와 연관된 자격증입니다.")
+            if cert.series:
+                parts.append(f"{domain_text} 분야에서 {cert.series} 계열의 핵심 자격증입니다.")
+            else:
+                parts.append(f"{domain_text} 분야에서 인정받는 자격증입니다.")
 
-        if cert.series:
-            parts.append(f"{cert.series} 계열로 {cert.title}을 통해 실무 역량을 증명할 수 있습니다.")
-        else:
-            parts.append(f"{cert.title} 자격증으로 목적에 맞춰 준비할 수 있습니다.")
+        # 2. 진로 전망
+        career_info = cert.career_info or {}
+        job_prospects = career_info.get("job_prospects")
+        if job_prospects:
+            # 전망이 너무 길면 앞부분만 사용
+            prospects = job_prospects[:60] + "..." if len(job_prospects) > 60 else job_prospects
+            parts.append(prospects)
 
+        # 3. 관련 직업 활용
+        related_jobs = career_info.get("related_jobs", [])
+        if related_jobs and len(parts) < 3:
+            jobs_text = ", ".join(related_jobs[:2])
+            parts.append(f"{jobs_text} 등의 직업에서 활용됩니다.")
+
+        # 4. 목적 기반 문구
         purpose_phrases = {
-            "취업": "취업 준비 시 직무 연관성을 높여줍니다.",
-            "이직": "이직을 위한 포트폴리오와 경쟁력을 강화할 수 있습니다.",
+            "취업": "취업 시 경쟁력을 높여줍니다.",
+            "이직": "이직 시 전문성을 증명하는 데 도움됩니다.",
             "커리어 전문성 강화": "전문성을 체계적으로 증명하기 좋습니다.",
-            "개인 관심 / 교양": "관심 분야를 깊이 있게 학습하기에 적합합니다.",
-            "창업 / 실무 활용": "실무 적용과 사업 운영에 바로 활용할 수 있는 역량을 다집니다.",
+            "개인 관심 / 교양": "관심 분야를 깊이 있게 학습할 수 있습니다.",
+            "창업 / 실무 활용": "실무에 바로 활용할 수 있는 역량을 갖출 수 있습니다.",
         }
-        if request.purpose in purpose_phrases:
+        if request.purpose in purpose_phrases and len(parts) < 3:
             parts.append(purpose_phrases[request.purpose])
 
-        # Constraint acknowledgement
-        if cert.study_period_days and request.study_timeline in {"3개월 이하", "6개월 이하", "1년 이하"}:
-            days = cert.study_period_days
-            parts.append(f"예상 준비 기간 약 {days}일로 {request.study_timeline} 목표에 맞습니다.")
+        # 5. 준비 기간 여유도
+        if cert.study_period_days and request.study_timeline:
+            available_days = AVAILABLE_DAYS.get(request.study_timeline, 365)
+            study_days = cert.study_period_days
+            if study_days <= available_days * 0.7:
+                months = max(1, study_days // 30)
+                parts.append(f"약 {months}개월 준비로 목표 기간 내 충분한 여유가 있습니다.")
+            elif study_days <= available_days:
+                parts.append(f"목표 기간 내 준비 가능합니다.")
 
-        if cert.difficulty and request.difficulty_preference == "쉬운 편" and cert.difficulty <= 2:
-            parts.append("입문 난이도라 부담 없이 시작할 수 있습니다.")
-        elif cert.difficulty and request.difficulty_preference == "중간":
-            parts.append("중급 난이도로 기본기가 있다면 빠르게 적응할 수 있습니다.")
-
-        return " ".join(filter(None, parts))
+        return " ".join(filter(None, parts[:3]))  # 최대 3문장
 
     def _generate_key_points(
         self, cert: Certificate, request: RecommendationRequest
     ) -> list[str]:
         """자격증 추천 핵심 포인트를 생성합니다.
 
+        난이도, 학습 팁, 준비 기간, 관련 직업/활용 분야 위주로
+        핵심 포인트를 제공합니다.
+
         Args:
             cert: 자격증 객체.
             request: 사용자 추천 요청.
 
         Returns:
-            핵심 포인트 목록(최대 3개).
+            핵심 포인트 목록(최대 5개).
         """
         points: list[str] = []
 
-        # Difficulty point aligned with preference
+        # 1. 난이도 문구
         if cert.difficulty:
             difficulty_labels = {
                 1: "초급 난이도로 입문자에게 적합",
@@ -285,40 +305,47 @@ class RecommendationService:
             if label:
                 points.append(label)
 
-            if request.difficulty_preference == "쉬운 편" and cert.difficulty <= 2:
-                points.append("입문/실무 초반 단계에 적합")
-            elif request.difficulty_preference == "중간" and cert.difficulty <= 3:
-                points.append("중급 선호와 맞는 난이도")
+        # 2. 학습 팁 (user_reviews.study_tips에서 첫 번째)
+        user_reviews = cert.user_reviews or {}
+        study_tips = user_reviews.get("study_tips", [])
+        if study_tips and len(study_tips) > 0:
+            tip = study_tips[0]
+            # 팁이 너무 길면 줄임
+            if len(tip) > 40:
+                tip = tip[:40] + "..."
+            points.append(f"학습 팁: {tip}")
 
-        # Study period point
+        # 3. 준비 기간
         if cert.study_period_days:
             days = cert.study_period_days
             if days <= 30:
-                points.append("1개월 이내 취득 가능")
+                points.append("약 1개월 준비 기간")
             elif days <= 60:
-                points.append("1-2개월 준비 기간 필요")
+                points.append("약 1-2개월 준비 기간")
             elif days <= 90:
-                points.append("약 3개월 준비 기간 필요")
+                points.append("약 3개월 준비 기간")
+            elif days <= 180:
+                points.append("약 6개월 준비 기간")
             else:
                 months = days // 30
-                points.append(f"약 {months}개월 준비 기간 필요")
+                points.append(f"약 {months}개월 준비 기간")
 
-            if request.study_timeline in {"3개월 이하", "6개월 이하", "1년 이하"}:
-                points.append(f"{request.study_timeline} 목표 대비 준비 기간 체크 완료")
-
-        # Career point from career_info
+        # 4. 관련 직업
         career_info = cert.career_info or {}
         if career_info.get("related_jobs"):
             jobs = career_info["related_jobs"][:2]
             points.append(f"관련 직업: {', '.join(jobs)}")
-        elif career_info.get("use_cases"):
+
+        # 5. 활용 분야
+        if len(points) < 5 and career_info.get("use_cases"):
             use_cases = career_info["use_cases"][:2]
             points.append(f"활용 분야: {', '.join(use_cases)}")
 
+        # 기본값
         if not points:
             points.append(f"{request.purpose} 목표에 도움이 되는 선택")
 
-        return points[:3]  # Max 3 points
+        return points[:5]  # 최대 5개
 
     def _calculate_feasibility(
         self, cert: Certificate, request: RecommendationRequest
@@ -346,6 +373,62 @@ class RecommendationService:
             estimated_days=study_days,
         )
 
+    def _build_quick_stats(self, cert: Certificate) -> QuickStats:
+        """MariaDB 데이터에서 QuickStats를 생성합니다.
+
+        Args:
+            cert: 자격증 객체.
+
+        Returns:
+            QuickStats 객체.
+        """
+        # 합격률
+        passing_rate = cert.passing_rate
+
+        # 평균 연봉 (career_info에서)
+        career_info = cert.career_info or {}
+        average_salary = career_info.get("average_salary")
+
+        # 응시료 (exam_info에서)
+        exam_info = cert.exam_info or {}
+        exam_fee = exam_info.get("total_fee")
+
+        # 시험 유형 (exam_info에서)
+        exam_type = exam_info.get("exam_type")
+
+        return QuickStats(
+            passing_rate=passing_rate,
+            average_salary=average_salary,
+            exam_fee=exam_fee,
+            exam_type=exam_type,
+        )
+
+    def _build_study_insights(self, cert: Certificate) -> StudyInsights:
+        """MariaDB 데이터에서 StudyInsights를 생성합니다.
+
+        Args:
+            cert: 자격증 객체.
+
+        Returns:
+            StudyInsights 객체.
+        """
+        # 학습 팁 (user_reviews에서, 최대 3개)
+        user_reviews = cert.user_reviews or {}
+        study_tips = user_reviews.get("study_tips", [])[:3]
+
+        # 합격 팁 (study_guide에서, 최대 2개)
+        study_guide = cert.study_guide or {}
+        success_tips = study_guide.get("success_tips", [])[:2]
+
+        # 난이도 피드백 (user_reviews에서)
+        difficulty_feedback = user_reviews.get("difficulty_feedback")
+
+        return StudyInsights(
+            study_tips=study_tips,
+            success_tips=success_tips,
+            difficulty_feedback=difficulty_feedback,
+        )
+
     def _generate_query_summary(self, request: RecommendationRequest) -> str:
         """사용자 질의 요약을 생성합니다.
 
@@ -371,7 +454,7 @@ class RecommendationService:
         """사용자 요청을 벡터 검색용 쿼리 텍스트로 변환합니다.
 
         자연어 문장으로 구성하여 더 정확한 의미 임베딩을 생성합니다.
-        user_summary가 있으면 가장 높은 가중치를 부여합니다 (맨 앞 배치 + 반복).
+        user_summary가 있으면 가장 높은 가중치를 부여합니다 (3중 강조).
 
         Args:
             request: 사용자 추천 요청.
@@ -384,18 +467,15 @@ class RecommendationService:
         difficulty = request.difficulty_preference
         user_summary = (request.user_summary or "").strip()
 
-        # user_summary가 있으면 최우선 배치 (가중치 강화)
+        # user_summary가 있으면 3중 강조로 임베딩 가중치 극대화
         if user_summary:
-            # 사용자 쿼리를 맨 앞에 배치하고 핵심 키워드로 강조
-            primary_query = f"[핵심 요청] {user_summary}"
-
-            context_sentence = (
-                f"추가 맥락: {request.purpose} 목적, {domain_text} 분야 관심, "
-                f"준비 기간 {timeline}, 난이도 {difficulty} 선호."
+            return (
+                f"[최우선 요청] {user_summary}\n\n"
+                f"배경: {request.purpose}, {domain_text} 분야, "
+                f"기간 {timeline}, 난이도 {difficulty}\n\n"
+                f"[핵심 키워드] {user_summary}\n\n"
+                f"[사용자 요청] {user_summary}"
             )
-
-            # user_summary를 다시 한번 강조하여 임베딩에 가중치 부여
-            return f"{primary_query}\n\n{context_sentence}\n\n{user_summary}"
 
         # user_summary가 없으면 기존 로직 (구조화된 쿼리)
         intent_sentence = (
@@ -407,6 +487,52 @@ class RecommendationService:
         )
 
         return f"{intent_sentence}\n\n{constraint_sentence}"
+
+    def _calculate_user_summary_bonus(
+        self, cert: Certificate, user_summary: str | None
+    ) -> int:
+        """user_summary 키워드와 자격증 데이터 매칭 보너스를 계산합니다.
+
+        사용자가 입력한 요청 문장의 키워드가 자격증 제목, 관련 직업,
+        활용 분야에 포함되어 있으면 보너스 점수를 부여합니다.
+
+        Args:
+            cert: 자격증 객체.
+            user_summary: 사용자가 입력한 원본 요청 문장.
+
+        Returns:
+            보너스 점수 (0-10).
+        """
+        if not user_summary:
+            return 0
+
+        bonus = 0
+        # 2글자 이상인 키워드만 추출 (불용어 제거)
+        keywords = {w.lower() for w in user_summary.split() if len(w) > 1}
+
+        if not keywords:
+            return 0
+
+        # 제목 매칭: +5점
+        title = cert.title.lower()
+        if any(kw in title for kw in keywords):
+            bonus += 5
+
+        # 관련 직업/활용 분야 매칭: +3점씩
+        career_info = cert.career_info or {}
+        related_jobs = career_info.get("related_jobs", [])
+        use_cases = career_info.get("use_cases", [])
+
+        jobs_text = " ".join(related_jobs).lower()
+        cases_text = " ".join(use_cases).lower()
+
+        if any(kw in jobs_text for kw in keywords):
+            bonus += 3
+
+        if any(kw in cases_text for kw in keywords):
+            bonus += 3
+
+        return min(bonus, 10)  # 최대 10점
 
     def _build_vector_filter(self, request: RecommendationRequest) -> Optional[dict]:
         """벡터 검색용 ChromaDB where 필터를 생성합니다.
@@ -503,6 +629,10 @@ class RecommendationService:
                 if max_days is not None and cert.study_period_days and cert.study_period_days <= max_days:
                     match_score = min(100, match_score + 5)
 
+            # user_summary 키워드 매칭 보너스 적용
+            user_bonus = self._calculate_user_summary_bonus(cert, request.user_summary)
+            match_score = min(100, match_score + user_bonus)
+
             # Generate recommendation reason
             reason = self._generate_reason(cert, request)
 
@@ -512,14 +642,23 @@ class RecommendationService:
             # Calculate feasibility
             feasibility = self._calculate_feasibility(cert, request)
 
+            # Build quick stats and study insights
+            quick_stats = self._build_quick_stats(cert)
+            study_insights = self._build_study_insights(cert)
+
+            # Get primary category name from categories array
+            primary_category = cert.categories[0].name if cert.categories else "기타"
+
             recommendations.append(
                 RecommendedCertificate(
                     certificate=cert,
-                    qualification_category=cert.category,
+                    qualification_category=primary_category,
                     match_score=match_score,
                     recommendation_reason=reason,
                     key_points=key_points,
                     feasibility=feasibility,
+                    quick_stats=quick_stats,
+                    study_insights=study_insights,
                 )
             )
 

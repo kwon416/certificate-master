@@ -16,9 +16,13 @@ def format_certificate_text(cert: dict) -> str:
     Returns:
         임베딩용으로 포맷된 텍스트 문자열.
     """
+    # categories 배열에서 이름 추출
+    categories = cert.get('categories', [])
+    category_display = ", ".join([cat.get('name', '') for cat in categories]) if categories else ""
+
     parts = [
         f"자격증: {cert.get('title', '')}",
-        f"분류: {cert.get('category', '')}",
+        f"분류: {category_display}",
         f"계열: {cert.get('series', '')}",
         f"개요: {cert.get('overview', '')}",
         f"난이도: {cert.get('difficulty', 'N/A')}/5",
@@ -122,9 +126,13 @@ def build_certificate_metadata(cert: dict) -> dict:
     else:
         industry_str = industry or ""
 
+    # categories 배열에서 이름 추출
+    categories = cert.get("categories", [])
+    categories_str = ", ".join([cat.get("name", "") for cat in categories]) if categories else ""
+
     return {
         "title": cert.get("title", ""),
-        "category": cert.get("category", ""),
+        "categories": categories_str,
         "series": cert.get("series", "") or "",
         "difficulty": cert.get("difficulty"),
         "study_period_days": cert.get("study_period_days"),

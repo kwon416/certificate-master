@@ -20,13 +20,12 @@ class TestMariaDBConnection:
 
     def test_mariadb_url_correct_format(self):
         """MariaDB URL이 올바른 형식인지 테스트."""
-        from app.core.database import MARIADB_URL
+        from app.core.database import get_mariadb_url
 
         # URL 형식 검증
-        assert "mysql+pymysql://" in MARIADB_URL
-        assert "dev01.server.ivetech.co.kr" in MARIADB_URL
-        assert "13306" in MARIADB_URL
-        assert "certificate-master" in MARIADB_URL
+        url = get_mariadb_url()
+        assert "mysql+pymysql://" in url
+        assert "certificate-master" in url
 
     def test_mariadb_session_created(self):
         """SQLAlchemy 세션이 생성되는지 테스트."""

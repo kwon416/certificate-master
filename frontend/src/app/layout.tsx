@@ -13,6 +13,13 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: '자격증 추천 및 비교 | Certificate Master - 3분만에 내게 맞는 자격증 찾기',
   description: '3,500+ 자격증 정보를 난이도, 시험 정보, 준비 기간으로 비교하세요. 베타 버전에서는 자격증 검색과 정보 비교에 집중하고 있습니다.',
+  icons: {
+    icon: [
+      { url: '/web-app-manifest-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/web-app-manifest-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/web-app-manifest-192x192.png',
+  },
   keywords: [
     '자격증 추천',
     '자격증 정보',

@@ -55,6 +55,7 @@ export interface RecommendedCertificate {
 export interface RecommendationResponse {
   recommendations: RecommendedCertificate[]
   query_summary: string
+  user_summary?: string | null  // 사용자가 입력한 원본 요청 문장
   total_matched: number
 }
 
@@ -290,6 +291,6 @@ export const WIZARD_STEPS: WizardStepConfig[] = [
     description: '선택하지 않아도 됩니다.',
     optional: true,
     type: 'input',
-    placeholder: '예) 데이터 분석 직무로 이직하려고 6개월 안에 준비할 수 있는 자격증을 찾고 있어요.',
+    placeholder: '예) 데이터 분석 직무로 이직하고싶어',
   },
 ]

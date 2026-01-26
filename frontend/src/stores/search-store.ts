@@ -3,8 +3,9 @@ import { create } from 'zustand'
 interface SearchFilters {
   difficulty: [number, number]
   studyPeriod: string | null
-  category: string | null
-  series: string | null  // NEW: series filter
+  categories: string[] | null     // 복수 선택 지원 (category → categories)
+  categoryCode: string | null     // 선택된 카테고리 코드
+  series: string | null
 }
 
 interface SearchState {
@@ -18,7 +19,8 @@ interface SearchState {
 const defaultFilters: SearchFilters = {
   difficulty: [1, 5],
   studyPeriod: null,
-  category: null,
+  categories: null,
+  categoryCode: null,
   series: null,
 }
 
@@ -31,11 +33,12 @@ export const useSearchStore = create<SearchState>((set) => ({
       filters: {
         ...state.filters,
         ...filters,
-        // Reset series when category changes
-        ...(filters.category !== undefined && filters.category !== state.filters.category
+        // categories 변경 시 series 리셋
+        ...(filters.categories !== undefined &&
+            JSON.stringify(filters.categories) !== JSON.stringify(state.filters.categories)
           ? { series: null }
           : {}
-        )
+        ),
       },
     })),
   resetFilters: () => set({ filters: defaultFilters, query: '' }),

@@ -19,8 +19,7 @@ class TestCertificateModel:
 
         required_fields = [
             "id",
-            "code",
-            "category",
+            "categories",  # code, category -> categories 배열로 변경
             "title",
             "raw_id",
             "overview",
@@ -43,8 +42,7 @@ class TestCertificateModel:
         from app.models.certificate import Certificate
 
         cert = Certificate(
-            code="T",
-            category="국가기술자격",
+            categories=[{"code": "T", "name": "국가기술자격"}],
             title="테스트자격증",
             raw_id="T_테스트자격증",
         )

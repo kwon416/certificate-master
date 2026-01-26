@@ -104,13 +104,18 @@ export interface CategoryInfo {
 /**
  * 자격증 상세 정보 (V2)
  */
+/**
+ * 카테고리 목록 응답 타입
+ */
+export type CategoryResponse = CategoryInfo[]
+
 export interface Certificate {
   // Basic Info
   id: string
   raw_id: string
   title: string
   categories: CategoryInfo[]             // 복수 카테고리 지원 (객체 배열)
-  code: string
+  // code 필드 삭제됨 - categories[].code 사용
   series: string | null
   qualification_type?: string | null    // 자격 구분 (국가/공인/민간 등)
   created_at: string

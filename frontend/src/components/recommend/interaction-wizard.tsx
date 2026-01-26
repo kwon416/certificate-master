@@ -2,9 +2,11 @@
  * InteractionWizard Component
  *
  * 5단계 인터랙션 위자드 메인 컨테이너
+ * 모바일 친화적 UX: 스텝 변경 시 스크롤, 하단 고정 버튼
  */
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { WizardProgress } from './wizard-progress'
@@ -20,11 +22,27 @@ import { useRecommendations } from '@/hooks/use-recommendations'
 export function InteractionWizard() {
   const { currentStep, answers, setAnswer, nextStep, prevStep } = useRecommendStore()
   const { getRecommendations, isLoading } = useRecommendations()
+  const wizardRef = useRef<HTMLDivElement>(null)
 
   const currentStepConfig = WIZARD_STEPS[currentStep - 1]
   const isLastStep = currentStep === WIZARD_STEPS.length
   const isFirstStep = currentStep === 1
   const secondaryKey = currentStepConfig.secondaryKey
+
+  // 스텝 변경 시 위자드 상단으로 스크롤 (헤더 높이 고려)
+  useEffect(() => {
+    if (wizardRef.current) {
+      // 헤더 높이(약 64px) + 여유 공간을 고려한 오프셋
+      const headerHeight = 80
+      const element = wizardRef.current
+      const y = element.getBoundingClientRect().top + window.scrollY - headerHeight
+
+      window.scrollTo({
+        top: Math.max(0, y),
+        behavior: 'smooth'
+      })
+    }
+  }, [currentStep])
 
   const handleAnswer = (key: keyof WizardAnswers, value: WizardAnswers[keyof WizardAnswers]) => {
     setAnswer(key, value)
@@ -79,12 +97,12 @@ export function InteractionWizard() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 relative">
+    <div ref={wizardRef} className="max-w-3xl mx-auto px-4 py-4 md:p-6 relative pb-24 md:pb-6">
       {/* Progress */}
       <WizardProgress currentStep={currentStep} totalSteps={WIZARD_STEPS.length} />
 
-      {/* Step Content */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-2xl p-8 mb-6">
+      {/* Step Content - 모바일에서 패딩 축소 */}
+      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-2xl p-4 md:p-8 mb-6 transition-all duration-300">
         <WizardStep
           step={currentStepConfig.step}
           title={currentStepConfig.title}
@@ -112,40 +130,42 @@ export function InteractionWizard() {
         />
       </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={handlePrev}
-          disabled={isFirstStep || isLoading}
-          className="px-6"
-        >
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          이전
-        </Button>
+      {/* Navigation Buttons - 모바일에서 하단 고정 */}
+      <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto bg-slate-950/95 md:bg-transparent backdrop-blur-lg md:backdrop-blur-none border-t border-slate-800 md:border-0 p-4 md:p-0 z-40">
+        <div className="flex items-center justify-between max-w-3xl mx-auto gap-3">
+          <Button
+            variant="outline"
+            onClick={handlePrev}
+            disabled={isFirstStep || isLoading}
+            className="flex-1 md:flex-none px-4 md:px-6 h-12 md:h-10"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1 md:mr-2" />
+            이전
+          </Button>
 
-        <Button
-          onClick={handleNext}
-          disabled={!canGoNext() || isLoading}
-          className="px-6 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              추천 중...
-            </>
-          ) : isLastStep ? (
-            <>
-              추천받기
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </>
-          ) : (
-            <>
-              다음
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </>
-          )}
-        </Button>
+          <Button
+            onClick={handleNext}
+            disabled={!canGoNext() || isLoading}
+            className="flex-1 md:flex-none px-4 md:px-6 h-12 md:h-10 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-1 md:mr-2 animate-spin" />
+                추천 중...
+              </>
+            ) : isLastStep ? (
+              <>
+                추천받기
+                <ChevronRight className="w-4 h-4 ml-1 md:ml-2" />
+              </>
+            ) : (
+              <>
+                다음
+                <ChevronRight className="w-4 h-4 ml-1 md:ml-2" />
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Loading Overlay */}

@@ -3,35 +3,104 @@
 Supabase에서 MariaDB로 마이그레이션됨 (2026-01-21).
 
 동작 순서:
-1. [Enrich] MariaDB에서 미보강 자격증 조회 → Brave 검색 → LLM 정제 → DB 업데이트
+1. [Enrich] MariaDB에서 미보강 자격증 조회 → 웹 검색 → LLM 정제 → DB 업데이트
 2. [Embedding] 보강된 자격증 조회 → 임베딩 생성 → ChromaDB 업로드
 
-사용법:
-    # 테스트 (1개만 처리)
-    uv run python -m scripts.data_pipeline --test
+============================================================
+Provider 설정 (오픈소스 전환 지원)
+============================================================
 
-    # 특정 개수만 처리
-    uv run python -m scripts.data_pipeline --limit 10
+--search-provider: 검색 서비스 선택
+  - brave   : Brave Search API (기본값, 유료 $3-5/1K 쿼리)
+  - searxng : SearXNG 메타 검색 엔진 (오픈소스, 무료)
+              └─ 설치: docker run -d -p 8888:8080 searxng/searxng
 
-    # 모든 미보강 자격증 처리
-    uv run python -m scripts.data_pipeline --all
+--embedding-provider: 임베딩 서비스 선택
+  - openai : OpenAI text-embedding-3-small (기본값, 유료)
+  - local  : BGE-M3 로컬 모델 (무료, GPU 권장)
+             └─ 설치: uv sync --extra local
 
-    # 보강만 실행 (임베딩 건너뛰기)
-    uv run python -m scripts.data_pipeline --limit 10 --skip-embedding
+LLM 서비스:
+  - GPT-4o-mini 유지 권장 (GPU 없이 로컬 LLM은 매우 느림)
 
-    # 임베딩만 실행 (보강 건너뛰기)
-    uv run python -m scripts.data_pipeline --limit 10 --skip-enrich
+============================================================
+기본 사용법
+============================================================
 
-    # 이미 임베딩된 자격증 건너뛰기
-    uv run python -m scripts.data_pipeline --all --skip-existing
+# 테스트 (1개만 처리)
+uv run python -m scripts.data_pipeline --test
+
+# 특정 개수만 처리
+uv run python -m scripts.data_pipeline --limit 10
+
+# 모든 미보강 자격증 처리
+uv run python -m scripts.data_pipeline --all
+
+# 보강만 실행 (임베딩 건너뛰기)
+uv run python -m scripts.data_pipeline --limit 10 --skip-embedding
+
+# 임베딩만 실행 (보강 건너뛰기)
+uv run python -m scripts.data_pipeline --limit 10 --skip-enrich
+
+# 이미 임베딩된 자격증 건너뛰기
+uv run python -m scripts.data_pipeline --all --skip-existing
+
+# 실패한 자격증 재시도
+uv run python -m scripts.data_pipeline --retry
+
+============================================================
+오픈소스 전환 사용법
+============================================================
+
+# SearXNG 검색 사용 (무료)
+# 1. SearXNG 서버 시작
+docker run -d -p 8888:8080 --name searxng searxng/searxng
+
+# 2. 파이프라인 실행
+uv run python -m scripts.data_pipeline --limit 10 --search-provider searxng
+
+# 로컬 임베딩 사용 (BGE-M3, 무료)
+uv run python -m scripts.data_pipeline --limit 10 --embedding-provider local
+
+# 완전 오픈소스 파이프라인 (검색 + 임베딩 무료)
+uv run python -m scripts.data_pipeline --limit 10 --search-provider searxng --embedding-provider local
+
+============================================================
+비용 절감 예상
+============================================================
+
+| 항목     | 기존 (월)   | 오픈소스 전환 후 | 절감 |
+|----------|------------|-----------------|------|
+| 임베딩   | ~$10-50    | $0              | 100% |
+| 웹 검색  | ~$30-100   | $0 (서버 비용)   | 100% |
+| LLM      | ~$20-100   | ~$20-100        | 0%   |
+| 합계     | ~$60-250   | ~$20-100        | 60%+ |
+
+============================================================
+SearXNG 최적화 설정 (선택사항)
+============================================================
+
+# searxng/settings.yml (Docker 볼륨 마운트 후 편집)
+server:
+  limiter: false  # 로컬이므로 제한 해제
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "ko-KR"
+
+============================================================
 """
 import argparse
 import asyncio
+import json
+import logging
 import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TypedDict
 
 from sqlalchemy.orm import Session
+from tqdm import tqdm
 
 # Add backend directory to path
 backend_dir = Path(__file__).parent.parent
@@ -39,6 +108,137 @@ sys.path.insert(0, str(backend_dir))
 
 from app.core.database import get_engine
 from app.models.certificate import Certificate
+
+# ============================================================
+# 로깅 설정
+# ============================================================
+
+logger = logging.getLogger(__name__)
+
+
+def setup_logging(verbose: bool = False) -> None:
+    """로깅을 설정한다.
+
+    Args:
+        verbose: True면 DEBUG 레벨, False면 INFO 레벨.
+    """
+    level = logging.DEBUG if verbose else logging.INFO
+    format_str = "%(asctime)s [%(levelname)s] %(message)s"
+    date_format = "%Y-%m-%d %H:%M:%S"
+
+    logging.basicConfig(
+        level=level,
+        format=format_str,
+        datefmt=date_format,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+
+
+# ============================================================
+# 타입 정의
+# ============================================================
+
+
+class EnrichResult(TypedDict):
+    """보강 단계 결과."""
+
+    processed: int
+    success: int
+    failed: int
+    failed_ids: list[str]
+    skipped: bool
+
+
+class EmbeddingResult(TypedDict):
+    """임베딩 단계 결과."""
+
+    processed: int
+    uploaded: int
+    synced: int
+    skipped: int
+    synced_from_chroma: int
+    failed_ids: list[str]
+    skipped_step: bool
+
+
+class PipelineResult(TypedDict):
+    """파이프라인 전체 결과."""
+
+    enrich: EnrichResult
+    embedding: EmbeddingResult
+
+
+# ============================================================
+# 실패 레코드 관리
+# ============================================================
+
+FAILED_RECORDS_DIR = Path(__file__).parent / "failed_records"
+
+
+def save_failed_records(
+    step: str, failed_certs: list[dict], error_messages: dict[str, str]
+) -> Path:
+    """실패한 자격증 목록을 JSON 파일로 저장한다.
+
+    Args:
+        step: 실패한 단계 ("enrich" 또는 "embedding").
+        failed_certs: 실패한 자격증 목록.
+        error_messages: 자격증 ID별 에러 메시지.
+
+    Returns:
+        저장된 파일 경로.
+    """
+    FAILED_RECORDS_DIR.mkdir(exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"failed_{step}_{timestamp}.json"
+    filepath = FAILED_RECORDS_DIR / filename
+
+    data = {
+        "step": step,
+        "timestamp": datetime.now().isoformat(),
+        "count": len(failed_certs),
+        "certificates": [
+            {
+                "id": cert["id"],
+                "title": cert["title"],
+                "error": error_messages.get(cert["id"], "Unknown error"),
+            }
+            for cert in failed_certs
+        ],
+    }
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    logger.info(f"실패 레코드 저장됨: {filepath}")
+    return filepath
+
+
+def load_latest_failed_records(step: Optional[str] = None) -> Optional[dict]:
+    """가장 최근 실패 레코드를 로드한다.
+
+    Args:
+        step: 특정 단계만 로드 ("enrich" 또는 "embedding"). None이면 전체.
+
+    Returns:
+        실패 레코드 딕셔너리 또는 None.
+    """
+    if not FAILED_RECORDS_DIR.exists():
+        return None
+
+    pattern = f"failed_{step}_*.json" if step else "failed_*.json"
+    files = sorted(FAILED_RECORDS_DIR.glob(pattern), reverse=True)
+
+    if not files:
+        return None
+
+    with open(files[0], "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+# ============================================================
+# 유틸리티 함수
+# ============================================================
 
 
 def get_mariadb_session() -> Session:
@@ -50,264 +250,514 @@ def get_mariadb_session() -> Session:
     return SessionLocal()
 
 
+# ============================================================
+# 데이터 파이프라인 클래스
+# ============================================================
+
+
 class DataPipeline:
     """데이터 파이프라인: 보강 → 임베딩 순서 실행."""
 
-    def __init__(self):
-        """파이프라인 초기화."""
-        pass
+    BATCH_SIZE = 32
+
+    def __init__(
+        self,
+        search_provider: Optional[str] = None,
+        embedding_provider: Optional[str] = None,
+    ):
+        """파이프라인 초기화.
+
+        Args:
+            search_provider: 검색 서비스 provider ("brave" 또는 "searxng").
+                            None이면 환경변수 SEARCH_PROVIDER 또는 기본값 "brave" 사용.
+            embedding_provider: 임베딩 서비스 provider ("openai" 또는 "local").
+                               None이면 환경변수 EMBEDDING_PROVIDER 또는 기본값 "openai" 사용.
+        """
+        self.search_provider = search_provider
+        self.embedding_provider = embedding_provider
+
+    # --------------------------------------------------------
+    # 보강 단계
+    # --------------------------------------------------------
 
     async def enrich_step(
         self,
         limit: Optional[int] = None,
-    ) -> dict:
+        cert_ids: Optional[list[str]] = None,
+    ) -> EnrichResult:
         """보강 단계 실행.
 
         Args:
-            limit: 처리할 최대 자격증 수
+            limit: 처리할 최대 자격증 수.
+            cert_ids: 특정 자격증 ID 목록 (재시도용).
 
         Returns:
-            처리 결과 딕셔너리
+            처리 결과.
         """
         from app.services.enrichment_service import get_enrichment_service
 
-        print("\n" + "=" * 70)
-        print("[STEP 1/2] 자격증 보강 (Enrich)")
-        print("=" * 70)
+        logger.info("=" * 70)
+        logger.info("[STEP 1/2] 자격증 보강 (Enrich)")
+        logger.info("=" * 70)
 
         session = get_mariadb_session()
+        failed_certs: list[dict] = []
+        error_messages: dict[str, str] = {}
 
         try:
-            # 미보강 자격증 조회
-            query = session.query(Certificate).filter(Certificate.overview.is_(None))
-
-            if limit:
-                query = query.limit(limit)
+            # 자격증 조회
+            if cert_ids:
+                # 특정 ID만 조회 (재시도)
+                query = session.query(Certificate).filter(
+                    Certificate.id.in_(cert_ids)
+                )
+                logger.info(f"재시도 대상: {len(cert_ids)}개 자격증")
+            else:
+                # 미보강 자격증 조회
+                query = session.query(Certificate).filter(
+                    Certificate.overview.is_(None)
+                )
+                if limit:
+                    query = query.limit(limit)
 
             results = query.all()
 
             if not results:
-                print("\n[확인] 보강할 자격증이 없습니다.")
-                return {"processed": 0, "success": 0, "failed": 0}
+                logger.info("보강할 자격증이 없습니다.")
+                return EnrichResult(
+                    processed=0,
+                    success=0,
+                    failed=0,
+                    failed_ids=[],
+                    skipped=False,
+                )
 
             certificates = [cert.to_dict() for cert in results]
-            print(f"\n미보강 자격증 {len(certificates)}개 발견")
+            logger.info(f"미보강 자격증 {len(certificates)}개 발견")
+
+            # 검색 서비스 생성 (DI)
+            from app.services.search_factory import get_search_service
+
+            search_service = get_search_service(self.search_provider)
+            logger.info(f"  검색 서비스: {search_service.provider_name}")
 
             # 보강 실행
-            service = get_enrichment_service(session)
+            service = get_enrichment_service(session, search_service=search_service)
             success = 0
             failed = 0
 
-            for cert in certificates:
+            # tqdm 진행률 표시
+            pbar = tqdm(certificates, desc="보강 처리", unit="건")
+
+            for cert in pbar:
+                pbar.set_postfix_str(cert["title"][:20])
                 try:
-                    result = await service.enrich_certificate(cert["id"], cert["title"])
+                    result = await service.enrich_certificate(
+                        cert["id"], cert["title"]
+                    )
                     if result.get("status") == "success":
                         success += 1
-                        print(f"  [성공] {cert['title']}")
+                        logger.debug(f"[성공] {cert['title']}")
                     else:
                         failed += 1
-                        print(
-                            f"  [실패] {cert['title']}: {result.get('error', '알 수 없는 오류')}"
-                        )
+                        error_msg = result.get("error", "알 수 없는 오류")
+                        error_messages[cert["id"]] = error_msg
+                        failed_certs.append(cert)
+                        logger.warning(f"[실패] {cert['title']}: {error_msg}")
                 except Exception as e:
                     failed += 1
-                    print(f"  [오류] {cert['title']}: {str(e)}")
+                    error_messages[cert["id"]] = str(e)
+                    failed_certs.append(cert)
+                    logger.error(f"[오류] {cert['title']}: {str(e)}")
 
-            print(f"\n보강 완료: 성공 {success}, 실패 {failed}")
-            return {"processed": len(certificates), "success": success, "failed": failed}
+            pbar.close()
+
+            # 실패 레코드 저장
+            if failed_certs:
+                save_failed_records("enrich", failed_certs, error_messages)
+
+            logger.info(f"보강 완료: 성공 {success}개, 실패 {failed}개")
+            return EnrichResult(
+                processed=len(certificates),
+                success=success,
+                failed=failed,
+                failed_ids=[c["id"] for c in failed_certs],
+                skipped=False,
+            )
 
         finally:
             session.close()
+
+    # --------------------------------------------------------
+    # 임베딩 단계 - Private 메서드
+    # --------------------------------------------------------
+
+    def _query_certificates(
+        self, session: Session, limit: Optional[int]
+    ) -> tuple[list[dict], list[dict]]:
+        """DB에서 자격증을 조회한다.
+
+        Args:
+            session: DB 세션.
+            limit: 검증용 조회 제한.
+
+        Returns:
+            (vector_id 없는 자격증, vector_id 있는 자격증) 튜플.
+        """
+        # vector_id가 없는 것: 전부 조회 (데이터 일관성 보장)
+        query_without = session.query(Certificate).filter(
+            Certificate.overview.isnot(None),
+            Certificate.vector_id.is_(None),
+        )
+        results_without = query_without.all()
+
+        # vector_id가 있는 것: 검증용 조회
+        query_with = session.query(Certificate).filter(
+            Certificate.overview.isnot(None),
+            Certificate.vector_id.isnot(None),
+        )
+        if limit and len(results_without) == 0:
+            results_with = query_with.limit(limit).all()
+        else:
+            results_with = query_with.all()
+
+        certs_without = [cert.to_dict() for cert in results_without]
+        certs_with = [cert.to_dict() for cert in results_with]
+
+        return certs_without, certs_with
+
+    def _classify_by_chroma_status(
+        self, vector_store, certs_without_vector_id: list[dict]
+    ) -> tuple[list[dict], list[dict]]:
+        """ChromaDB 존재 여부로 자격증을 분류한다.
+
+        Args:
+            vector_store: VectorStoreService 인스턴스.
+            certs_without_vector_id: vector_id가 없는 자격증 목록.
+
+        Returns:
+            (동기화만 필요한 것, 새로 생성 필요한 것) 튜플.
+        """
+        if not certs_without_vector_id:
+            return [], []
+
+        ids_to_check = [c["id"] for c in certs_without_vector_id]
+        existing_in_chroma = set(vector_store.check_existing_vectors(ids_to_check))
+
+        certs_to_sync_only = []  # ChromaDB에 있지만 MariaDB에 vector_id 없음
+        certs_truly_missing = []  # ChromaDB에도 없음
+
+        for cert in certs_without_vector_id:
+            if cert["id"] in existing_in_chroma:
+                certs_to_sync_only.append(cert)
+            else:
+                certs_truly_missing.append(cert)
+
+        if certs_to_sync_only:
+            logger.info(
+                f"  ChromaDB에 이미 존재 (동기화만 필요): {len(certs_to_sync_only)}개"
+            )
+        if certs_truly_missing:
+            logger.info(f"  ChromaDB에 없음 (새로 생성 필요): {len(certs_truly_missing)}개")
+
+        return certs_to_sync_only, certs_truly_missing
+
+    def _sync_existing_from_chroma(
+        self, vector_store, certs_to_sync_only: list[dict]
+    ) -> int:
+        """ChromaDB에 존재하는 자격증의 vector_id를 동기화한다.
+
+        Args:
+            vector_store: VectorStoreService 인스턴스.
+            certs_to_sync_only: 동기화할 자격증 목록.
+
+        Returns:
+            동기화된 개수.
+        """
+        if not certs_to_sync_only:
+            return 0
+
+        logger.info(
+            f"ChromaDB에 존재하는 {len(certs_to_sync_only)}개 자격증의 "
+            "vector_id 동기화 중..."
+        )
+        mappings = [(cert["id"], cert["id"]) for cert in certs_to_sync_only]
+        sync_result = vector_store.sync_vector_ids_to_db_batch(mappings)
+        synced = sync_result["success"]
+        logger.info(f"  DB에 vector_id {synced}개 동기화 완료")
+        return synced
+
+    def _find_orphan_certs(
+        self, vector_store, certs_with_vector_id: list[dict]
+    ) -> tuple[list[dict], int]:
+        """ChromaDB에 없는 고아 레코드를 찾는다.
+
+        Args:
+            vector_store: VectorStoreService 인스턴스.
+            certs_with_vector_id: vector_id가 있는 자격증 목록.
+
+        Returns:
+            (고아 자격증 목록, 이미 동기화된 개수) 튜플.
+        """
+        if not certs_with_vector_id:
+            return [], 0
+
+        ids_to_check = [c["vector_id"] for c in certs_with_vector_id]
+        existing_in_chroma = set(vector_store.check_existing_vectors(ids_to_check))
+
+        orphan_certs = []
+        already_synced = 0
+
+        for cert in certs_with_vector_id:
+            if cert["vector_id"] in existing_in_chroma:
+                already_synced += 1
+            else:
+                orphan_certs.append(cert)
+
+        if orphan_certs:
+            logger.warning(
+                f"ChromaDB에 없는 고아 레코드: {len(orphan_certs)}개 → 재생성 예정"
+            )
+
+        return orphan_certs, already_synced
+
+    def _process_embedding_batches(
+        self,
+        vector_store,
+        certificates: list[dict],
+        certs_truly_missing: list[dict],
+        orphan_certs: list[dict],
+    ) -> tuple[int, int, list[str]]:
+        """배치로 임베딩을 생성하고 업로드한다.
+
+        Args:
+            vector_store: VectorStoreService 인스턴스.
+            certificates: 처리할 자격증 목록.
+            certs_truly_missing: 신규 생성 대상.
+            orphan_certs: 재생성 대상.
+
+        Returns:
+            (업로드 개수, 동기화 개수, 실패 ID 목록) 튜플.
+        """
+        total_uploaded = 0
+        total_synced = 0
+        all_failed_ids: list[str] = []
+
+        total_batches = (len(certificates) + self.BATCH_SIZE - 1) // self.BATCH_SIZE
+
+        logger.info(
+            f"처리 대상: {len(certificates)}개 "
+            f"(신규 {len(certs_truly_missing)} + 재생성 {len(orphan_certs)})"
+        )
+
+        # tqdm 진행률 표시
+        pbar = tqdm(
+            range(0, len(certificates), self.BATCH_SIZE),
+            desc="임베딩 생성",
+            unit="배치",
+            total=total_batches,
+        )
+
+        for i in pbar:
+            batch = certificates[i : i + self.BATCH_SIZE]
+            batch_num = (i // self.BATCH_SIZE) + 1
+            pbar.set_postfix_str(f"배치 {batch_num}/{total_batches}")
+
+            try:
+                # 처리 대상 로깅
+                for cert in batch:
+                    status = "재생성" if cert.get("vector_id") else "신규"
+                    logger.debug(
+                        f"  [{status}] {cert['title']} (ID: {cert['id'][:8]}...)"
+                    )
+
+                # 임베딩 + 업로드
+                result = vector_store.upsert_certificates_batch_integrated(
+                    batch, skip_existing=True
+                )
+
+                verified = result.get("verified_count", 0)
+                skipped = result.get("skipped_count", 0)
+                failed_ids = result.get("failed_ids", [])
+
+                if skipped > 0:
+                    logger.debug(f"  ChromaDB에 이미 존재: {skipped}개 스킵")
+
+                if verified > 0:
+                    logger.debug(f"  ChromaDB에 {verified}개 업로드 완료")
+                    total_uploaded += verified
+
+                if failed_ids:
+                    logger.warning(f"  검증 실패: {failed_ids[:3]}")
+                    all_failed_ids.extend(failed_ids)
+
+                # DB에 vector_id 동기화
+                skipped_set = set(result.get("skipped_ids", []))
+                failed_set = set(failed_ids)
+                certs_to_sync = [
+                    cert
+                    for cert in batch
+                    if cert["id"] not in skipped_set and cert["id"] not in failed_set
+                ]
+
+                if certs_to_sync:
+                    mappings = [(cert["id"], cert["id"]) for cert in certs_to_sync]
+                    sync_result = vector_store.sync_vector_ids_to_db_batch(mappings)
+                    sync_count = sync_result["success"]
+                    total_synced += sync_count
+                    logger.debug(f"  DB에 vector_id {sync_count}개 동기화")
+
+            except Exception as e:
+                logger.error(f"배치 처리 실패: {str(e)}")
+                # 배치 전체를 실패로 처리
+                all_failed_ids.extend([c["id"] for c in batch])
+                continue
+
+        pbar.close()
+        return total_uploaded, total_synced, all_failed_ids
+
+    # --------------------------------------------------------
+    # 임베딩 단계 - 메인 메서드
+    # --------------------------------------------------------
 
     async def embedding_step(
         self,
         limit: Optional[int] = None,
         skip_existing: bool = False,
-    ) -> dict:
+        cert_ids: Optional[list[str]] = None,
+    ) -> EmbeddingResult:
         """임베딩 단계 실행.
 
-        주의: 데이터 일관성 보장을 위해 vector_id가 없는 자격증은 limit과 관계없이 전부 처리됨.
-        limit은 검증용 조회에만 적용됨.
-
         Args:
-            limit: 검증용 조회 제한 (vector_id 없는 것은 전부 처리)
-            skip_existing: 이미 임베딩된 자격증 건너뛰기
+            limit: 검증용 조회 제한.
+            skip_existing: 이미 임베딩된 자격증 건너뛰기.
+            cert_ids: 특정 자격증 ID 목록 (재시도용).
 
         Returns:
-            처리 결과 딕셔너리
+            처리 결과.
         """
+        from app.services.embedding_factory import get_embedding_service
         from app.services.vector_store import VectorStoreService
 
-        print("\n" + "=" * 70)
-        print("[STEP 2/2] 임베딩 생성 (Embedding)")
-        print("=" * 70)
+        logger.info("=" * 70)
+        logger.info("[STEP 2/2] 임베딩 생성 (Embedding)")
+        logger.info("=" * 70)
+
+        # 임베딩 서비스 생성 (DI)
+        embedding_service = get_embedding_service(self.embedding_provider)
+        logger.info(f"  임베딩 서비스: {type(embedding_service).__name__}")
 
         session = get_mariadb_session()
 
         try:
-            vector_store = VectorStoreService()
-
-            # 1. vector_id가 없는 것: 전부 조회 (limit 무시 - 데이터 일관성 보장)
-            # 보강된 자격증은 반드시 벡터 DB에 저장되어야 함
-            query_without_vector = session.query(Certificate).filter(
-                Certificate.overview.isnot(None),
-                Certificate.vector_id.is_(None)
+            # 세션 및 임베딩 서비스 주입으로 DI 패턴 적용
+            vector_store = VectorStoreService(
+                session=session,
+                embedding_service=embedding_service,
             )
-            results_without = query_without_vector.all()  # 전부 조회
 
-            # 2. vector_id가 있는 것: 검증용 조회 (limit 적용 가능)
-            query_with_vector = session.query(Certificate).filter(
-                Certificate.overview.isnot(None),
-                Certificate.vector_id.isnot(None)
-            )
-            if limit and len(results_without) == 0:
-                # vector_id 없는 것이 없을 때만 limit 적용 (검증용)
-                results_with = query_with_vector.limit(limit).all()
+            # 1단계: 자격증 조회
+            if cert_ids:
+                # 재시도: 특정 ID만 처리
+                query = session.query(Certificate).filter(
+                    Certificate.id.in_(cert_ids)
+                )
+                results = query.all()
+                certs_without_vector_id = [cert.to_dict() for cert in results]
+                certs_with_vector_id = []
+                logger.info(f"재시도 대상: {len(certs_without_vector_id)}개 자격증")
             else:
-                results_with = query_with_vector.all()
+                certs_without_vector_id, certs_with_vector_id = self._query_certificates(
+                    session, limit
+                )
 
-            certs_without_vector_id = [cert.to_dict() for cert in results_without]
-            certs_with_vector_id = [cert.to_dict() for cert in results_with]
             all_certificates = certs_without_vector_id + certs_with_vector_id
 
             if not all_certificates:
-                print("\n[확인] 보강된 자격증이 없습니다.")
-                return {"processed": 0, "uploaded": 0, "skipped": 0}
+                logger.info("보강된 자격증이 없습니다.")
+                return EmbeddingResult(
+                    processed=0,
+                    uploaded=0,
+                    synced=0,
+                    skipped=0,
+                    synced_from_chroma=0,
+                    failed_ids=[],
+                    skipped_step=False,
+                )
 
-            print(f"\n보강된 자격증 {len(all_certificates)}개 발견")
-            print(f"  - MariaDB vector_id 없음: {len(certs_without_vector_id)}개")
-            print(f"  - MariaDB vector_id 있음: {len(certs_with_vector_id)}개")
+            logger.info(f"보강된 자격증 {len(all_certificates)}개 발견")
+            logger.info(f"  MariaDB vector_id 없음: {len(certs_without_vector_id)}개")
+            logger.info(f"  MariaDB vector_id 있음: {len(certs_with_vector_id)}개")
 
-            # ==== 2단계: vector_id 없는 것 중 ChromaDB에 이미 존재하는지 확인 ====
-            certs_to_sync_only = []  # ChromaDB에 있지만 MariaDB에 vector_id 없는 것
-            certs_truly_missing = []  # ChromaDB에도 없는 것 → 새로 생성 필요
+            # 2단계: ChromaDB 존재 여부로 분류
+            certs_to_sync_only, certs_truly_missing = self._classify_by_chroma_status(
+                vector_store, certs_without_vector_id
+            )
 
-            if certs_without_vector_id:
-                ids_to_check = [c["id"] for c in certs_without_vector_id]
-                existing_in_chroma = set(vector_store.check_existing_vectors(ids_to_check))
+            # 3단계: ChromaDB에 있는 것은 vector_id만 동기화
+            synced_from_chroma = self._sync_existing_from_chroma(
+                vector_store, certs_to_sync_only
+            )
 
-                for cert in certs_without_vector_id:
-                    if cert["id"] in existing_in_chroma:
-                        # ChromaDB에 이미 존재 → vector_id만 동기화 필요
-                        certs_to_sync_only.append(cert)
-                    else:
-                        # ChromaDB에도 없음 → 새로 생성 필요
-                        certs_truly_missing.append(cert)
+            # 4단계: 고아 레코드 찾기
+            orphan_certs, already_synced = self._find_orphan_certs(
+                vector_store, certs_with_vector_id
+            )
 
-                if certs_to_sync_only:
-                    print(f"  - [발견] ChromaDB에 이미 존재 (vector_id만 동기화 필요): {len(certs_to_sync_only)}개")
-                if certs_truly_missing:
-                    print(f"  - [발견] ChromaDB에 없음 (새로 생성 필요): {len(certs_truly_missing)}개")
-
-            # ==== 3단계: ChromaDB에 있는 것은 vector_id만 동기화 ====
-            synced_from_chroma = 0
-            if certs_to_sync_only:
-                print(f"\n  ChromaDB에 존재하는 {len(certs_to_sync_only)}개 자격증의 vector_id 동기화 중...")
-                mappings = [(cert["id"], cert["id"]) for cert in certs_to_sync_only]
-                sync_result = vector_store.sync_vector_ids_to_db_batch(mappings)
-                synced_from_chroma = sync_result["success"]
-                print(f"    - DB에 vector_id {synced_from_chroma}개 동기화 완료 [OK]")
-
-            # ==== 4단계: vector_id가 있는 것 중 ChromaDB 검증 ====
-            orphan_certs = []  # MariaDB에는 vector_id 있지만 ChromaDB에 없는 것
-            already_synced = 0
-
-            if certs_with_vector_id:
-                ids_to_check = [c["vector_id"] for c in certs_with_vector_id]
-                existing_in_chroma = set(vector_store.check_existing_vectors(ids_to_check))
-
-                for cert in certs_with_vector_id:
-                    if cert["vector_id"] in existing_in_chroma:
-                        already_synced += 1
-                    else:
-                        # ChromaDB에 없음 → 다시 생성 필요
-                        orphan_certs.append(cert)
-
-                if orphan_certs:
-                    print(f"  - [경고] ChromaDB에 없는 고아 레코드: {len(orphan_certs)}개 → 재생성 예정")
-
-            # ==== 5단계: 처리 대상 결정 ====
-            # ChromaDB에 없는 것 + 고아 레코드 (certs_to_sync_only는 이미 처리됨)
+            # 5단계: 처리 대상 결정
             certificates = certs_truly_missing + orphan_certs
 
             if not certificates:
                 total_synced = already_synced + synced_from_chroma
-                print(f"\n[완료] 모든 자격증이 이미 동기화됨 (기존 {already_synced}개 + 신규 동기화 {synced_from_chroma}개)")
-                return {"processed": 0, "uploaded": 0, "skipped": total_synced, "synced_from_chroma": synced_from_chroma}
+                logger.info(
+                    f"모든 자격증이 이미 동기화됨 "
+                    f"(기존 {already_synced}개 + 신규 {synced_from_chroma}개)"
+                )
+                return EmbeddingResult(
+                    processed=0,
+                    uploaded=0,
+                    synced=0,
+                    skipped=total_synced,
+                    synced_from_chroma=synced_from_chroma,
+                    failed_ids=[],
+                    skipped_step=False,
+                )
 
-            print(f"\n처리 대상: {len(certificates)}개 (신규 {len(certs_truly_missing)} + 재생성 {len(orphan_certs)})")
+            # 6단계: 배치 임베딩 생성 및 업로드
+            total_uploaded, total_synced, failed_ids = self._process_embedding_batches(
+                vector_store, certificates, certs_truly_missing, orphan_certs
+            )
 
-            # ==== 6단계: 임베딩 생성 및 업로드 ====
-            BATCH_SIZE = 32
-            total_uploaded = 0
-            total_synced = 0
+            # 실패 레코드 저장
+            if failed_ids:
+                failed_certs = [c for c in certificates if c["id"] in failed_ids]
+                save_failed_records(
+                    "embedding",
+                    failed_certs,
+                    {c["id"]: "Embedding/Upload failed" for c in failed_certs},
+                )
 
-            for i in range(0, len(certificates), BATCH_SIZE):
-                batch = certificates[i : i + BATCH_SIZE]
-                batch_num = (i // BATCH_SIZE) + 1
-                total_batches = (len(certificates) + BATCH_SIZE - 1) // BATCH_SIZE
+            logger.info(
+                f"임베딩 완료: 업로드 {total_uploaded}개, 동기화 {total_synced}개, "
+                f"기존 {already_synced}개, ChromaDB 복구 {synced_from_chroma}개"
+            )
 
-                print(f"\n  배치 {batch_num}/{total_batches} 처리 중 ({len(batch)}개)...")
-
-                try:
-                    # 처리 대상 출력
-                    for cert in batch:
-                        status = "재생성" if cert.get("vector_id") else "신규"
-                        print(f"    [{status}] {cert['title']} (ID: {cert['id'][:8]}...)")
-
-                    # BGE-M3 임베딩 + ChromaDB 업로드 + 검증 (skip_existing=True)
-                    result = vector_store.upsert_certificates_batch_integrated(batch, skip_existing=True)
-
-                    # 결과 출력
-                    uploaded = result.get("uploaded_count", 0)
-                    verified = result.get("verified_count", 0)
-                    skipped = result.get("skipped_count", 0)
-                    failed_ids = result.get("failed_ids", [])
-
-                    if skipped > 0:
-                        print(f"    - ChromaDB에 이미 존재: {skipped}개 스킵")
-
-                    if verified > 0:
-                        print(f"    - ChromaDB에 {verified}개 업로드 및 검증 완료 [OK]")
-                        total_uploaded += verified
-
-                    if failed_ids:
-                        print(f"    - [경고] 검증 실패: {failed_ids[:3]}{'...' if len(failed_ids) > 3 else ''}")
-
-                    # DB에 vector_id 동기화 (새로 업로드된 것만)
-                    skipped_set = set(result.get("skipped_ids", []))
-                    failed_set = set(failed_ids)
-                    certs_to_sync = [
-                        cert for cert in batch
-                        if cert["id"] not in skipped_set and cert["id"] not in failed_set
-                    ]
-
-                    if certs_to_sync:
-                        mappings = [(cert["id"], cert["id"]) for cert in certs_to_sync]
-                        sync_result = vector_store.sync_vector_ids_to_db_batch(mappings)
-                        sync_count = sync_result["success"]
-                        total_synced += sync_count
-                        print(f"    - DB에 vector_id {sync_count}개 동기화 완료")
-                        if sync_result.get("not_found_ids"):
-                            print(f"      [경고] DB에서 미발견: {len(sync_result['not_found_ids'])}개")
-
-                except Exception as e:
-                    print(f"    [오류] 배치 처리 실패: {str(e)}")
-                    import traceback
-                    traceback.print_exc()
-                    continue
-
-            print(f"\n임베딩 완료: 업로드 {total_uploaded}개, 동기화 {total_synced}개, 기존 {already_synced}개, ChromaDB에서 복구 {synced_from_chroma}개")
-            return {
-                "processed": len(certificates),
-                "uploaded": total_uploaded,
-                "synced": total_synced,
-                "skipped": already_synced,
-                "synced_from_chroma": synced_from_chroma
-            }
+            return EmbeddingResult(
+                processed=len(certificates),
+                uploaded=total_uploaded,
+                synced=total_synced,
+                skipped=already_synced,
+                synced_from_chroma=synced_from_chroma,
+                failed_ids=failed_ids,
+                skipped_step=False,
+            )
 
         finally:
             session.close()
+
+    # --------------------------------------------------------
+    # 파이프라인 실행
+    # --------------------------------------------------------
 
     async def run(
         self,
@@ -316,74 +766,167 @@ class DataPipeline:
         skip_enrich: bool = False,
         skip_embedding: bool = False,
         skip_existing: bool = False,
-    ) -> dict:
+        retry_mode: bool = False,
+    ) -> PipelineResult:
         """파이프라인 전체 실행.
 
         Args:
-            test_mode: True면 limit=1로 설정
-            limit: 처리할 최대 자격증 수
-            skip_enrich: True면 보강 단계 건너뛰기
-            skip_embedding: True면 임베딩 단계 건너뛰기
-            skip_existing: True면 이미 임베딩된 자격증 건너뛰기
+            test_mode: True면 limit=1로 설정.
+            limit: 처리할 최대 자격증 수.
+            skip_enrich: True면 보강 단계 건너뛰기.
+            skip_embedding: True면 임베딩 단계 건너뛰기.
+            skip_existing: True면 이미 임베딩된 자격증 건너뛰기.
+            retry_mode: True면 실패한 자격증 재시도.
 
         Returns:
-            각 단계별 처리 결과
+            각 단계별 처리 결과.
         """
-        print("\n" + "=" * 70)
-        print("데이터 파이프라인 시작")
-        print("=" * 70)
+        logger.info("=" * 70)
+        logger.info("데이터 파이프라인 시작")
+        logger.info("=" * 70)
 
         # test_mode면 limit=1
         if test_mode:
             limit = 1
 
-        result = {"enrich": {}, "embedding": {}}
+        # 재시도 모드: 실패 레코드 로드
+        retry_enrich_ids: Optional[list[str]] = None
+        retry_embedding_ids: Optional[list[str]] = None
+
+        if retry_mode:
+            enrich_failed = load_latest_failed_records("enrich")
+            if enrich_failed:
+                retry_enrich_ids = [c["id"] for c in enrich_failed["certificates"]]
+                logger.info(f"보강 재시도 대상: {len(retry_enrich_ids)}개")
+
+            embedding_failed = load_latest_failed_records("embedding")
+            if embedding_failed:
+                retry_embedding_ids = [c["id"] for c in embedding_failed["certificates"]]
+                logger.info(f"임베딩 재시도 대상: {len(retry_embedding_ids)}개")
+
+            if not retry_enrich_ids and not retry_embedding_ids:
+                logger.info("재시도할 실패 레코드가 없습니다.")
+                return PipelineResult(
+                    enrich=EnrichResult(
+                        processed=0,
+                        success=0,
+                        failed=0,
+                        failed_ids=[],
+                        skipped=True,
+                    ),
+                    embedding=EmbeddingResult(
+                        processed=0,
+                        uploaded=0,
+                        synced=0,
+                        skipped=0,
+                        synced_from_chroma=0,
+                        failed_ids=[],
+                        skipped_step=True,
+                    ),
+                )
+
+        result: PipelineResult = {
+            "enrich": EnrichResult(
+                processed=0,
+                success=0,
+                failed=0,
+                failed_ids=[],
+                skipped=True,
+            ),
+            "embedding": EmbeddingResult(
+                processed=0,
+                uploaded=0,
+                synced=0,
+                skipped=0,
+                synced_from_chroma=0,
+                failed_ids=[],
+                skipped_step=True,
+            ),
+        }
 
         # Step 1: Enrich
-        if skip_enrich:
-            print("\n[SKIP] 보강 단계 건너뛰기")
-            result["enrich"] = {"skipped": True}
+        if skip_enrich and not retry_enrich_ids:
+            logger.info("[SKIP] 보강 단계 건너뛰기")
         else:
-            result["enrich"] = await self.enrich_step(limit=limit)
+            enrich_ids = retry_enrich_ids if retry_mode else None
+            enrich_limit = None if retry_mode else limit
+            result["enrich"] = await self.enrich_step(
+                limit=enrich_limit, cert_ids=enrich_ids
+            )
 
         # Step 2: Embedding
-        if skip_embedding:
-            print("\n[SKIP] 임베딩 단계 건너뛰기")
-            result["embedding"] = {"skipped_step": True}
+        if skip_embedding and not retry_embedding_ids:
+            logger.info("[SKIP] 임베딩 단계 건너뛰기")
         else:
+            embedding_ids = retry_embedding_ids if retry_mode else None
+            embedding_limit = None if retry_mode else limit
             result["embedding"] = await self.embedding_step(
-                limit=limit,
+                limit=embedding_limit,
                 skip_existing=skip_existing,
+                cert_ids=embedding_ids,
             )
 
         # 요약
-        print("\n" + "=" * 70)
-        print("파이프라인 완료")
-        print("=" * 70)
+        logger.info("=" * 70)
+        logger.info("파이프라인 완료")
+        logger.info("=" * 70)
 
         if not result["enrich"].get("skipped"):
-            print(
+            logger.info(
                 f"  보강: {result['enrich'].get('success', 0)}개 성공, "
                 f"{result['enrich'].get('failed', 0)}개 실패"
             )
 
         if not result["embedding"].get("skipped_step"):
             emb = result["embedding"]
-            print(f"  임베딩: 업로드 {emb.get('uploaded', 0)}개, 동기화 {emb.get('synced', 0)}개, 기존 {emb.get('skipped', 0)}개")
+            logger.info(
+                f"  임베딩: 업로드 {emb.get('uploaded', 0)}개, "
+                f"동기화 {emb.get('synced', 0)}개, 기존 {emb.get('skipped', 0)}개"
+            )
 
         return result
+
+
+# ============================================================
+# 메인 함수
+# ============================================================
 
 
 async def main():
     """메인 엔트리 포인트."""
     parser = argparse.ArgumentParser(
-        description="자격증 보강 + 임베딩 생성 통합 파이프라인"
+        description="자격증 보강 + 임베딩 생성 통합 파이프라인",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+예시:
+  # 테스트 (1개만 처리)
+  uv run python -m scripts.data_pipeline --test
+
+  # 특정 개수만 처리
+  uv run python -m scripts.data_pipeline --limit 10
+
+  # SearXNG 검색 사용 (무료)
+  uv run python -m scripts.data_pipeline --limit 10 --search-provider searxng
+
+  # 로컬 임베딩 사용 (무료)
+  uv run python -m scripts.data_pipeline --limit 10 --embedding-provider local
+
+  # 완전 오픈소스 (검색 + 임베딩 무료)
+  uv run python -m scripts.data_pipeline --limit 10 --search-provider searxng --embedding-provider local
+        """,
     )
+
+    # 처리 범위 옵션
     parser.add_argument(
         "--test", action="store_true", help="테스트 모드: 1개 자격증만 처리"
     )
     parser.add_argument("--limit", type=int, help="처리할 자격증 최대 개수")
     parser.add_argument("--all", action="store_true", help="모든 미보강 자격증 처리")
+    parser.add_argument(
+        "--retry", action="store_true", help="실패한 자격증 재시도"
+    )
+
+    # 단계 건너뛰기 옵션
     parser.add_argument(
         "--skip-enrich", action="store_true", help="보강 단계 건너뛰기"
     )
@@ -394,15 +937,49 @@ async def main():
         "--skip-existing", action="store_true", help="이미 임베딩된 자격증 건너뛰기"
     )
 
+    # Provider 옵션 (오픈소스 전환)
+    parser.add_argument(
+        "--search-provider",
+        choices=["brave", "searxng"],
+        default=None,
+        help="검색 서비스 선택 (brave: 유료 API, searxng: 오픈소스 무료)",
+    )
+    parser.add_argument(
+        "--embedding-provider",
+        choices=["openai", "local"],
+        default=None,
+        help="임베딩 서비스 선택 (openai: 유료 API, local: BGE-M3 무료)",
+    )
+
+    # 기타 옵션
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="상세 로그 출력"
+    )
+
     args = parser.parse_args()
 
+    # 로깅 설정
+    setup_logging(verbose=args.verbose)
+
     # 인자 검증
-    if not (args.test or args.limit or args.all):
+    if not (args.test or args.limit or args.all or args.retry):
         parser.print_help()
-        print("\n--test, --limit N 또는 --all 옵션을 지정하세요.")
+        logger.error("\n--test, --limit N, --all 또는 --retry 옵션을 지정하세요.")
         return
 
-    pipeline = DataPipeline()
+    # Provider 로깅
+    search_provider = args.search_provider
+    embedding_provider = args.embedding_provider
+
+    if search_provider:
+        logger.info(f"검색 서비스: {search_provider}")
+    if embedding_provider:
+        logger.info(f"임베딩 서비스: {embedding_provider}")
+
+    pipeline = DataPipeline(
+        search_provider=search_provider,
+        embedding_provider=embedding_provider,
+    )
 
     try:
         await pipeline.run(
@@ -411,12 +988,13 @@ async def main():
             skip_enrich=args.skip_enrich,
             skip_embedding=args.skip_embedding,
             skip_existing=args.skip_existing,
+            retry_mode=args.retry,
         )
     except KeyboardInterrupt:
-        print("\n\n[경고] 사용자가 작업을 중단했습니다.")
+        logger.warning("사용자가 작업을 중단했습니다.")
         sys.exit(1)
     except Exception as e:
-        print(f"\n\n[오류] {str(e)}")
+        logger.exception(f"파이프라인 실행 중 오류 발생: {str(e)}")
         sys.exit(1)
 
 

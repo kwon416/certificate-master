@@ -1,12 +1,12 @@
 /**
  * Certificates Hooks
- * 
+ *
  * React Query hooks for certificate data fetching.
  */
 
 import { useQuery, useInfiniteQuery, UseQueryOptions } from '@tanstack/react-query'
 import { certificatesAPI, SearchCertificatesParams } from '@/lib/api'
-import type { Certificate, CertificateList } from '@/lib/api'
+import type { Certificate, CertificateList, CategoryInfo } from '@/lib/api'
 
 export const certificateKeys = {
   all: ['certificates'] as const,
@@ -75,9 +75,10 @@ export function useCertificate(
 
 /**
  * Hook to get certificate categories
+ * @returns CategoryInfo[] - 카테고리 코드와 이름 배열
  */
 export function useCertificateCategories(
-  options?: Omit<UseQueryOptions<string[]>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<CategoryInfo[]>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: certificateKeys.categories(),

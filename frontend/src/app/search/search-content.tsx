@@ -55,7 +55,6 @@ export function SearchContent() {
     isFetchingNextPage,
   } = useInfiniteCertificates({
     q: debouncedQuery || undefined,
-    code: undefined,
     page_size: 20, // 20 items per page
   }, {
     enabled: activeTab === 'search', // Only fetch when search tab is active
@@ -244,10 +243,10 @@ export function SearchContent() {
                   <>
                     <div
                       className={cn(
-                        'grid gap-6',
+                        'grid',
                         viewMode === 'grid'
-                          ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'
-                          : 'grid-cols-1'
+                          ? 'gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'
+                          : 'gap-3 grid-cols-1'
                       )}
                     >
                       {results.map((cert, index) => (
@@ -266,6 +265,7 @@ export function SearchContent() {
                             overview={cert.overview ?? null}
                             isFavorite={favorites.has(cert.id)}
                             onFavoriteToggle={handleFavoriteToggle}
+                            variant={viewMode}
                           />
                         </div>
                       ))}

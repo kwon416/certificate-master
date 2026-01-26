@@ -83,8 +83,7 @@ class TestStudyPlansLLMAPI:
         """LLM 기반 학습 계획 생성 테스트 (E2E)."""
         # Step 1: Create a test certificate
         cert_data = {
-            "code": "T",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보처리",
             "title": "정보처리기사 (LLM 테스트)",
             "raw_id": "TEST_LLM_정보처리기사",
@@ -166,8 +165,7 @@ class TestStudyPlansLLMAPI:
         """수동으로 milestones 제공 시 LLM 미호출 테스트."""
         # Step 1: Create a test certificate
         cert_data = {
-            "code": "T",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보처리",
             "title": "정보처리기사 (수동 테스트)",
             "raw_id": "TEST_MANUAL_정보처리기사",
@@ -238,8 +236,8 @@ class TestStudyPlansLLMAPI:
         """LLM 오류 발생 시 적절한 에러 응답 테스트."""
         # Step 1: Create a test certificate
         cert_data = {
-            "code": "T",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "series": "정보처리",
             "title": "에러 테스트 자격증",
             "raw_id": "TEST_ERROR_자격증",
             "overview": "Test certificate for error handling",

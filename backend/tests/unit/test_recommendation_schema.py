@@ -16,7 +16,7 @@ class TestRecommendationRequestSchema:
             "interest_domains": ["IT개발", "데이터"],
             "study_timeline": "6개월 이하",
             "difficulty_preference": "중간",
-            "user_summary": "데이터 분석 직무로 이직하려고 6개월 안에 준비할 자격증을 찾습니다.",
+            "user_summary": "데이터 분석 직무로 이직하고싶어",
         }
 
         request = RecommendationRequest(**data)
@@ -145,8 +145,7 @@ class TestRecommendedCertificateSchema:
         cert_data = {
             "id": "123e4567-e89b-12d3-a456-426614174000",
             "raw_id": "T_정보처리기사",
-            "code": "T",
-            "category": "국가기술자격",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
             "series": "정보기술",
             "title": "정보처리기사",
             "created_at": datetime.now(),
@@ -183,11 +182,10 @@ class TestRecommendedCertificateSchema:
 
         cert_data = {
             "id": "123e4567-e89b-12d3-a456-426614174000",
-                "raw_id": "T_정보처리기사",
-                "code": "T",
-                "category": "국가기술자격",
-                "series": "정보기술",
-                "title": "정보처리기사",
+            "raw_id": "T_정보처리기사",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "series": "정보기술",
+            "title": "정보처리기사",
             "created_at": datetime.now(),
             "updated_at": datetime.now(),
         }
@@ -225,20 +223,19 @@ class TestRecommendationResponseSchema:
                 {
                     "certificate": {
                         "id": "123e4567-e89b-12d3-a456-426614174000",
-                    "raw_id": "T_정보처리기사",
-                    "code": "T",
-                    "category": "국가기술자격",
-                    "series": "정보기술",
-                    "title": "정보처리기사",
-                    "created_at": datetime.now(),
-                    "updated_at": datetime.now(),
-                },
-                "qualification_category": "국가기술자격",
-                "match_score": 95,
-                "recommendation_reason": "데이터 분야 이직 준비에 적합합니다.",
-                "key_points": ["중급 난이도"],
-                "feasibility": {"can_prepare": True, "estimated_days": 90},
-            }
+                        "raw_id": "T_정보처리기사",
+                        "categories": [{"code": "T", "name": "국가기술자격"}],
+                        "series": "정보기술",
+                        "title": "정보처리기사",
+                        "created_at": datetime.now(),
+                        "updated_at": datetime.now(),
+                    },
+                    "qualification_category": "국가기술자격",
+                    "match_score": 95,
+                    "recommendation_reason": "데이터 분야 이직 준비에 적합합니다.",
+                    "key_points": ["중급 난이도"],
+                    "feasibility": {"can_prepare": True, "estimated_days": 90},
+                }
             ],
             "query_summary": "취업 목적 | 관심 분야: IT개발, 데이터 | 준비 기간: 6개월 이하 | 난이도 선호: 중간",
             "total_matched": 15,
@@ -264,3 +261,33 @@ class TestRecommendationResponseSchema:
 
         assert len(response.recommendations) == 0
         assert response.total_matched == 0
+
+    def test_recommendation_response_with_user_summary(self):
+        """Test RecommendationResponse includes user_summary field."""
+        from app.schemas.recommendation import RecommendationResponse
+
+        data = {
+            "recommendations": [],
+            "query_summary": "취업 목적 | 관심 분야: IT개발",
+            "user_summary": "데이터 분석 직무로 이직하고싶어",
+            "total_matched": 0,
+        }
+
+        response = RecommendationResponse(**data)
+
+        assert response.user_summary == "데이터 분석 직무로 이직하고싶어"
+        assert response.query_summary == "취업 목적 | 관심 분야: IT개발"
+
+    def test_recommendation_response_user_summary_optional(self):
+        """Test RecommendationResponse user_summary is optional (None)."""
+        from app.schemas.recommendation import RecommendationResponse
+
+        data = {
+            "recommendations": [],
+            "query_summary": "취업 목적 | 관심 분야: IT개발",
+            "total_matched": 0,
+        }
+
+        response = RecommendationResponse(**data)
+
+        assert response.user_summary is None

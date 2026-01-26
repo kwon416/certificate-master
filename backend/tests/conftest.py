@@ -59,8 +59,7 @@ def client() -> Generator[TestClient, None, None]:
 def sample_certificate_data() -> dict:
     """Sample certificate data for testing."""
     return {
-        "code": "T",
-        "category": "국가기술자격",
+        "categories": [{"code": "T", "name": "국가기술자격"}],
         "series": "정보처리",
         "title": "정보처리기사",
         "raw_id": "T_정보처리기사",

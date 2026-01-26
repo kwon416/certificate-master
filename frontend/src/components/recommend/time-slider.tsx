@@ -29,20 +29,20 @@ export function TimeSlider({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Display selected value */}
       <div className="text-center">
-        <div className="text-5xl font-bold text-emerald-400 mb-2">
+        <div className="text-4xl md:text-5xl font-bold text-emerald-400 mb-1 md:mb-2">
           {value.toFixed(1)}
-          <span className="text-2xl text-slate-400 ml-2">시간</span>
+          <span className="text-xl md:text-2xl text-slate-400 ml-1 md:ml-2">시간</span>
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-xs md:text-sm text-slate-400">
           하루 {value.toFixed(1)}시간 × 주 5일 = 주당 {(value * 5).toFixed(1)}시간
         </p>
       </div>
 
-      {/* Slider */}
-      <div className="px-2">
+      {/* Slider - 모바일에서 터치 영역 확대 */}
+      <div className="px-2 py-2 touch-pan-x">
         <Slider
           value={[value]}
           onValueChange={handleChange}
@@ -50,7 +50,7 @@ export function TimeSlider({
           max={max}
           step={step}
           disabled={disabled}
-          className="w-full"
+          className="w-full [&_[role=slider]]:h-5 [&_[role=slider]]:w-5 md:[&_[role=slider]]:h-4 md:[&_[role=slider]]:w-4"
         />
       </div>
 
