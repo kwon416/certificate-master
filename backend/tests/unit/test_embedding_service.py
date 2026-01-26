@@ -1,6 +1,6 @@
-"""EmbeddingService 텍스트 포맷팅 및 BGE-M3 임베딩 생성 테스트.
+"""EmbeddingService 텍스트 포맷팅 및 OpenAI 임베딩 생성 테스트.
 
-BGE-M3 로컬 임베딩을 사용하여 텍스트를 벡터로 변환합니다.
+OpenAI API를 사용하여 텍스트를 벡터로 변환합니다.
 """
 import pytest
 from unittest.mock import MagicMock, patch
@@ -318,39 +318,44 @@ class TestFormatCertificateForEmbeddingEnhanced:
         assert "[학습 가이드]" not in result
 
 
-class TestBGEM3Embedding:
-    """BGE-M3 임베딩 생성 테스트."""
+class TestOpenAIEmbedding:
+    """OpenAI 임베딩 생성 테스트."""
 
     def setup_method(self):
         """각 테스트 전에 싱글톤 리셋."""
         from app.services.embedding_service import EmbeddingService
-        EmbeddingService._model = None
+        EmbeddingService._client = None
 
-    def test_model_singleton_initialization(self):
-        """모델이 싱글톤으로 초기화되는지 테스트."""
-        with patch("app.services.embedding_service.BGEM3FlagModel") as mock_model:
-            mock_instance = MagicMock()
-            mock_model.return_value = mock_instance
+    def test_client_singleton_initialization(self):
+        """클라이언트가 싱글톤으로 초기화되는지 테스트."""
+        with patch("app.services.embedding_service.OpenAI") as mock_openai:
+            mock_client = MagicMock()
+            mock_openai.return_value = mock_client
 
             from app.services.embedding_service import EmbeddingService
 
             service = EmbeddingService()
 
-            # 첫 임베딩 호출 시 모델 로드
-            mock_instance.encode.return_value = {"dense_vecs": [[0.1] * 1024]}
+            # 첫 임베딩 호출 시 클라이언트 생성
+            mock_response = MagicMock()
+            mock_response.data = [MagicMock(embedding=[0.1] * 1024)]
+            mock_client.embeddings.create.return_value = mock_response
+
             service.create_embedding("테스트")
 
-            # 모델이 한 번만 로드되어야 함 (싱글톤)
-            assert mock_model.call_count <= 1
+            # 클라이언트가 한 번만 생성되어야 함 (싱글톤)
+            assert mock_openai.call_count <= 1
 
     def test_create_embedding_returns_list(self):
         """단일 텍스트 임베딩이 리스트를 반환하는지 테스트."""
-        with patch("app.services.embedding_service.BGEM3FlagModel") as mock_model:
-            mock_instance = MagicMock()
-            mock_model.return_value = mock_instance
+        with patch("app.services.embedding_service.OpenAI") as mock_openai:
+            mock_client = MagicMock()
+            mock_openai.return_value = mock_client
 
-            # BGE-M3는 dense_vecs 키로 임베딩 반환
-            mock_instance.encode.return_value = {"dense_vecs": [[0.1, 0.2, 0.3] * 341 + [0.1]]}
+            # OpenAI 응답 모킹
+            mock_response = MagicMock()
+            mock_response.data = [MagicMock(embedding=[0.1] * 1024)]
+            mock_client.embeddings.create.return_value = mock_response
 
             from app.services.embedding_service import EmbeddingService
 
@@ -358,36 +363,39 @@ class TestBGEM3Embedding:
             result = service.create_embedding("정보처리기사")
 
             assert isinstance(result, list)
-            assert len(result) == 1024  # BGE-M3 기본 차원
+            assert len(result) == 1024  # OpenAI text-embedding-3-small 기본 차원
 
-    def test_create_embedding_calls_model_encode(self):
-        """임베딩 생성 시 모델의 encode 메서드가 호출되는지 테스트."""
-        with patch("app.services.embedding_service.BGEM3FlagModel") as mock_model:
-            mock_instance = MagicMock()
-            mock_model.return_value = mock_instance
-            mock_instance.encode.return_value = {"dense_vecs": [[0.1] * 1024]}
+    def test_create_embedding_calls_api(self):
+        """임베딩 생성 시 OpenAI API가 호출되는지 테스트."""
+        with patch("app.services.embedding_service.OpenAI") as mock_openai:
+            mock_client = MagicMock()
+            mock_openai.return_value = mock_client
+
+            mock_response = MagicMock()
+            mock_response.data = [MagicMock(embedding=[0.1] * 1024)]
+            mock_client.embeddings.create.return_value = mock_response
 
             from app.services.embedding_service import EmbeddingService
 
             service = EmbeddingService()
             service.create_embedding("테스트 텍스트")
 
-            mock_instance.encode.assert_called()
+            mock_client.embeddings.create.assert_called_once()
 
     def test_create_embeddings_batch_returns_list_of_lists(self):
         """배치 임베딩이 2D 리스트를 반환하는지 테스트."""
-        with patch("app.services.embedding_service.BGEM3FlagModel") as mock_model:
-            mock_instance = MagicMock()
-            mock_model.return_value = mock_instance
+        with patch("app.services.embedding_service.OpenAI") as mock_openai:
+            mock_client = MagicMock()
+            mock_openai.return_value = mock_client
 
             # 3개 텍스트에 대한 임베딩
-            mock_instance.encode.return_value = {
-                "dense_vecs": [
-                    [0.1] * 1024,
-                    [0.2] * 1024,
-                    [0.3] * 1024,
-                ]
-            }
+            mock_response = MagicMock()
+            mock_response.data = [
+                MagicMock(embedding=[0.1] * 1024, index=0),
+                MagicMock(embedding=[0.2] * 1024, index=1),
+                MagicMock(embedding=[0.3] * 1024, index=2),
+            ]
+            mock_client.embeddings.create.return_value = mock_response
 
             from app.services.embedding_service import EmbeddingService
 
@@ -403,10 +411,12 @@ class TestBGEM3Embedding:
 
     def test_create_embedding_with_empty_text(self):
         """빈 텍스트에 대한 처리 테스트."""
-        with patch("app.services.embedding_service.BGEM3FlagModel") as mock_model:
-            mock_instance = MagicMock()
-            mock_model.return_value = mock_instance
-            mock_instance.encode.return_value = {"dense_vecs": [[0.0] * 1024]}
+        with patch("app.services.embedding_service.OpenAI") as mock_openai:
+            mock_client = MagicMock()
+            mock_openai.return_value = mock_client
+            mock_response = MagicMock()
+            mock_response.data = [MagicMock(embedding=[0.0] * 1024)]
+            mock_client.embeddings.create.return_value = mock_response
 
             from app.services.embedding_service import EmbeddingService
 
@@ -415,3 +425,37 @@ class TestBGEM3Embedding:
 
             assert isinstance(result, list)
             assert len(result) == 1024
+
+    def test_create_embeddings_batch_empty_list(self):
+        """빈 리스트에 대한 처리 테스트."""
+        from app.services.embedding_service import EmbeddingService
+
+        service = EmbeddingService()
+        results = service.create_embeddings_batch([])
+
+        assert results == []
+
+    def test_create_embeddings_batch_preserves_order(self):
+        """배치 임베딩 순서가 보존되는지 테스트."""
+        with patch("app.services.embedding_service.OpenAI") as mock_openai:
+            mock_client = MagicMock()
+            mock_openai.return_value = mock_client
+
+            # 순서가 뒤섞인 응답 (index로 정렬 필요)
+            mock_response = MagicMock()
+            mock_response.data = [
+                MagicMock(embedding=[0.3] * 1024, index=2),
+                MagicMock(embedding=[0.1] * 1024, index=0),
+                MagicMock(embedding=[0.2] * 1024, index=1),
+            ]
+            mock_client.embeddings.create.return_value = mock_response
+
+            from app.services.embedding_service import EmbeddingService
+
+            service = EmbeddingService()
+            results = service.create_embeddings_batch(["a", "b", "c"])
+
+            # 순서가 index 기준으로 정렬되어야 함
+            assert results[0][0] == 0.1  # index 0
+            assert results[1][0] == 0.2  # index 1
+            assert results[2][0] == 0.3  # index 2

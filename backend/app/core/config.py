@@ -66,13 +66,16 @@ class Settings(BaseSettings):
     # OpenAI API Configuration
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL_NAME: str = "gpt-4o-mini"  # 빠르고 저렴한 모델
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"  # 임베딩 모델
+    OPENAI_EMBEDDING_DIMENSIONS: int = 1024  # 임베딩 차원 (BGE-M3와 호환)
 
     # ChromaDB Configuration (외부 서버)
     CHROMA_HOST: str = "db01.server.ivetech.co.kr"
     CHROMA_PORT: int = 38000
     CHROMA_COLLECTION_NAME: str = "certificate-master-index"
 
-    # BGE-M3 Configuration
+    # BGE-M3 Configuration (Deprecated - kept for backward compatibility)
+    # Now using OpenAI Embedding API instead
     BGE_M3_MODEL_NAME: str = "BAAI/bge-m3"
     BGE_M3_USE_FP16: bool = True
     BGE_M3_BATCH_SIZE: int = 32

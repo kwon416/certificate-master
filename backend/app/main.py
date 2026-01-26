@@ -3,12 +3,7 @@
 This module creates and configures the FastAPI application instance.
 """
 import logging
-import warnings
 from contextlib import asynccontextmanager
-
-# Transformers/FlagEmbedding 경고 숨기기
-warnings.filterwarnings("ignore", message=".*XLMRobertaTokenizerFast.*")
-logging.getLogger("transformers").setLevel(logging.ERROR)
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware

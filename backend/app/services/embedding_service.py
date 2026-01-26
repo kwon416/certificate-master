@@ -1,58 +1,55 @@
-"""자격증 텍스트 포맷팅 및 BGE-M3 임베딩 생성 서비스.
+"""자격증 텍스트 포맷팅 및 OpenAI 임베딩 생성 서비스.
 
 이 서비스는:
 1. 자격증 데이터를 임베딩용 텍스트로 포맷합니다.
-2. BGE-M3 모델을 사용하여 로컬에서 임베딩을 생성합니다.
+2. OpenAI API를 사용하여 임베딩을 생성합니다.
 
-BGE-M3: 다국어 지원, 1024차원 임베딩, FP16 지원
+OpenAI text-embedding-3-small: 1536차원, 빠르고 저렴
 """
-import os
-import warnings
+import logging
 from typing import Optional
 
-# 토크나이저 경고 억제 (모듈 import 전에 설정)
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-warnings.filterwarnings("ignore", message=".*XLMRobertaTokenizerFast.*")
-warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
-
-from FlagEmbedding import BGEM3FlagModel
+from openai import OpenAI
 
 from app.core.config import get_settings
 from app.utils.certificate_formatter import format_certificate_text
 
+logger = logging.getLogger(__name__)
+
 
 class EmbeddingService:
-    """자격증 데이터 포맷팅 및 BGE-M3 임베딩 생성 서비스.
+    """자격증 데이터 포맷팅 및 OpenAI 임베딩 생성 서비스.
 
     Attributes:
-        _model: BGE-M3 모델 인스턴스 (싱글톤).
+        _client: OpenAI 클라이언트 인스턴스 (싱글톤).
+        model_name: 임베딩 모델 이름.
+        dimensions: 임베딩 차원 (기본 1536).
     """
 
-    _model: Optional[BGEM3FlagModel] = None  # 클래스 레벨 싱글톤
+    _client: Optional[OpenAI] = None  # 클래스 레벨 싱글톤
 
     def __init__(self, api_key: Optional[str] = None):
         """서비스를 초기화합니다.
 
         Args:
-            api_key: 더 이상 사용되지 않음 (하위 호환성 유지).
+            api_key: OpenAI API 키 (선택, 환경변수에서 자동 로드).
         """
-        # 하위 호환성을 위해 유지, 실제로 사용되지 않음
         self.api_key = api_key
+        settings = get_settings()
+        self.model_name = settings.OPENAI_EMBEDDING_MODEL
+        self.dimensions = settings.OPENAI_EMBEDDING_DIMENSIONS
 
     @classmethod
-    def _get_model(cls) -> BGEM3FlagModel:
-        """BGE-M3 모델을 싱글톤으로 로드합니다.
+    def _get_client(cls) -> OpenAI:
+        """OpenAI 클라이언트를 싱글톤으로 생성합니다.
 
         Returns:
-            BGEM3FlagModel 인스턴스.
+            OpenAI 클라이언트 인스턴스.
         """
-        if cls._model is None:
+        if cls._client is None:
             settings = get_settings()
-            cls._model = BGEM3FlagModel(
-                model_name_or_path=settings.BGE_M3_MODEL_NAME,
-                use_fp16=settings.BGE_M3_USE_FP16,
-            )
-        return cls._model
+            cls._client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        return cls._client
 
     def create_embedding(self, text: str) -> list[float]:
         """단일 텍스트의 임베딩을 생성합니다.
@@ -61,13 +58,21 @@ class EmbeddingService:
             text: 임베딩할 텍스트.
 
         Returns:
-            1024차원 임베딩 벡터.
+            임베딩 벡터 (dimensions 차원).
         """
-        model = self._get_model()
-        result = model.encode([text])
-        vec = result["dense_vecs"][0]
-        # numpy array인 경우 tolist() 호출, 이미 list면 그대로 반환
-        return vec.tolist() if hasattr(vec, "tolist") else vec
+        client = self._get_client()
+
+        # 빈 텍스트 처리
+        if not text or not text.strip():
+            text = " "
+
+        response = client.embeddings.create(
+            model=self.model_name,
+            input=text,
+            dimensions=self.dimensions,
+        )
+
+        return response.data[0].embedding
 
     def create_embeddings_batch(self, texts: list[str]) -> list[list[float]]:
         """여러 텍스트의 임베딩을 배치로 생성합니다.
@@ -76,29 +81,26 @@ class EmbeddingService:
             texts: 임베딩할 텍스트 목록.
 
         Returns:
-            각 텍스트에 대한 1024차원 임베딩 벡터 목록.
+            각 텍스트에 대한 임베딩 벡터 목록.
         """
         if not texts:
             return []
 
-        settings = get_settings()
-        model = self._get_model()
+        client = self._get_client()
 
-        # 배치 크기로 나누어 처리
-        all_embeddings = []
-        batch_size = settings.BGE_M3_BATCH_SIZE
+        # 빈 텍스트 처리
+        processed_texts = [t if t and t.strip() else " " for t in texts]
 
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i:i + batch_size]
-            result = model.encode(batch)
-            # numpy array인 경우 tolist() 호출, 이미 list면 그대로 사용
-            embeddings = [
-                vec.tolist() if hasattr(vec, "tolist") else vec
-                for vec in result["dense_vecs"]
-            ]
-            all_embeddings.extend(embeddings)
+        # OpenAI API는 배치 처리 지원
+        response = client.embeddings.create(
+            model=self.model_name,
+            input=processed_texts,
+            dimensions=self.dimensions,
+        )
 
-        return all_embeddings
+        # 응답 순서 보장 (index로 정렬)
+        sorted_data = sorted(response.data, key=lambda x: x.index)
+        return [item.embedding for item in sorted_data]
 
     def format_certificate_for_embedding(self, cert: dict) -> str:
         """임베딩 생성을 위해 자격증 데이터를 포맷합니다.
