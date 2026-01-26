@@ -17,7 +17,7 @@ services:
       - LOG_LEVEL=INFO
       # CORS_ORIGINS는 .env에서 불러옴
       # 같은 서버의 MariaDB 사용 시 localhost로 연결
-      - MARIADB_HOST=127.0.0.1
+      - MARIADB_HOST=mariadb
     # network_mode: host 사용 시 ports 불필요 (자동으로 8000 사용)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
