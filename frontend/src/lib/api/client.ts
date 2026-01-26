@@ -6,9 +6,10 @@
 
 import { createClient } from '@/lib/supabase/client'
 
-// Production에서는 상대 경로 사용 (Next.js rewrites로 프록시)
-// Development에서는 직접 백엔드 접근
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// 항상 상대 경로 사용 (Next.js rewrites로 프록시)
+// 이렇게 하면 로컬 네트워크 접근 권한이 필요 없음
+// 브라우저 → /api/* (같은 origin) → Next.js 서버 → 백엔드
+const API_URL = '';
 
 export class APIError extends Error {
   constructor(
