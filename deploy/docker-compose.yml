@@ -41,7 +41,6 @@ services:
       - ../frontend/.env
     environment:
       - PORT=5100
-      - BACKEND_INTERNAL_URL=http://backend:8000
     ports:
       - "5100:5100"
     networks:

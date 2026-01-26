@@ -8,9 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 
 // Production에서는 상대 경로 사용 (Next.js rewrites로 프록시)
 // Development에서는 직접 백엔드 접근
-const API_URL = typeof window !== 'undefined'
-  ? '' // 브라우저: 상대 경로 (Next.js rewrites 사용)
-  : (process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') // 서버: 직접 접근
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export class APIError extends Error {
   constructor(

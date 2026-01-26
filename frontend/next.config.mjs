@@ -12,7 +12,7 @@ const nextConfig = {
 
   // API 프록시 설정 (Docker 환경용)
   async rewrites() {
-    const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://backend:8000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
     return [
       {
         source: '/api/:path*',
