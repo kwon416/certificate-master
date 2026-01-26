@@ -115,7 +115,7 @@ export function SearchContent() {
             자격증 검색
           </h1>
           <p className="text-slate-400">
-            AI 추천으로 나에게 맞는 자격증을 찾거나, 3,500개 이상의 자격증을 직접 검색하세요.
+            AI 추천으로 나에게 맞는 자격증을 찾거나, 필요한 자격증을 검색해보세요
           </p>
         </div>
 
