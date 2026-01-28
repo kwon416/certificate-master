@@ -82,7 +82,6 @@ SUPABASE_SERVICE_ROLE_KEY=<Supabase 대시보드에서 확인>
 
 # Optional (나중에 추가)
 REDIS_URL=redis://localhost:6379
-BRAVE_API_KEY=
 OPENAI_API_KEY=
 PINECONE_API_KEY=
 PINECONE_INDEX=certificate-master
@@ -369,7 +368,6 @@ docker run -p 8000:8000 --env-file .env certificate-master-backend
 
 ```bash
 # 1. 환경 변수 추가 (.env 파일)
-BRAVE_API_KEY=your_brave_api_key
 OPENAI_API_KEY=your_openai_api_key
 
 # 2. 자격증 데이터 seed (처음 한 번만)
@@ -388,7 +386,6 @@ uv run python -m scripts.enrich_certificates --all
 ### 처리 성능
 
 - 단일: 8-10초 (7개 카테고리 검색 + 2-Phase LLM + 후처리)
-- Brave API 제약: **1 query/sec** (Free tier)
 - 배치 처리: ~8초/자격증
 - 전체 (3545개): ~8시간 (예상)
 - 비용: ~$0.50 (OpenAI GPT-4o-mini)

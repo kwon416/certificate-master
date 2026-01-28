@@ -65,7 +65,7 @@ class TestEnrichmentServiceMariaDB:
              patch('app.services.enrichment_service.LLMService') as MockLLM:
 
             mock_search_instance = MagicMock()
-            mock_search_instance.provider_name = "brave"
+            mock_search_instance.provider_name = "searxng"
             mock_search_instance.search_certificate_comprehensive = AsyncMock(return_value={
                 'general': [], 'statistics': [], 'career': [], 'reviews': [],
                 'study_methods': [], 'books': [], 'lectures': [], 'official': []
@@ -115,7 +115,7 @@ class TestEnrichmentServiceErrorHandling:
 
             # Mock search service
             mock_search_instance = MagicMock()
-            mock_search_instance.provider_name = "brave"
+            mock_search_instance.provider_name = "searxng"
             mock_search_instance.search_certificate_comprehensive = AsyncMock(return_value={
                 'general': [], 'statistics': [], 'career': [], 'reviews': [],
                 'study_methods': [], 'books': [], 'lectures': [], 'official': []

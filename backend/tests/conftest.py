@@ -8,7 +8,11 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
+import pytest_asyncio
 from dotenv import load_dotenv
+
+# pytest-asyncio 설정: auto 모드로 모든 async 테스트 자동 처리
+pytest_plugins = ("pytest_asyncio",)
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 

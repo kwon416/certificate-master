@@ -16,7 +16,6 @@ class TestSettings:
         monkeypatch.setenv("SUPABASE_ANON_KEY", "test-anon-key")
         monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "test-service-key")
         monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://postgres:postgres@localhost:54322/postgres")
-        monkeypatch.setenv("BRAVE_API_KEY", "test-brave-key")
         monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
         monkeypatch.setenv("CHROMA_HOST", "test-host")
         monkeypatch.setenv("CHROMA_PORT", "38000")
@@ -45,7 +44,6 @@ class TestSettings:
 
         settings = Settings()
 
-        assert settings.BRAVE_API_KEY == "test-brave-key"
         assert settings.OPENAI_API_KEY == "test-openai-key"
 
     def test_settings_loads_chroma_config(self) -> None:

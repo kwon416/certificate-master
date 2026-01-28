@@ -4,7 +4,7 @@ Supabase에서 MariaDB로 마이그레이션됨 (2026-01-21).
 
 동작 순서:
 1. MariaDB에서 자격증 조회
-2. Brave API로 정보 검색
+2. SearXNG API로 정보 검색
 3. LLM(OpenAI)으로 정제
 4. MariaDB 업데이트
 

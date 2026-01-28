@@ -118,6 +118,84 @@ class StudyGuide(BaseModel):
     )
 
 
+# ============================================================
+# 취업준비생 관점 스키마 (NEW: 2026-01-28)
+# ============================================================
+
+
+class JobMarketInfo(BaseModel):
+    """채용 시장 정보 - 취업에 도움되는지 판단용."""
+
+    job_posting_frequency: Optional[str] = Field(
+        None, description="채용공고 출현 빈도 ('매우 많음', '많음', '보통', '적음')"
+    )
+    preferred_industries: list[str] = Field(
+        default_factory=list, description="선호 산업군 (예: ['IT', '금융', '제조'])"
+    )
+    preferred_companies: list[str] = Field(
+        default_factory=list, description="우대 기업 예시 (예: ['삼성', 'SK', 'LG'])"
+    )
+    requirement_type: Optional[str] = Field(
+        None, description="채용 요건 유형 ('필수', '우대', '가산점')"
+    )
+    public_sector_points: Optional[str] = Field(
+        None, description="공무원/공기업 가산점 (예: '5%', '3점')"
+    )
+    salary_premium: Optional[str] = Field(
+        None, description="연봉 가산 효과 (예: '월 10-20만원 수당')"
+    )
+
+
+class CostBreakdown(BaseModel):
+    """비용 상세 - 총 취득 비용 투명화."""
+
+    exam_fee: Optional[str] = Field(None, description="응시료 (예: '필기 19,400원 + 실기 22,600원')")
+    exam_fee_refund: Optional[str] = Field(None, description="환불 정책")
+    textbook_cost: Optional[str] = Field(None, description="교재 비용 범위 (예: '30,000 ~ 50,000원')")
+    lecture_cost: Optional[str] = Field(None, description="인강 비용 범위 (예: '100,000 ~ 300,000원')")
+    total_estimated_cost: Optional[str] = Field(None, description="총 예상 비용 (예: '150,000 ~ 400,000원')")
+    free_resources: list[str] = Field(
+        default_factory=list, description="무료 학습 자료 (예: ['큐넷 기출문제', '유튜브 무료 강의'])"
+    )
+
+
+class FeasibilityInfo(BaseModel):
+    """합격 가능성 정보 - 비전공자/직장인 관점."""
+
+    non_major_pass_rate: Optional[str] = Field(
+        None, description="비전공자 합격률 추정 (예: '약 30-35%')"
+    )
+    working_adult_tips: list[str] = Field(
+        default_factory=list, description="직장인 합격 팁"
+    )
+    self_study_possible: Optional[bool] = Field(None, description="독학 가능 여부")
+    minimum_study_period: Optional[int] = Field(
+        None, description="최소 합격 준비기간 (일)"
+    )
+    first_attempt_pass_rate: Optional[str] = Field(
+        None, description="1회 합격 비율 (예: '약 40%')"
+    )
+
+
+class ExamScheduleDetail(BaseModel):
+    """시험 일정 상세 - D-Day 계산용."""
+
+    annual_exam_count: Optional[int] = Field(None, description="연간 시험 횟수")
+    exam_type: Optional[str] = Field(None, description="시험 유형 ('CBT', '정기', 'CBT+정기')")
+    cbt_available: Optional[bool] = Field(None, description="CBT 상시 가능 여부")
+    next_exam_date: Optional[str] = Field(None, description="다음 시험일 (예상)")
+    registration_period: Optional[str] = Field(None, description="접수 기간")
+    result_announcement: Optional[str] = Field(None, description="합격 발표일")
+
+
+class SimilarCertificate(BaseModel):
+    """유사 자격증 비교 정보."""
+
+    certificate_id: Optional[str] = Field(None, description="유사 자격증 ID (있으면)")
+    title: str = Field(..., description="유사 자격증명")
+    comparison: Optional[str] = Field(None, description="비교 설명 (예: '기사보다 난이도 낮음')")
+
+
 class ExamInfo(BaseModel):
     """시험 정보 상세 구조."""
     
@@ -192,6 +270,25 @@ class CertificateUpdate(BaseModel):
         None, ge=0, le=100, description="합격률 (%)"
     )
 
+    # ============================================================
+    # 취업준비생 관점 필드 (NEW: 2026-01-28)
+    # ============================================================
+    job_market_info: Optional[dict[str, Any]] = Field(
+        None, description="채용 시장 정보 (JobMarketInfo 구조)"
+    )
+    cost_breakdown: Optional[dict[str, Any]] = Field(
+        None, description="비용 상세 (CostBreakdown 구조)"
+    )
+    feasibility_info: Optional[dict[str, Any]] = Field(
+        None, description="합격 가능성 정보 (FeasibilityInfo 구조)"
+    )
+    exam_schedule_detail: Optional[dict[str, Any]] = Field(
+        None, description="시험 일정 상세 (ExamScheduleDetail 구조)"
+    )
+    similar_certificates: Optional[list[dict[str, Any]]] = Field(
+        None, description="유사 자격증 비교 (SimilarCertificate 구조)"
+    )
+
 
 class Certificate(CertificateBase):
     """Schema for certificate response."""
@@ -238,6 +335,28 @@ class Certificate(CertificateBase):
 
     # 통계 (Phase 2)
     passing_rate: Optional[float] = Field(None, description="합격률 (%)")
+
+    # ============================================================
+    # 취업준비생 관점 필드 (NEW: 2026-01-28)
+    # ============================================================
+    job_market_info: dict[str, Any] = Field(
+        default_factory=dict, description="채용 시장 정보 (JobMarketInfo 구조)"
+    )
+    cost_breakdown: dict[str, Any] = Field(
+        default_factory=dict, description="비용 상세 (CostBreakdown 구조)"
+    )
+    feasibility_info: dict[str, Any] = Field(
+        default_factory=dict, description="합격 가능성 정보 (FeasibilityInfo 구조)"
+    )
+    exam_schedule_detail: dict[str, Any] = Field(
+        default_factory=dict, description="시험 일정 상세 (ExamScheduleDetail 구조)"
+    )
+    similar_certificates: list[dict[str, Any]] = Field(
+        default_factory=list, description="유사 자격증 비교 (SimilarCertificate 구조)"
+    )
+
+    # 조회수
+    view_count: int = Field(default=0, description="조회수")
 
     # Timestamps
     created_at: datetime

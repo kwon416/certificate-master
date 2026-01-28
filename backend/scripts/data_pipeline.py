@@ -7,27 +7,49 @@ Supabase에서 MariaDB로 마이그레이션됨 (2026-01-21).
 2. [Embedding] 보강된 자격증 조회 → 임베딩 생성 → ChromaDB 업로드
 
 ============================================================
-Provider 설정 (오픈소스 전환 지원)
+Provider 설정 (.env.local 또는 CLI 인자)
 ============================================================
 
---search-provider: 검색 서비스 선택
-  - brave   : Brave Search API (기본값, 유료 $3-5/1K 쿼리)
-  - searxng : SearXNG 메타 검색 엔진 (오픈소스, 무료)
+검색:
+  - searxng : SearXNG 메타 검색 (기본값, 무료)
               └─ 설치: docker run -d -p 8888:8080 searxng/searxng
 
---embedding-provider: 임베딩 서비스 선택
-  - openai : OpenAI text-embedding-3-small (기본값, 유료)
-  - local  : BGE-M3 로컬 모델 (무료, GPU 권장)
+임베딩 (EMBEDDING_PROVIDER 또는 --embedding-provider):
+  - openai : OpenAI text-embedding-3-small (프로덕션, 유료)
+  - local  : BGE-M3 로컬 모델 (로컬 개발용, 무료, GPU 권장)
              └─ 설치: uv sync --extra local
 
-LLM 서비스:
-  - GPT-4o-mini 유지 권장 (GPU 없이 로컬 LLM은 매우 느림)
+LLM:
+  - GPT-4o-mini (OpenAI API) 사용
+
+============================================================
+로컬 개발 환경 설정 (.env.local)
+============================================================
+
+로컬 테스트 시 임베딩을 무료로 사용하려면
+.env.local에 아래 설정 추가:
+
+# 검색: SearXNG (기본값)
+SEARXNG_BASE_URL=http://localhost:8888
+
+# 임베딩: BGE-M3 (무료, 로컬)
+EMBEDDING_PROVIDER=local
+
+============================================================
+로컬 개발 환경 사전 준비
+============================================================
+
+# 1. SearXNG 검색 엔진 (Docker)
+docker run -d -p 8888:8080 --name searxng searxng/searxng
+
+# 2. BGE-M3 임베딩 모델 (선택사항, GPU 권장)
+uv sync --extra local
 
 ============================================================
 기본 사용법
 ============================================================
 
-# 테스트 (1개만 처리)
+# 테스트 (1개만 처리, .env.local 설정 사용)
 uv run python -m scripts.data_pipeline --test
 
 # 특정 개수만 처리
@@ -49,35 +71,26 @@ uv run python -m scripts.data_pipeline --all --skip-existing
 uv run python -m scripts.data_pipeline --retry
 
 ============================================================
-오픈소스 전환 사용법
+CLI 인자로 Provider 오버라이드
 ============================================================
 
-# SearXNG 검색 사용 (무료)
-# 1. SearXNG 서버 시작
-docker run -d -p 8888:8080 --name searxng searxng/searxng
+# 프로덕션 (SearXNG + OpenAI)
+uv run python -m scripts.data_pipeline --limit 10 --embedding-provider openai
 
-# 2. 파이프라인 실행
-uv run python -m scripts.data_pipeline --limit 10 --search-provider searxng
-
-# 로컬 임베딩 사용 (BGE-M3, 무료)
+# 로컬 임베딩 (SearXNG + BGE-M3)
 uv run python -m scripts.data_pipeline --limit 10 --embedding-provider local
 
-# 완전 오픈소스 파이프라인 (검색 + 임베딩 무료)
-uv run python -m scripts.data_pipeline --limit 10 --search-provider searxng --embedding-provider local
-
 ============================================================
-비용 절감 예상
+비용 비교
 ============================================================
 
-| 항목     | 기존 (월)   | 오픈소스 전환 후 | 절감 |
-|----------|------------|-----------------|------|
-| 임베딩   | ~$10-50    | $0              | 100% |
-| 웹 검색  | ~$30-100   | $0 (서버 비용)   | 100% |
-| LLM      | ~$20-100   | ~$20-100        | 0%   |
-| 합계     | ~$60-250   | ~$20-100        | 60%+ |
+| 환경       | 검색    | 임베딩   | LLM          | 월 비용    |
+|------------|---------|----------|--------------|------------|
+| 프로덕션   | SearXNG | OpenAI   | GPT-4o-mini  | ~$10-50    |
+| 로컬 개발  | SearXNG | BGE-M3   | GPT-4o-mini  | ~$1-5      |
 
 ============================================================
-SearXNG 최적화 설정 (선택사항)
+SearXNG 최적화 설정
 ============================================================
 
 # searxng/settings.yml (Docker 볼륨 마운트 후 편집)
@@ -262,18 +275,17 @@ class DataPipeline:
 
     def __init__(
         self,
-        search_provider: Optional[str] = None,
         embedding_provider: Optional[str] = None,
     ):
         """파이프라인 초기화.
 
         Args:
-            search_provider: 검색 서비스 provider ("brave" 또는 "searxng").
-                            None이면 환경변수 SEARCH_PROVIDER 또는 기본값 "brave" 사용.
             embedding_provider: 임베딩 서비스 provider ("openai" 또는 "local").
                                None이면 환경변수 EMBEDDING_PROVIDER 또는 기본값 "openai" 사용.
+
+        Note:
+            검색 서비스는 SearXNG를 기본값으로 사용합니다.
         """
-        self.search_provider = search_provider
         self.embedding_provider = embedding_provider
 
     # --------------------------------------------------------
@@ -335,14 +347,17 @@ class DataPipeline:
             certificates = [cert.to_dict() for cert in results]
             logger.info(f"미보강 자격증 {len(certificates)}개 발견")
 
-            # 검색 서비스 생성 (DI)
+            # 검색 서비스 생성 (SearXNG 기본값)
             from app.services.search_factory import get_search_service
 
-            search_service = get_search_service(self.search_provider)
+            search_service = get_search_service()
             logger.info(f"  검색 서비스: {search_service.provider_name}")
 
             # 보강 실행
-            service = get_enrichment_service(session, search_service=search_service)
+            service = get_enrichment_service(
+                session, search_service=search_service
+            )
+            logger.info(f"  LLM 서비스: {service.llm.provider_name} ({service.llm.model})")
             success = 0
             failed = 0
 
@@ -905,14 +920,8 @@ async def main():
   # 특정 개수만 처리
   uv run python -m scripts.data_pipeline --limit 10
 
-  # SearXNG 검색 사용 (무료)
-  uv run python -m scripts.data_pipeline --limit 10 --search-provider searxng
-
-  # 로컬 임베딩 사용 (무료)
+  # 로컬 임베딩 사용 (SearXNG + BGE-M3)
   uv run python -m scripts.data_pipeline --limit 10 --embedding-provider local
-
-  # 완전 오픈소스 (검색 + 임베딩 무료)
-  uv run python -m scripts.data_pipeline --limit 10 --search-provider searxng --embedding-provider local
         """,
     )
 
@@ -937,13 +946,7 @@ async def main():
         "--skip-existing", action="store_true", help="이미 임베딩된 자격증 건너뛰기"
     )
 
-    # Provider 옵션 (오픈소스 전환)
-    parser.add_argument(
-        "--search-provider",
-        choices=["brave", "searxng"],
-        default=None,
-        help="검색 서비스 선택 (brave: 유료 API, searxng: 오픈소스 무료)",
-    )
+    # Provider 옵션
     parser.add_argument(
         "--embedding-provider",
         choices=["openai", "local"],
@@ -968,16 +971,12 @@ async def main():
         return
 
     # Provider 로깅
-    search_provider = args.search_provider
     embedding_provider = args.embedding_provider
 
-    if search_provider:
-        logger.info(f"검색 서비스: {search_provider}")
     if embedding_provider:
-        logger.info(f"임베딩 서비스: {embedding_provider}")
+        logger.info(f"임베딩 서비스 오버라이드: {embedding_provider}")
 
     pipeline = DataPipeline(
-        search_provider=search_provider,
         embedding_provider=embedding_provider,
     )
 

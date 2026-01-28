@@ -18,7 +18,6 @@ class Settings(BaseSettings):
         SUPABASE_SERVICE_ROLE_KEY: Supabase service role key for server-side access.
         SUPABASE_DB_URL: PostgreSQL connection URL.
         REDIS_URL: Redis connection URL.
-        BRAVE_API_KEY: Brave Search API key.
         OPENAI_API_KEY: OpenAI API key.
         CHROMA_HOST: ChromaDB server host.
         CHROMA_PORT: ChromaDB server port.
@@ -60,9 +59,6 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: Optional[str] = None
     CELERY_RESULT_BACKEND: Optional[str] = None
 
-    # External APIs (Optional - can be added later)
-    BRAVE_API_KEY: Optional[str] = None
-
     # OpenAI API Configuration
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL_NAME: str = "gpt-4o-mini"  # 빠르고 저렴한 모델
@@ -84,18 +80,22 @@ class Settings(BaseSettings):
     RECOMMENDATION_MIN_SIMILARITY_SCORE: float = 0.35
     RECOMMENDATION_TOP_K: int = 5
 
-    # Brave Search Configuration (Enrich용)
-    BRAVE_SEARCH_RESULTS_PER_CATEGORY: int = 5  # 카테고리당 검색 결과 수 (기본 10 → 5)
+    # Search Configuration (SearXNG)
+    SEARCH_PROVIDER: str = "searxng"  # 검색 프로바이더 (searxng)
+    SEARCH_RESULTS_PER_CATEGORY: int = 5  # 카테고리당 검색 결과 수
+
+    # Content Crawling Configuration (검색 결과 보강)
+    # 검색 결과 URL에서 실제 페이지 콘텐츠를 추출
+    CRAWL_ENABLED: bool = True  # 크롤링 활성화 여부
+    CRAWL_TOP_N: int = 3  # 카테고리당 크롤링할 상위 결과 수
+    CRAWL_MAX_CONTENT_LENGTH: int = 2000  # 크롤링 콘텐츠 최대 길이 (자)
+    CRAWL_TIMEOUT: float = 10.0  # 크롤링 타임아웃 (초)
+    CRAWL_MAX_CONCURRENT: int = 5  # 동시 크롤링 최대 수
 
     # Embedding Provider Configuration
     # "openai": OpenAI API 사용 (서버용, 기본값)
     # "local": BGE-M3 로컬 모델 사용 (파이프라인용, FlagEmbedding 필요)
     EMBEDDING_PROVIDER: str = "openai"
-
-    # Search Provider Configuration
-    # "brave": Brave Search API 사용 (기본값, 유료)
-    # "searxng": SearXNG 메타 검색 엔진 사용 (오픈소스, 무료)
-    SEARCH_PROVIDER: str = "brave"
 
     # SearXNG Configuration (오픈소스 검색 엔진)
     # Docker: docker run -d -p 8888:8080 searxng/searxng

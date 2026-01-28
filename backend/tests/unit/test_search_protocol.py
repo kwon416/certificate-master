@@ -6,14 +6,6 @@ from unittest.mock import MagicMock, patch, AsyncMock
 class TestSearchServiceProtocol:
     """SearchServiceProtocol 테스트."""
 
-    def test_brave_service_implements_protocol(self):
-        """BraveSearchService가 프로토콜을 구현하는지 테스트."""
-        from app.services.search_protocol import SearchServiceProtocol
-        from app.services.brave_search import BraveSearchService
-
-        service = BraveSearchService(api_key="test-key")
-        assert isinstance(service, SearchServiceProtocol)
-
     def test_searxng_service_implements_protocol(self):
         """SearXNGSearchService가 프로토콜을 구현하는지 테스트."""
         from app.services.search_protocol import SearchServiceProtocol
@@ -56,52 +48,13 @@ class TestSearchServiceProtocol:
 class TestSearchFactory:
     """검색 팩토리 테스트."""
 
-    def test_get_search_service_brave_default(self):
-        """기본 provider가 Brave인지 테스트."""
-        with patch("app.services.search_factory.get_settings") as mock_settings:
-            mock_settings.return_value.SEARCH_PROVIDER = "brave"
-
-            from app.services.search_factory import get_search_service
-            from app.services.brave_search import BraveSearchService
-
-            service = get_search_service()
-            assert isinstance(service, BraveSearchService)
-
-    def test_get_search_service_explicit_brave(self):
-        """명시적으로 brave provider 지정 테스트."""
-        from app.services.search_factory import get_search_service
-        from app.services.brave_search import BraveSearchService
-
-        service = get_search_service("brave")
-        assert isinstance(service, BraveSearchService)
-
-    def test_get_search_service_explicit_searxng(self):
-        """명시적으로 searxng provider 지정 테스트."""
+    def test_get_search_service_returns_searxng(self):
+        """기본 검색 서비스가 SearXNG인지 테스트."""
         from app.services.search_factory import get_search_service
         from app.services.searxng_search import SearXNGSearchService
 
-        service = get_search_service("searxng")
+        service = get_search_service()
         assert isinstance(service, SearXNGSearchService)
-
-    def test_get_search_service_invalid_provider(self):
-        """지원하지 않는 provider 테스트."""
-        from app.services.search_factory import get_search_service
-
-        with pytest.raises(ValueError) as exc_info:
-            get_search_service("invalid_provider")
-
-        assert "지원하지 않는 search provider" in str(exc_info.value)
-
-    def test_get_search_service_from_env_variable(self):
-        """환경변수에서 provider 읽기 테스트."""
-        with patch("app.services.search_factory.get_settings") as mock_settings:
-            mock_settings.return_value.SEARCH_PROVIDER = "searxng"
-
-            from app.services.search_factory import get_search_service
-            from app.services.searxng_search import SearXNGSearchService
-
-            service = get_search_service()
-            assert isinstance(service, SearXNGSearchService)
 
 
 class TestSearXNGSearchService:
@@ -323,12 +276,3 @@ class TestSearXNGSearchService:
             assert "정보처리기사" in payload["query"]
 
 
-class TestBraveSearchProviderName:
-    """BraveSearchService provider_name 테스트."""
-
-    def test_brave_provider_name(self):
-        """BraveSearchService의 provider_name 속성 테스트."""
-        from app.services.brave_search import BraveSearchService
-
-        service = BraveSearchService(api_key="test-key")
-        assert service.provider_name == "brave"

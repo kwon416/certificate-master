@@ -104,6 +104,74 @@ def format_certificate_text(cert: dict) -> str:
         parts.append("[학습 가이드]")
         parts.extend(guide_parts)
 
+    # ============================================================
+    # 취업준비생 관점 정보 (NEW: 2026-01-28)
+    # ============================================================
+
+    # Job market info (채용 시장 정보)
+    job_market = cert.get("job_market_info", {}) or {}
+    job_market_parts = []
+    if job_market.get("job_posting_frequency"):
+        job_market_parts.append(f"채용공고빈도: {job_market['job_posting_frequency']}")
+    if job_market.get("preferred_industries"):
+        job_market_parts.append(f"선호산업군: {', '.join(job_market['preferred_industries'][:5])}")
+    if job_market.get("preferred_companies"):
+        job_market_parts.append(f"우대기업: {', '.join(job_market['preferred_companies'][:5])}")
+    if job_market.get("requirement_type"):
+        job_market_parts.append(f"채용요건유형: {job_market['requirement_type']}")
+    if job_market.get("public_sector_points"):
+        job_market_parts.append(f"공공부문가산점: {job_market['public_sector_points']}")
+    if job_market.get("salary_premium"):
+        job_market_parts.append(f"연봉가산효과: {job_market['salary_premium']}")
+
+    if job_market_parts:
+        parts.append("")
+        parts.append("[채용 시장 정보]")
+        parts.extend(job_market_parts)
+
+    # Cost breakdown (비용 정보)
+    cost = cert.get("cost_breakdown", {}) or {}
+    cost_parts = []
+    if cost.get("exam_fee"):
+        cost_parts.append(f"응시료: {cost['exam_fee']}")
+    if cost.get("total_estimated_cost"):
+        cost_parts.append(f"총예상비용: {cost['total_estimated_cost']}")
+    if cost.get("free_resources"):
+        cost_parts.append(f"무료자료: {', '.join(cost['free_resources'][:3])}")
+
+    if cost_parts:
+        parts.append("")
+        parts.append("[비용 정보]")
+        parts.extend(cost_parts)
+
+    # Feasibility info (합격 가능성 정보)
+    feasibility = cert.get("feasibility_info", {}) or {}
+    feasibility_parts = []
+    if feasibility.get("non_major_pass_rate"):
+        feasibility_parts.append(f"비전공자합격률: {feasibility['non_major_pass_rate']}")
+    if feasibility.get("self_study_possible") is not None:
+        feasibility_parts.append(f"독학가능: {'가능' if feasibility['self_study_possible'] else '어려움'}")
+    if feasibility.get("minimum_study_period"):
+        feasibility_parts.append(f"최소준비기간: {feasibility['minimum_study_period']}일")
+    if feasibility.get("working_adult_tips"):
+        tips = feasibility["working_adult_tips"][:2]
+        feasibility_parts.append(f"직장인팁: {' / '.join(tips)}")
+
+    if feasibility_parts:
+        parts.append("")
+        parts.append("[합격 가능성 정보]")
+        parts.extend(feasibility_parts)
+
+    # Similar certificates (유사 자격증)
+    similar = cert.get("similar_certificates", []) or []
+    if similar:
+        parts.append("")
+        parts.append("[유사 자격증]")
+        for sim in similar[:3]:  # 최대 3개
+            if sim.get("title"):
+                comparison = sim.get("comparison", "")
+                parts.append(f"- {sim['title']}: {comparison}")
+
     return "\n".join(parts)
 
 
@@ -130,6 +198,31 @@ def build_certificate_metadata(cert: dict) -> dict:
     categories = cert.get("categories", [])
     categories_str = ", ".join([cat.get("name", "") for cat in categories]) if categories else ""
 
+    # 취업준비생 관점 필드 처리 (NEW: 2026-01-28)
+    job_market = cert.get("job_market_info", {}) or {}
+    cost = cert.get("cost_breakdown", {}) or {}
+    feasibility = cert.get("feasibility_info", {}) or {}
+    schedule = cert.get("exam_schedule_detail", {}) or {}
+    similar = cert.get("similar_certificates", []) or []
+
+    # preferred_industries 처리
+    preferred_industries = job_market.get("preferred_industries", [])
+    if isinstance(preferred_industries, list):
+        preferred_industries_str = ", ".join(preferred_industries[:5])
+    else:
+        preferred_industries_str = ""
+
+    # preferred_companies 처리
+    preferred_companies = job_market.get("preferred_companies", [])
+    if isinstance(preferred_companies, list):
+        preferred_companies_str = ", ".join(preferred_companies[:5])
+    else:
+        preferred_companies_str = ""
+
+    # similar_certificates 처리
+    similar_titles = [s.get("title", "") for s in similar[:3] if s.get("title")]
+    similar_certificates_str = ", ".join(similar_titles)
+
     return {
         "title": cert.get("title", ""),
         "categories": categories_str,
@@ -140,4 +233,18 @@ def build_certificate_metadata(cert: dict) -> dict:
         "industry": industry_str[:200],
         "average_salary": (career.get("average_salary", "") or "")[:100],
         "exam_type": (exam.get("exam_type", "") or "")[:100],
+        # 취업준비생 관점 필드 (NEW: 2026-01-28)
+        "job_posting_frequency": job_market.get("job_posting_frequency", "") or "",
+        "preferred_industries": preferred_industries_str[:200],
+        "preferred_companies": preferred_companies_str[:200],
+        "requirement_type": job_market.get("requirement_type", "") or "",
+        "public_sector_points": (job_market.get("public_sector_points", "") or "")[:100],
+        "salary_premium": (job_market.get("salary_premium", "") or "")[:100],
+        "total_estimated_cost": (cost.get("total_estimated_cost", "") or "")[:100],
+        "self_study_possible": feasibility.get("self_study_possible"),
+        "non_major_pass_rate": (feasibility.get("non_major_pass_rate", "") or "")[:50],
+        "minimum_study_period": feasibility.get("minimum_study_period"),
+        "cbt_available": schedule.get("cbt_available"),
+        "annual_exam_count": schedule.get("annual_exam_count"),
+        "similar_certificates": similar_certificates_str[:200],
     }

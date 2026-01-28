@@ -19,7 +19,7 @@
 한 곳에서 **자격증 정보 + 맞춤형 학습 플랜 + AI 가이드**를 제공하는 올인원 플랫폼
 
 ### 1.3 핵심 가치
-- 🎯 **신뢰도:** 공공데이터 자격증 목록 데이터 + Brave API 웹 검색 기반
+- 🎯 **신뢰도:** 공공데이터 자격증 목록 데이터 + SearXNG 웹 검색 기반
 - ⚡ **속도:** LLM 기반 자동 요약으로 최신 정보 실시간 제공
 - 🧠 **개인화:** 사용자 프로필 → 맞춤형 학습 계획 자동 생성
 - 🎮 **동기부여:** 진행도 시각화, 레벨/배지 시스템
@@ -34,9 +34,9 @@
 ```
 사용자 검색 → 자격증 선택 → 상세 정보 페이지
   ├─ 기본정보: 난이도, 관리기관, 시험일정
-  ├─ AI 요약: 자격증 개요 (Brave API + LLM)
+  ├─ AI 요약: 자격증 개요 (SearXNG + LLM)
   ├─ 공부플랜: 추천 준비기간 & 일일 계획 (AI 생성)
-  ├─ 추천강의: 상위 3개 강의 (Brave 검색)
+  ├─ 추천강의: 상위 3개 강의 (SearXNG 검색)
   └─ 시험정보: 다음 시험일, 합격률, 기출문제 링크
 ```
 
@@ -81,7 +81,7 @@
 └─────────────────────────────────────────────────────┘
 
   자격증명 (예: "세무사")
-    ↓ [Brave API 검색]
+    ↓ [SearXNG 검색]
     ├─ "세무사 자격증 준비 기간"
     ├─ "세무사 공부 방법"
     ├─ "세무사 추천 강의"
@@ -152,7 +152,7 @@ Backend (Python FastAPI)
 │
 ├─ 배치 작업 (Async Task Queue)
 │  ├─ 엑셀 파일 파싱 (1회)
-│  ├─ Brave API 웹 검색 (일일 업데이트)
+│  ├─ SearXNG 웹 검색 (일일 업데이트)
 │  ├─ LLM 요약 및 정제
 │  └─ 벡터스토어 동기화
 │
@@ -168,7 +168,7 @@ Backend (Python FastAPI)
          ↕ (API calls)
 
 외부 서비스
-├─ Brave Search API (웹 검색)
+├─ SearXNG (메타 검색 엔진)
 ├─ OpenAI API (LLM + Embedding)
 └─ 벡터스토어 (Pinecone / Milvus)
 
@@ -210,7 +210,7 @@ S           | 국가전문자격   | 관광통역안내사 | 관광통역안내�
   "title": "세무사",
   "enriched_at": "2026-01-06T14:00:00Z",
   
-  // Brave API 검색 결과 + LLM 요약
+  // SearXNG 검색 결과 + LLM 요약
   "overview": {
     "description": "세무사는 국가고시 자격증으로, 세금 관련 컨설팅 및 신고 대리 업무를 수행하는 전문가입니다.",
     "key_points": [
@@ -374,7 +374,7 @@ S           | 국가전문자격   | 관광통역안내사 | 관광통역안내�
 │  │  ├─ 가격
 │  │  ├─ 평점 / 리뷰수
 │  │  └─ "바로가기" 링크
-│  └─ "더 많은 강의 보기" (Brave 검색 결과)
+│  └─ "더 많은 강의 보기" (SearXNG 검색 결과)
 └─ [자료] 탭
    ├─ 시험일정
    ├─ 기출문제 링크
@@ -515,9 +515,9 @@ S           | 국가전문자격   | 관광통역안내사 | 관광통역안내�
 - DB 테이블 생성 (Certificate, UserProfile, StudyPlan)
 ```
 
-### **Day 3~4: Brave API + LLM 통합**
+### **Day 3~4: SearXNG + LLM 통합**
 ```
-- Brave Search API 설정
+- SearXNG 메타 검색 엔진 설정
 - 웹 검색 → 결과 페이지 수집
 - OpenAI API로 요약 및 구조화
 - 결과 DB 저장
@@ -556,7 +556,7 @@ Database: PostgreSQL
 Cache: Redis
 Async Queue: Celery (Python) 또는 Spring Batch (Java)
 AI/LLM: OpenAI API (GPT-4, Embedding)
-Search API: Brave Search API
+Search Engine: SearXNG (메타 검색 엔진)
 Vector Store: Pinecone (또는 Milvus, Weaviate)
 ```
 
@@ -609,35 +609,34 @@ with open('certificates_raw.json', 'w', encoding='utf-8') as f:
 ```
 
 ```python
-# 2단계: Brave API로 웹 검색 + LLM 요약 (배치 작업)
+# 2단계: SearXNG로 웹 검색 + LLM 요약 (배치 작업)
 import requests
 import openai
 from datetime import datetime
 
-BRAVE_API_KEY = "..."
+SEARXNG_BASE_URL = "http://localhost:8888"
 OPENAI_API_KEY = "..."
 
 def enrich_certificate(cert):
     """자격증 정보를 웹 검색으로 보강"""
-    
+
     title = cert['title']
-    
-    # Brave API 검색
+
+    # SearXNG 검색
     queries = [
         f"{title} 자격증 준비 기간",
         f"{title} 공부 방법 팁",
         f"{title} 추천 강의",
         f"{title} 난이도 합격률"
     ]
-    
+
     search_results = []
     for q in queries:
         resp = requests.get(
-            "https://api.search.brave.com/res/v1/web/search",
-            headers={"X-Subscription-Token": BRAVE_API_KEY},
-            params={"q": q, "count": 5}
+            f"{SEARXNG_BASE_URL}/search",
+            params={"q": q, "format": "json", "categories": "general"}
         )
-        search_results.extend(resp.json()['web'][:3])
+        search_results.extend(resp.json().get('results', [])[:3])
     
     # 검색 결과 텍스트 추출
     context = "\n".join([
@@ -880,8 +879,8 @@ if __name__ == "__main__":
 - [ ] 자격증 10~20개 목록 JSON 생성
 - **산출물:** `certificates_raw.json`
 
-### **Day 2 (화): Brave API + LLM 통합**
-- [ ] Brave Search API 셋업 (API 키 발급)
+### **Day 2 (화): SearXNG + LLM 통합**
+- [ ] SearXNG 셋업 (Docker로 설치)
 - [ ] OpenAI API 셋업 (GPT-4, Embedding)
 - [ ] 웹 검색 스크립트 작성
 - [ ] LLM 요약 프롬프트 최적화
@@ -944,7 +943,7 @@ if __name__ == "__main__":
 ### 📊 기대 효과
 ```
 - 취준생 입장에서 "한 곳에서 모든 정보 조회 가능"
-- 포트폴리오: WebSearch API + LLM + RAG + 벡터스토어 통합 시스템
+- 포트폴리오: SearXNG + LLM + RAG + 벡터스토어 통합 시스템
 - 확장성: CBT 문제집, 커뮤니티 쉽게 추가 가능
 ```
 
@@ -962,7 +961,7 @@ if __name__ == "__main__":
 ## 11. 참고 자료
 
 ### API 문서
-- [Brave Search API](https://api.search.brave.com/res/v1/web/search)
+- [SearXNG Documentation](https://docs.searxng.org/)
 - [OpenAI API (GPT-4, Embedding)](https://platform.openai.com/docs)
 - [Pinecone Vector Database](https://www.pinecone.io/docs)
 
