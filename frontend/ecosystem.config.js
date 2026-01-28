@@ -6,6 +6,7 @@ module.exports = {
       args: 'start',
       cwd: __dirname,
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
@@ -13,9 +14,8 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 5100
       },
-      error_file: './logs/frontend-error.log',
-      out_file: './logs/frontend-out.log',
-      log_file: './logs/frontend-combined.log',
+      error_file: '/data01/logs/certificate-master-frontend-service/error.log',
+      out_file: '/data01/logs/certificate-master-frontend-service/app.log',
       time: true
     }
   ]

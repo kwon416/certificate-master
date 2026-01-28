@@ -30,16 +30,16 @@ docker-compose -f docker-compose.yml up -d
 echo -e "\n${YELLOW}[4/4] 상태 확인...${NC}"
 sleep 5
 
-if docker ps | grep -q cert-master-backend; then
+if docker ps | grep -q certificate-master-backend; then
     echo -e "\n${GREEN}✅ 백엔드 배포 성공!${NC}"
-    echo -e "   컨테이너: cert-master-backend"
+    echo -e "   컨테이너: certificate-master-backend"
     echo -e "   포트: 8000"
     echo -e "   Health: http://localhost:8000/health"
     echo -e "   Docs: http://localhost:8000/docs"
 
     # 로그 출력
     echo -e "\n${YELLOW}최근 로그:${NC}"
-    docker logs cert-master-backend --tail 10
+    docker logs certificate-master-backend --tail 10
 else
     echo -e "\n${RED}❌ 배포 실패!${NC}"
     docker-compose -f docker-compose.yml logs

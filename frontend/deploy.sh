@@ -16,7 +16,7 @@ npm run build
 
 # 로그 디렉토리 생성
 echo "[3/4] Creating log directory..."
-mkdir -p logs
+mkdir -p /data01/logs/certificate-master-frontend-service
 
 # PM2로 실행 (이미 실행 중이면 reload)
 echo "[4/4] Starting/Reloading PM2..."
