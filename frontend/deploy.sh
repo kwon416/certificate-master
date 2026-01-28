@@ -8,11 +8,11 @@ cd "$(dirname "$0")"
 
 # 의존성 설치
 echo "[1/4] Installing dependencies..."
-npm ci
+pnpm install --frozen-lockfile
 
 # 빌드
 echo "[2/4] Building Next.js..."
-npm run build
+pnpm build
 
 # 로그 디렉토리 생성
 echo "[3/4] Creating log directory..."
