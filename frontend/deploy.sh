@@ -21,7 +21,7 @@ mkdir -p logs
 # PM2로 실행 (이미 실행 중이면 reload)
 echo "[4/4] Starting/Reloading PM2..."
 
-if pm2 describe certificate-frontend > /dev/null 2>&1; then
+if pm2 describe certificate-master-frontend > /dev/null 2>&1; then
     echo "Reloading existing process..."
     pm2 reload ecosystem.config.js --update-env
 else

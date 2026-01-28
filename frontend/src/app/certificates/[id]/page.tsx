@@ -226,38 +226,38 @@ export default function CertificateDetailPage() {
               </div>
 
             </div>
-
-            {/* Official Site Button - Prominent CTA */}
-            {hasOfficialSources(cert) && cert.official_sources.official_site && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-cyan-900/30 to-emerald-900/30 rounded-xl border border-cyan-500/20">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
-                      <Building2 className="h-5 w-5 text-cyan-400" />
-                      공식 사이트 바로가기
-                    </h3>
-                    <p className="text-sm text-slate-300">
-                      📅 시험 일정, 접수 기간, 응시료 등 최신 정보를 공식 사이트에서 확인하세요
-                    </p>
-                  </div>
-                  <a
-                    href={cert.official_sources.official_site}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-shrink-0"
-                  >
-                    <Button
-                      size="lg"
-                      className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-semibold shadow-lg shadow-cyan-500/20"
-                    >
-                      <ExternalLink className="mr-2 h-5 w-5" />
-                      확인하기
-                    </Button>
-                  </a>
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Official Site Button - Prominent CTA (헤더 아래 전체 너비) */}
+          {hasOfficialSources(cert) && cert.official_sources.official_site && (
+            <div className="mt-6 p-4 bg-gradient-to-r from-cyan-900/30 to-emerald-900/30 rounded-xl border border-cyan-500/20">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
+                    <Building2 className="h-5 w-5 text-cyan-400" />
+                    공식 사이트 바로가기
+                  </h3>
+                  <p className="text-sm text-slate-300">
+                    📅 시험 일정, 접수 기간, 응시료 등 최신 정보를 공식 사이트에서 확인하세요
+                  </p>
+                </div>
+                <a
+                  href={cert.official_sources.official_site}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0"
+                >
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-semibold shadow-lg shadow-cyan-500/20"
+                  >
+                    <ExternalLink className="mr-2 h-5 w-5" />
+                    확인하기
+                  </Button>
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabs */}

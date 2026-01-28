@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'certificate-frontend',
+      name: 'certificate-master-frontend',
       script: 'npm',
       args: 'start',
       cwd: __dirname,

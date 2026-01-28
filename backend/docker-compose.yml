@@ -6,7 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: cert-master-backend
+    image: certificate-master-backend
+    container_name: certificate-master-backend
     restart: unless-stopped
     network_mode: host  # 호스트 네트워크 사용 (MySQL 권한 문제 해결)
     env_file:
