@@ -99,6 +99,32 @@ class TestEnrichmentServiceMariaDB:
             assert result["status"] == "success"
 
 
+class TestCertificateEnrichmentSchema:
+    """CertificateEnrichment 스키마 테스트."""
+
+    def test_recommended_lectures_is_optional(self):
+        """recommended_lectures 필드는 Optional이어야 함 (덜 유명한 자격증 대비)."""
+        from app.services.llm.service import CertificateEnrichment
+
+        # recommended_lectures 없이 생성 가능해야 함
+        data = {
+            "overview": "농화학기술사는 농업 화학 분야의 전문가 자격증입니다.",
+            "difficulty": 4,
+            "study_period_days": 180,
+            "passing_rate": 15.5,
+            "exam_info": {"subjects": ["농업화학"]},
+            "career_info": {"use_cases": ["농업연구소"]},
+            "user_reviews": {"summary": "어렵다"},
+            "study_guide": {"study_methods": ["이론 학습"]},
+            "official_sources": {"official_site": "https://q-net.or.kr"},
+            # recommended_lectures 없음!
+        }
+
+        # ValidationError 없이 생성되어야 함
+        enrichment = CertificateEnrichment(**data)
+        assert enrichment.recommended_lectures == []  # 기본값 빈 리스트
+
+
 class TestEnrichmentServiceErrorHandling:
     """에러 처리 테스트."""
 

@@ -189,7 +189,7 @@ class CertificateEnrichment(BaseModel):
     user_reviews: dict
     study_guide: dict
     official_sources: dict
-    recommended_lectures: list[dict]
+    recommended_lectures: list[dict] = Field(default_factory=list)  # Optional: 덜 유명한 자격증은 추천 강의 없을 수 있음
     # 취업준비생 관점 필드 (NEW: 2026-01-28)
     job_market_info: dict = Field(default_factory=dict)
     cost_breakdown: dict = Field(default_factory=dict)

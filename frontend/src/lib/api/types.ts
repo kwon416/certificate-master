@@ -144,6 +144,7 @@ export interface Certificate {
 
   // Statistics
   passing_rate?: number | null          // 합격률 (%)
+  view_count?: number                   // 조회수
 }
 
 /**

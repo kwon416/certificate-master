@@ -1,0 +1,12 @@
+{
+  "step": "enrich",
+  "timestamp": "2026-01-29T01:06:18.362027",
+  "count": 1,
+  "certificates": [
+    {
+      "id": "009cf438-4596-47a0-93d5-36a636092277",
+      "title": "농화학기술사",
+      "error": "1 validation error for CertificateEnrichment\nrecommended_lectures\n  Field required [type=missing, input_value={'overview': '농화학...milar_certificates': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing"
+    }
+  ]
+}

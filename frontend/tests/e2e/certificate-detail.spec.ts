@@ -336,6 +336,44 @@ test.describe('Certificate Detail Page (V2 Schema)', () => {
     });
   });
 
+  test.describe('View Count Display', () => {
+    test('should display view count on certificate detail page', async ({ page }) => {
+      await page.goto('/search');
+      await page.waitForLoadState('networkidle');
+
+      const cards = page.locator('a[href^="/certificates/"]');
+      const cardCount = await cards.count();
+      test.skip(cardCount === 0, 'No certificates available');
+
+      if (cardCount > 0) {
+        await cards.first().click();
+        await page.waitForLoadState('networkidle');
+
+        // 조회수 텍스트가 표시되어야 함
+        const viewCountText = page.getByText(/조회수|조회/i);
+        await expect(viewCountText.first()).toBeVisible({ timeout: 10000 });
+      }
+    });
+
+    test('should show view count as a number', async ({ page }) => {
+      await page.goto('/search');
+      await page.waitForLoadState('networkidle');
+
+      const cards = page.locator('a[href^="/certificates/"]');
+      const cardCount = await cards.count();
+      test.skip(cardCount === 0, 'No certificates available');
+
+      if (cardCount > 0) {
+        await cards.first().click();
+        await page.waitForLoadState('networkidle');
+
+        // 조회수가 숫자와 함께 표시되어야 함 (예: "조회 123" 또는 "123회 조회")
+        const viewCountPattern = page.getByText(/조회.*\d+|\d+.*조회/i);
+        await expect(viewCountPattern.first()).toBeVisible({ timeout: 10000 });
+      }
+    });
+  });
+
   test.describe('Study Plan Button', () => {
     test('should display "학습 계획 만들기" button', async ({ page }) => {
       await page.goto('/search');

@@ -7,8 +7,16 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 
 from app.services.vector_store import VectorStoreService
+
+
+class DeleteBatchRequest(BaseModel):
+    """배치 삭제 요청 스키마."""
+
+    ids: list[str]
+
 
 router = APIRouter()
 
@@ -16,6 +24,26 @@ router = APIRouter()
 def get_vector_store_service() -> VectorStoreService:
     """VectorStoreService 의존성 생성자."""
     return VectorStoreService()
+
+
+@router.delete("/chroma/{vector_id}")
+async def delete_single_vector(
+    vector_id: str,
+    service: VectorStoreService = Depends(get_vector_store_service),
+):
+    """단일 벡터를 삭제합니다."""
+    service.delete_certificate(vector_id)
+    return {"success": True, "deleted_id": vector_id}
+
+
+@router.post("/chroma/delete")
+async def delete_batch_vectors(
+    request: DeleteBatchRequest,
+    service: VectorStoreService = Depends(get_vector_store_service),
+):
+    """여러 벡터를 배치로 삭제합니다."""
+    service.delete_certificates_batch(request.ids)
+    return {"success": True, "deleted_count": len(request.ids)}
 
 
 def _render_metadata(metadata: dict) -> str:
@@ -37,7 +65,7 @@ def _render_embedding_preview(values: Optional[list]) -> str:
 def _render_vectors_table(vectors: list[dict], limit: int, offset: int, search: str, selected_id: str = "") -> str:
     """벡터 리스트 테이블 HTML을 생성합니다."""
     if not vectors:
-        return "<tr><td colspan='3'>No vectors found</td></tr>"
+        return "<tr><td colspan='4'>No vectors found</td></tr>"
 
     search_param = f"&q={html.escape(search)}" if search else ""
     rows = []
@@ -49,10 +77,13 @@ def _render_vectors_table(vectors: list[dict], limit: int, offset: int, search: 
         row_url = f"/chroma?id={vector_id}&limit={limit}&offset={offset}{search_param}"
         is_selected = "selected" if vector_id == selected_id else ""
         rows.append(
-            f"<tr class=\"clickable-row {is_selected}\" onclick=\"window.location.href='{row_url}'\">"
-            f"<td><code>{vector_id}</code></td>"
-            f"<td>{title}</td>"
-            f"<td>{category}</td>"
+            f"<tr class=\"clickable-row {is_selected}\" data-id=\"{vector_id}\">"
+            f"<td class=\"checkbox-col\" onclick=\"event.stopPropagation()\">"
+            f"<input type=\"checkbox\" class=\"row-checkbox\" value=\"{vector_id}\" onchange=\"updateBulkActions()\" />"
+            f"</td>"
+            f"<td onclick=\"window.location.href='{row_url}'\"><code>{vector_id}</code></td>"
+            f"<td onclick=\"window.location.href='{row_url}'\">{title}</td>"
+            f"<td onclick=\"window.location.href='{row_url}'\">{category}</td>"
             "</tr>"
         )
     return "\n".join(rows)
@@ -68,19 +99,23 @@ def _render_detail_section(detail: Optional[dict]) -> str:
     values = detail.get("values") or []
 
     # 주요 정보 추출
+    vector_id = html.escape(str(detail.get("id", "")))
     title = html.escape(str(metadata.get("title", "N/A")))
     category = html.escape(str(metadata.get("category", "N/A")))
     difficulty = metadata.get("difficulty", "N/A")
     study_days = metadata.get("study_period_days", "N/A")
 
     return f"""
-        <p><strong>ID</strong>: <code>{html.escape(str(detail.get('id', '')))}</code></p>
+        <p><strong>ID</strong>: <code>{vector_id}</code></p>
         <p><strong>Title</strong>: {title}</p>
         <p><strong>Category</strong>: {category}</p>
         <p><strong>Difficulty</strong>: {difficulty}/5</p>
         <p><strong>Study Period</strong>: {study_days}일</p>
         <p><strong>Vector size</strong>: {len(values) if values else 0}</p>
         {_render_embedding_preview(values)}
+        <div class="delete-section">
+            <button class="delete-btn" onclick="deleteVector('{vector_id}')">🗑️ 삭제</button>
+        </div>
         <details open>
             <summary><strong>Full Metadata (JSON)</strong></summary>
             <pre>{metadata_html}</pre>
@@ -375,6 +410,74 @@ async def chroma_dashboard(
                 color: #e2e8f0;
             }}
 
+            /* Delete */
+            .delete-section {{
+                margin: 16px 0;
+                padding-top: 12px;
+                border-top: 1px solid #334155;
+            }}
+            .delete-btn {{
+                padding: 10px 20px;
+                border: none;
+                border-radius: 6px;
+                background: #dc2626;
+                color: white;
+                font-size: 0.95rem;
+                cursor: pointer;
+                transition: background 0.2s;
+            }}
+            .delete-btn:hover {{
+                background: #b91c1c;
+            }}
+            .delete-btn:disabled {{
+                background: #6b7280;
+                cursor: not-allowed;
+            }}
+
+            /* Checkbox */
+            .checkbox-col {{
+                width: 40px;
+                text-align: center;
+            }}
+            .row-checkbox {{
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+            }}
+            .bulk-actions {{
+                margin-bottom: 12px;
+                padding: 12px;
+                background: #1e293b;
+                border: 1px solid #334155;
+                border-radius: 6px;
+                display: none;
+                align-items: center;
+                gap: 12px;
+            }}
+            .bulk-actions.visible {{
+                display: flex;
+            }}
+            .bulk-delete-btn {{
+                padding: 8px 16px;
+                border: none;
+                border-radius: 6px;
+                background: #dc2626;
+                color: white;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: background 0.2s;
+            }}
+            .bulk-delete-btn:hover {{
+                background: #b91c1c;
+            }}
+            .selected-count {{
+                color: #94a3b8;
+                font-size: 0.9rem;
+            }}
+            tr.selected td {{
+                background: #1e3a5f;
+            }}
+
             /* Layout */
             .layout {{
                 display: grid;
@@ -428,16 +531,26 @@ async def chroma_dashboard(
             <!-- Vector List -->
             <div class="card">
                 <h3>Vectors {f'(filtered: "{html.escape(q)}")' if q else ''}</h3>
+
+                <!-- Bulk Actions -->
+                <div class="bulk-actions" id="bulk-actions">
+                    <span class="selected-count"><span id="selected-count">0</span>개 선택됨</span>
+                    <button class="bulk-delete-btn" onclick="deleteSelected()">🗑️ 선택 삭제</button>
+                </div>
+
                 <table>
                     <thead>
                         <tr>
+                            <th class="checkbox-col">
+                                <input type="checkbox" id="select-all" onchange="toggleSelectAll()" />
+                            </th>
                             <th>ID</th>
                             <th>Title</th>
                             <th>Category</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {_render_vectors_table(vectors, limit, offset, q or "")}
+                        {_render_vectors_table(vectors, limit, offset, q or "", id or "")}
                     </tbody>
                 </table>
                 {_render_pagination(display_total, limit, offset, q or "")}
@@ -449,6 +562,95 @@ async def chroma_dashboard(
                 {_render_detail_section(detail)}
             </div>
         </div>
+
+        <script>
+            // 단일 벡터 삭제
+            async function deleteVector(vectorId) {{
+                if (!confirm(`벡터 "${{vectorId}}"를 삭제하시겠습니까?`)) {{
+                    return;
+                }}
+
+                try {{
+                    const response = await fetch(`/chroma/${{vectorId}}`, {{
+                        method: 'DELETE'
+                    }});
+
+                    if (response.ok) {{
+                        alert('삭제되었습니다.');
+                        window.location.href = '/chroma?limit={limit}&offset={offset}' + ('{q or ""}' ? '&q={q or ""}' : '');
+                    }} else {{
+                        const error = await response.json();
+                        alert('삭제 실패: ' + (error.detail || '알 수 없는 오류'));
+                    }}
+                }} catch (e) {{
+                    alert('삭제 중 오류 발생: ' + e.message);
+                }}
+            }}
+
+            // 선택된 항목 업데이트
+            function updateBulkActions() {{
+                const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+                const count = checkboxes.length;
+                document.getElementById('selected-count').textContent = count;
+
+                const bulkActions = document.getElementById('bulk-actions');
+                if (count > 0) {{
+                    bulkActions.classList.add('visible');
+                }} else {{
+                    bulkActions.classList.remove('visible');
+                }}
+
+                // 전체 선택 체크박스 상태 업데이트
+                const allCheckboxes = document.querySelectorAll('.row-checkbox');
+                const selectAll = document.getElementById('select-all');
+                selectAll.checked = allCheckboxes.length > 0 && allCheckboxes.length === count;
+                selectAll.indeterminate = count > 0 && count < allCheckboxes.length;
+            }}
+
+            // 전체 선택/해제
+            function toggleSelectAll() {{
+                const selectAll = document.getElementById('select-all');
+                const checkboxes = document.querySelectorAll('.row-checkbox');
+                checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                updateBulkActions();
+            }}
+
+            // 선택된 벡터 일괄 삭제
+            async function deleteSelected() {{
+                const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+                const ids = Array.from(checkboxes).map(cb => cb.value);
+
+                if (ids.length === 0) {{
+                    alert('삭제할 항목을 선택하세요.');
+                    return;
+                }}
+
+                if (!confirm(`${{ids.length}}개의 벡터를 삭제하시겠습니까?`)) {{
+                    return;
+                }}
+
+                try {{
+                    const response = await fetch('/chroma/delete', {{
+                        method: 'POST',
+                        headers: {{
+                            'Content-Type': 'application/json'
+                        }},
+                        body: JSON.stringify({{ ids: ids }})
+                    }});
+
+                    if (response.ok) {{
+                        const result = await response.json();
+                        alert(`${{result.deleted_count}}개 삭제되었습니다.`);
+                        window.location.reload();
+                    }} else {{
+                        const error = await response.json();
+                        alert('삭제 실패: ' + (error.detail || '알 수 없는 오류'));
+                    }}
+                }} catch (e) {{
+                    alert('삭제 중 오류 발생: ' + e.message);
+                }}
+            }}
+        </script>
     </body>
     </html>
     """

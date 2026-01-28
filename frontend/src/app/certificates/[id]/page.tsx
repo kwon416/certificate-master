@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { 
-  ArrowLeft, 
-  Star, 
-  Clock, 
-  TrendingUp, 
+import {
+  ArrowLeft,
+  Star,
+  Clock,
+  TrendingUp,
   Building2,
   AlertCircle,
   Loader2,
@@ -22,6 +22,7 @@ import {
   Award,
   MessageSquare,
   Lightbulb,
+  Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -181,9 +182,15 @@ export default function CertificateDetailPage() {
                 )}
               </div>
 
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
                 {cert.title}
               </h1>
+
+              {/* View Count */}
+              <div className="flex items-center gap-1.5 text-slate-400 mb-4">
+                <Eye className="h-4 w-4" />
+                <span className="text-sm">조회 {(cert.view_count ?? 0).toLocaleString()}회</span>
+              </div>
 
               {/* Quick Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

@@ -291,3 +291,105 @@ class TestCertificatesUpdate:
         assert response.status_code == 400
         assert "No fields to update" in response.json()["detail"]
 
+
+class TestCertificatesViewCount:
+    """Test suite for certificate view count feature."""
+
+    def test_view_count_increments_on_detail_view(
+        self,
+        client: TestClient,
+        test_supabase_client: Client,
+        clean_test_certificates
+    ):
+        """Test that view count increments when viewing certificate details.
+
+        Given: A certificate exists with view_count = 0
+        When: GET /api/v1/certificates/{id} is called
+        Then: view_count should increment by 1
+        """
+        # Create a test certificate with view_count = 0
+        test_cert = {
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "series": "테스트",
+            "title": "조회수테스트자격증",
+            "raw_id": "TEST_view_count_test",
+            "view_count": 0
+        }
+
+        insert_result = test_supabase_client.table("certificates").insert(test_cert).execute()
+        cert_id = insert_result.data[0]["id"]
+
+        # First view - should increment from 0 to 1
+        response = client.get(f"/api/v1/certificates/{cert_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["view_count"] == 1
+
+        # Second view - should increment from 1 to 2
+        response = client.get(f"/api/v1/certificates/{cert_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["view_count"] == 2
+
+    def test_view_count_increments_on_raw_id_view(
+        self,
+        client: TestClient,
+        test_supabase_client: Client,
+        clean_test_certificates
+    ):
+        """Test that view count increments when viewing by raw_id.
+
+        Given: A certificate exists with view_count = 0
+        When: GET /api/v1/certificates/raw/{raw_id} is called
+        Then: view_count should increment by 1
+        """
+        # Create a test certificate
+        test_cert = {
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "series": "테스트",
+            "title": "조회수테스트자격증2",
+            "raw_id": "TEST_view_count_raw_id",
+            "view_count": 0
+        }
+
+        insert_result = test_supabase_client.table("certificates").insert(test_cert).execute()
+        raw_id = insert_result.data[0]["raw_id"]
+
+        # View by raw_id - should increment
+        response = client.get(f"/api/v1/certificates/raw/{raw_id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["view_count"] == 1
+
+    def test_search_does_not_increment_view_count(
+        self,
+        client: TestClient,
+        test_supabase_client: Client,
+        clean_test_certificates
+    ):
+        """Test that search does NOT increment view count.
+
+        Given: A certificate exists with view_count = 0
+        When: GET /api/v1/certificates/search?q={title} is called
+        Then: view_count should remain 0 (only detail view increments)
+        """
+        # Create a test certificate
+        test_cert = {
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "series": "테스트",
+            "title": "검색조회수테스트",
+            "raw_id": "TEST_search_view_count",
+            "view_count": 0
+        }
+
+        insert_result = test_supabase_client.table("certificates").insert(test_cert).execute()
+        cert_id = insert_result.data[0]["id"]
+
+        # Search for the certificate (should NOT increment view_count)
+        response = client.get("/api/v1/certificates/search?q=검색조회수테스트")
+        assert response.status_code == 200
+
+        # Check view_count in database directly
+        cert = test_supabase_client.table("certificates").select("view_count").eq("id", cert_id).execute()
+        assert cert.data[0]["view_count"] == 0
+

@@ -74,3 +74,70 @@ def test_chroma_page_renders_vectors_and_details(client: TestClient):
         "where": None,
     }
     assert fake_service.requested_ids[0] == "vec-2"
+
+
+def test_chroma_delete_single_vector(client: TestClient):
+    """DELETE /chroma/{id} should delete a single vector."""
+    fake_service = FakeVectorStoreService()
+    fake_service.deleted_ids = []
+
+    def delete_certificate(cert_id: str):
+        fake_service.deleted_ids.append(cert_id)
+
+    fake_service.delete_certificate = delete_certificate
+
+    app.dependency_overrides[get_vector_store_service] = lambda: fake_service
+
+    try:
+        response = client.delete("/chroma/vec-1")
+    finally:
+        app.dependency_overrides.pop(get_vector_store_service, None)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["deleted_id"] == "vec-1"
+    assert "vec-1" in fake_service.deleted_ids
+
+
+def test_chroma_delete_batch_vectors(client: TestClient):
+    """POST /chroma/delete should delete multiple vectors."""
+    fake_service = FakeVectorStoreService()
+    fake_service.deleted_ids = []
+
+    def delete_certificates_batch(cert_ids: list[str]):
+        fake_service.deleted_ids.extend(cert_ids)
+
+    fake_service.delete_certificates_batch = delete_certificates_batch
+
+    app.dependency_overrides[get_vector_store_service] = lambda: fake_service
+
+    try:
+        response = client.post(
+            "/chroma/delete",
+            json={"ids": ["vec-1", "vec-2"]}
+        )
+    finally:
+        app.dependency_overrides.pop(get_vector_store_service, None)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["deleted_count"] == 2
+    assert "vec-1" in fake_service.deleted_ids
+    assert "vec-2" in fake_service.deleted_ids
+
+
+def test_chroma_page_has_delete_button(client: TestClient):
+    """The /chroma page should have delete button when vector is selected."""
+    fake_service = FakeVectorStoreService()
+    app.dependency_overrides[get_vector_store_service] = lambda: fake_service
+
+    try:
+        response = client.get("/chroma?id=vec-1")
+    finally:
+        app.dependency_overrides.pop(get_vector_store_service, None)
+
+    assert response.status_code == 200
+    body = response.text
+    assert "delete-btn" in body or "삭제" in body or "Delete" in body

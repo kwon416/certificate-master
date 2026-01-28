@@ -82,12 +82,13 @@ class Settings(BaseSettings):
 
     # Search Configuration (SearXNG)
     SEARCH_PROVIDER: str = "searxng"  # 검색 프로바이더 (searxng)
-    SEARCH_RESULTS_PER_CATEGORY: int = 5  # 카테고리당 검색 결과 수
+    SEARCH_RESULTS_PER_CATEGORY: int = 10  # 카테고리당 검색 결과 수 (10개로 증가)
 
     # Content Crawling Configuration (검색 결과 보강)
     # 검색 결과 URL에서 실제 페이지 콘텐츠를 추출
     CRAWL_ENABLED: bool = True  # 크롤링 활성화 여부
-    CRAWL_TOP_N: int = 3  # 카테고리당 크롤링할 상위 결과 수
+    CRAWL_TOP_N: int = 10  # 카테고리당 크롤링 시도할 최대 결과 수 (PDF 등 실패 대비)
+    CRAWL_TARGET_SUCCESS: int = 3  # 크롤링 성공 목표 수 (이 수에 도달하면 중단)
     CRAWL_MAX_CONTENT_LENGTH: int = 2000  # 크롤링 콘텐츠 최대 길이 (자)
     CRAWL_TIMEOUT: float = 10.0  # 크롤링 타임아웃 (초)
     CRAWL_MAX_CONCURRENT: int = 5  # 동시 크롤링 최대 수

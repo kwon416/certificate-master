@@ -36,7 +36,8 @@ class SearXNGSearchService:
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
         crawl_enabled: bool = True,
-        crawl_top_n: int = 3,
+        crawl_top_n: int = 10,
+        crawl_target_success: int = 3,
     ):
         """SearXNG 검색 서비스를 초기화합니다.
 
@@ -44,7 +45,8 @@ class SearXNGSearchService:
             base_url: SearXNG 서버 URL. 제공되지 않으면 설정 값을 사용합니다.
             timeout: 요청 타임아웃(초). 제공되지 않으면 설정 값을 사용합니다.
             crawl_enabled: 크롤링 활성화 여부 (기본: True).
-            crawl_top_n: 카테고리당 크롤링할 상위 결과 수 (기본: 3).
+            crawl_top_n: 크롤링 시도할 최대 결과 수 (기본: 10).
+            crawl_target_success: 크롤링 성공 목표 수 (기본: 3).
         """
         settings = get_settings()
         self.base_url = base_url or settings.SEARXNG_BASE_URL
@@ -54,6 +56,7 @@ class SearXNGSearchService:
         # 크롤링 설정
         self.crawl_enabled = crawl_enabled
         self.crawl_top_n = crawl_top_n
+        self.crawl_target_success = crawl_target_success
         self._crawler: Optional[ContentCrawlerService] = None
 
     def _get_crawler(self) -> ContentCrawlerService:
@@ -281,7 +284,11 @@ class SearXNGSearchService:
         search_response: dict,
         keyword_hints: Optional[list[str]] = None,
     ) -> list[dict]:
-        """검색 결과를 추출하고 상위 N개 URL 콘텐츠를 크롤링합니다.
+        """검색 결과를 추출하고 순차적으로 크롤링합니다.
+
+        PDF/파일은 후순위로 정렬하고, 웹페이지를 우선 크롤링합니다.
+        목표 성공 수(crawl_target_success)에 도달하면 크롤링을 중단합니다.
+        크롤링 실패 시 검색 snippet을 fallback으로 사용합니다.
 
         Args:
             search_response: search() 메서드의 응답.
@@ -292,32 +299,88 @@ class SearXNGSearchService:
         """
         results = self._extract_results(search_response, keyword_hints)
 
+        # 크롤링 비활성화 또는 결과 없음
         if not self.crawl_enabled or not results:
             for r in results:
                 r["full_content"] = ""
                 r["crawl_method"] = None
             return results
 
-        urls_to_crawl = [r["url"] for r in results[: self.crawl_top_n]]
+        # URL 우선순위 정렬 (PDF 후순위)
+        prioritized = self._prioritize_urls(results)
 
-        if urls_to_crawl:
-            crawler = self._get_crawler()
-            crawl_results = await crawler.extract_multiple(urls_to_crawl)
+        # 크롤링 결과 저장 (url -> content)
+        crawled_content: dict[str, tuple[str, str]] = {}  # url -> (content, method)
+        success_count = 0
+        crawler = self._get_crawler()
 
-            for i, crawl_result in enumerate(crawl_results):
-                if i < len(results):
-                    if crawl_result.success:
-                        results[i]["full_content"] = crawl_result.content
-                        results[i]["crawl_method"] = crawl_result.method
-                    else:
-                        results[i]["full_content"] = ""
-                        results[i]["crawl_method"] = None
+        # 순차 크롤링: 성공 목표 수까지 시도
+        for result in prioritized[: self.crawl_top_n]:
+            if success_count >= self.crawl_target_success:
+                break
 
-        for i in range(len(urls_to_crawl), len(results)):
-            results[i]["full_content"] = ""
-            results[i]["crawl_method"] = None
+            url = result["url"]
+            description = result.get("description", "")
+
+            try:
+                crawl_result = await crawler.extract_content(url)
+
+                if crawl_result.success and crawl_result.content:
+                    # 크롤링 성공
+                    crawled_content[url] = (crawl_result.content, crawl_result.method)
+                    success_count += 1
+                    logger.info(f"크롤링 성공 ({success_count}/{self.crawl_target_success}): {url[:50]}")
+                elif description:
+                    # 크롤링 실패 → snippet fallback
+                    crawled_content[url] = (description, "snippet_fallback")
+                    success_count += 1
+                    logger.info(f"Snippet fallback ({success_count}/{self.crawl_target_success}): {url[:50]}")
+                else:
+                    logger.warning(f"크롤링 실패 (snippet 없음): {url[:50]}")
+
+            except Exception as e:
+                logger.error(f"크롤링 예외: {url[:50]} - {e}")
+                if description:
+                    crawled_content[url] = (description, "snippet_fallback")
+                    success_count += 1
+
+        # 결과에 크롤링된 콘텐츠 병합
+        for result in results:
+            url = result["url"]
+            if url in crawled_content:
+                content, method = crawled_content[url]
+                result["full_content"] = content
+                result["crawl_method"] = method
+            else:
+                result["full_content"] = ""
+                result["crawl_method"] = None
 
         return results
+
+    def _prioritize_urls(self, results: list[dict]) -> list[dict]:
+        """URL을 크롤링 우선순위로 정렬합니다.
+
+        웹페이지를 우선하고, PDF/파일은 후순위로 정렬합니다.
+        같은 우선순위 내에서는 원래 순서를 유지합니다 (stable sort).
+
+        Args:
+            results: 검색 결과 목록.
+
+        Returns:
+            우선순위로 정렬된 결과 목록.
+        """
+        file_extensions = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".hwp")
+
+        def get_priority(result: dict) -> int:
+            url = result.get("url", "").lower()
+            # 파일 확장자 → 낮은 우선순위 (1)
+            if url.endswith(file_extensions):
+                return 1
+            # 웹페이지 → 높은 우선순위 (0)
+            return 0
+
+        # stable sort로 같은 우선순위 내 순서 유지
+        return sorted(results, key=get_priority)
 
     def _calculate_url_quality(self, url: str) -> int:
         """URL 품질 점수를 계산합니다 (0-100).

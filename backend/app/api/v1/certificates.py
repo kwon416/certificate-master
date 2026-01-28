@@ -287,6 +287,7 @@ async def get_certificate(
     """자격증 상세 정보 조회 (ID).
 
     UUID로 특정 자격증의 상세 정보를 조회합니다.
+    조회 시 view_count가 1 증가합니다.
 
     Args:
         certificate_id: 자격증 UUID
@@ -309,6 +310,11 @@ async def get_certificate(
             detail=f"Certificate with id {certificate_id} not found",
         )
 
+    # 조회수 증가
+    cert.view_count = (cert.view_count or 0) + 1
+    db.commit()
+    db.refresh(cert)
+
     return Certificate.model_validate(cert.to_dict())
 
 
@@ -320,6 +326,7 @@ async def get_certificate_by_raw_id(
     """자격증 조회 (raw_id).
 
     raw_id로 자격증을 조회합니다.
+    조회 시 view_count가 1 증가합니다.
 
     Args:
         raw_id: 자격증 raw_id (예: S_세무사, T_정보처리기사)
@@ -337,6 +344,11 @@ async def get_certificate_by_raw_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Certificate with raw_id {raw_id} not found",
         )
+
+    # 조회수 증가
+    cert.view_count = (cert.view_count or 0) + 1
+    db.commit()
+    db.refresh(cert)
 
     return Certificate.model_validate(cert.to_dict())
 

@@ -129,15 +129,12 @@ async def test_search_with_crawl(
                 print(f"      URL 품질: {result.get('url_quality', 'N/A')}")
 
                 if result.get("full_content"):
-                    # 특수 문자 제거하여 안전하게 출력
                     content_preview = result["full_content"][:200]
-                    content_preview = content_preview.encode('ascii', 'replace').decode('ascii')
                     print(f"      크롤링: {result.get('crawl_method', 'N/A')}")
                     print(f"      콘텐츠 ({len(result['full_content'])}자):")
                     print(f"        {content_preview}...")
                 else:
                     desc = result['description'][:100]
-                    desc = desc.encode('ascii', 'replace').decode('ascii')
                     print(f"      설명: {desc}...")
 
     print(f"\n{'='*60}")
