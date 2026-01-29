@@ -26,6 +26,8 @@ class ExtractedExamInfo(BaseModel):
     exam_type: str = Field(default="")
     passing_criteria: str = Field(default="")
     total_fee: Optional[str] = None  # Changed to str to handle "20,000원", "무료" etc.
+    acquisition_method: Optional[str] = None  # 취득 방법 (응시자격, 취득 절차)
+    exam_criteria_url: Optional[str] = None  # 출제 기준 링크
 
     @field_validator("total_fee", mode="before")
     @classmethod
@@ -55,8 +57,6 @@ class ExtractedUserReviews(BaseModel):
     summary: Optional[str] = None
     difficulty_feedback: Optional[str] = None
     difficulty_breakdown: Optional[dict] = None
-    study_period_distribution: Optional[dict] = None
-    study_period_range_days: Optional[dict] = None
     study_tips: list[str] = Field(default_factory=list)
     common_challenges: list[str] = Field(default_factory=list)
 
@@ -79,11 +79,20 @@ class ExtractedLecture(BaseModel):
     price: Optional[str] = None  # Changed to str to handle "50만원", "무료" etc.
 
 
+class ExtractedKeyExamTopic(BaseModel):
+    """추출된 핵심 출제 토픽."""
+
+    topic: str
+    frequency: str  # '매우 자주', '자주', '보통', '가끔'
+    importance: str  # '상', '중', '하'
+    description: Optional[str] = None
+
+
 class ExtractedStudyGuide(BaseModel):
     """추출된 학습 가이드 정보."""
 
     study_methods: list[str] = Field(default_factory=list)
-    learning_sequence: list[str] = Field(default_factory=list)
+    key_exam_topics: list[dict] = Field(default_factory=list)
     time_allocation: Optional[dict] = None
     recommended_books: list[dict] = Field(default_factory=list)
     success_tips: list[str] = Field(default_factory=list)
@@ -98,10 +107,8 @@ class ExtractedJobMarketInfo(BaseModel):
 
     job_posting_frequency: Optional[str] = None
     preferred_industries: list[str] = Field(default_factory=list)
-    preferred_companies: list[str] = Field(default_factory=list)
     requirement_type: Optional[str] = None
     public_sector_points: Optional[str] = None
-    salary_premium: Optional[str] = None
 
 
 class ExtractedCostBreakdown(BaseModel):
@@ -111,7 +118,6 @@ class ExtractedCostBreakdown(BaseModel):
     exam_fee_refund: Optional[str] = None
     textbook_cost: Optional[str] = None
     lecture_cost: Optional[str] = None
-    total_estimated_cost: Optional[str] = None
     free_resources: list[str] = Field(default_factory=list)
 
 
@@ -119,7 +125,6 @@ class ExtractedFeasibilityInfo(BaseModel):
     """추출된 합격 가능성 정보."""
 
     non_major_pass_rate: Optional[str] = None
-    working_adult_tips: list[str] = Field(default_factory=list)
     self_study_possible: Optional[bool] = None
     minimum_study_period: Optional[int] = None
     first_attempt_pass_rate: Optional[str] = None
@@ -130,7 +135,6 @@ class ExtractedExamScheduleDetail(BaseModel):
 
     annual_exam_count: Optional[int] = None
     exam_type: Optional[str] = None
-    cbt_available: Optional[bool] = None
     next_exam_date: Optional[str] = None
     registration_period: Optional[str] = None
     result_announcement: Optional[str] = None
@@ -150,7 +154,6 @@ class Phase1Extraction(BaseModel):
     overview_draft: str = Field(..., description="초안 개요 (1-2문장)")
     difficulty: int = Field(..., ge=1, le=5)
     study_period_days: int = Field(..., ge=1)
-    passing_rate: Optional[float] = Field(None, description="평균 합격률 (%) ⭐NEW")
     exam_info: ExtractedExamInfo
     career_info: ExtractedCareerInfo
     user_reviews: ExtractedUserReviews
@@ -183,7 +186,6 @@ class CertificateEnrichment(BaseModel):
     overview: str = Field(..., description="정제된 개요 (3-5문장)")
     difficulty: int = Field(..., ge=1, le=5)
     study_period_days: int = Field(..., ge=1)
-    passing_rate: Optional[float] = Field(None, description="평균 합격률 (%) ⭐NEW")
     exam_info: dict
     career_info: dict
     user_reviews: dict
@@ -408,22 +410,18 @@ class LLMService:
 4. 강의는 실제 강의 플랫폼(eduwill.net, hackers.com 등)만 선택
 5. 커뮤니티/블로그 추천글은 강의 목록에서 제외
 
-**합격률 추출 규칙** ⭐NEW:
-- "2. 합격률 및 준비기간 통계" 카테고리 우선 참고
-- 공식 통계(q-net, .go.kr) 우선 사용
-- 최근 3년(2023-2025) 평균 합격률 추출
-- 합격률 추이를 exam_info.pass_rate_trend에 포함
-  예: "2023년 45%, 2024년 48%, 2025년 50% (상승 추세)"
-- 불확실하면 passing_rate: null
+**[문체 규칙 - 필수]** ⭐중요:
+- 모든 서술형 텍스트는 존댓말(~입니다, ~합니다, ~됩니다)로 작성하세요.
+- "~이다", "~한다", "~좋다" 등 반말 종결어미는 절대 사용하지 마세요.
+- 친절하고 정중한 어조로 작성하세요.
+- 예시:
+  - 좋음: "이 자격증은 IT 분야에서 필수적입니다."
+  - 나쁨: "이 자격증은 IT 분야에서 필수이다." (반말 금지)
 
 **준비 기간 추출 규칙** ⭐NEW:
 - "2. 합격률 및 준비기간 통계" 및 "5. 합격 후기 및 팁" 카테고리 참고
 - 실제 합격자들의 준비기간 수집 (1개월, 3개월, 6개월 등)
 - 가장 많이 언급된 기간을 study_period_days로 설정
-- 준비기간 분포를 user_reviews.study_period_distribution에 구조화해 포함
-  예: {"1개월 이하": "20%", "1-3개월": "35%", "3-6개월": "30%", "6-12개월": "10%", "1년 이상": "5%"}
-- 준비기간 범위를 user_reviews.study_period_range_days에 포함
-  예: {"min": 30, "median": 120, "max": 365}
 - 공식 권장 기간이 있으면 우선 사용
 
 **난이도 추출 규칙** ⭐NEW:
@@ -437,10 +435,12 @@ class LLMService:
 - 과목별 배점, 합격 기준 (평균 60점 이상 등)
 - 필기/실기 구분, 각 시험의 난이도 차이
 - 최근 출제 경향, 자주 나오는 주제
+- acquisition_method: 취득 방법 (응시자격, 취득 절차)
+- exam_criteria_url: 출제 기준 링크 (공식 URL)
 
 **학습 가이드 추출 강화**:
 - 실제 합격자들의 구체적인 공부 방법
-- 주차별 학습 계획 예시 (1주차: 이론 1-3장, 2주차: 기출문제 등)
+- 핵심 출제 토픽 추출 (topic, frequency, importance, description)
 - 교재별 특징 및 장단점
 - 공부 시간대, 집중력 관리 방법
 - 취약 과목 극복 방법
@@ -449,6 +449,8 @@ class LLMService:
 - 교재명과 출판사가 모두 확인될 때만 포함
 - 정보가 부족하면 recommended_books를 빈 배열로 반환
 - "교재명", "책 제목" 같은 자리표시는 절대 사용하지 않음
+- 교재 구매 링크(yes24, 알라딘, 교보문고 등)가 검색 결과에 있으면 url 필드에 포함
+- 공식 홈페이지에서 제공하는 공개 문제/기출문제가 있으면 학습 자료로 포함
 
 **후기 추출 강화**:
 - 시험장에서 주의할 점 (시간 배분, 순서 등)
@@ -457,10 +459,12 @@ class LLMService:
 - 멘탈 관리, 슬럼프 극복 방법
 - 합격 후 실무에서 활용하는 팁
 
-**연봉 정보 추출 규칙**:
-- 공식 통계 또는 신뢰할 수 있는 뉴스 출처만
-- 범위로 표시 (예: "연 3,000만원 ~ 5,000만원")
-- 불확실하면 null
+**연봉 정보 추출 규칙** ⭐중요:
+- 신뢰할 수 있는 출처만 사용: 통계청, 고용노동부, 워크넷, 잡코리아, 사람인 채용공고
+- 검색 결과에 출처가 명시된 경우만 저장
+- 형식: "신입 기준 연 2,800만원 ~ 3,500만원" 또는 "경력 3년 기준 연 4,000만원 ~ 5,000만원"
+- 출처 없이 추측하지 마세요 - 불확실하면 null
+- 직종/경력별 범위가 다르면 가장 일반적인 신입 기준 사용
 
 **공식 출처 정보**:
 - official_site: 시험 일정, 접수 공지를 확인할 수 있는 공식 사이트
@@ -473,10 +477,8 @@ class LLMService:
    - "8. 채용공고 정보" 카테고리 참고
    - job_posting_frequency: 채용공고 출현 빈도 ("매우 많음", "많음", "보통", "적음")
    - preferred_industries: 이 자격증을 선호하는 산업군 (예: ["IT", "금융", "제조"])
-   - preferred_companies: 우대하는 기업 예시 (예: ["삼성", "SK", "네이버"])
    - requirement_type: 채용 시 자격증 요건 유형 ("필수", "우대", "가산점")
    - public_sector_points: 공무원/공기업 가산점 (예: "5%", "3점")
-   - salary_premium: 연봉 가산 효과 (예: "월 10-20만원 수당")
 
 2. **비용 상세 (cost_breakdown)**:
    - "10. 비용 정보" 카테고리 참고
@@ -484,25 +486,23 @@ class LLMService:
    - exam_fee_refund: 환불 정책 (예: "시험 3일 전까지 100% 환불")
    - textbook_cost: 교재 비용 범위 (예: "30,000 ~ 50,000원")
    - lecture_cost: 인강 비용 범위 (예: "100,000 ~ 300,000원")
-   - total_estimated_cost: 총 예상 비용 (예: "150,000 ~ 400,000원")
    - free_resources: 무료 학습 자료 (예: ["큐넷 기출문제", "유튜브 무료 강의"])
 
 3. **합격 가능성 정보 (feasibility_info)**:
    - "11. 비전공자 합격 후기" 카테고리 참고
    - non_major_pass_rate: 비전공자 합격률 추정 (예: "약 30-35%")
-   - working_adult_tips: 직장인 합격 팁 (예: ["출퇴근 시간 활용", "CBT 상시 응시"])
    - self_study_possible: 독학 가능 여부 (true/false)
    - minimum_study_period: 최소 합격 준비기간 (일 단위, 예: 30)
    - first_attempt_pass_rate: 1회 합격 비율 (예: "약 40%")
 
-4. **시험 일정 상세 (exam_schedule_detail)**:
-   - exam_info와 별도로 일정 관련 상세 정보
-   - annual_exam_count: 연간 시험 횟수 (예: 3)
+4. **시험 일정 상세 (exam_schedule_detail)** ⭐중요:
+   - **공식 출처(q-net.or.kr, .go.kr)에서 크롤링으로 확인된 경우만 저장**
+   - 확인되지 않으면 반드시 null로 저장 (추측하지 마세요)
+   - annual_exam_count: 연간 시험 횟수 (공식 확인된 경우만)
    - exam_type: 시험 유형 ("CBT", "정기", "CBT+정기")
-   - cbt_available: CBT 상시 가능 여부 (true/false)
-   - next_exam_date: 다음 시험일 예상 (검색 결과에 있으면)
-   - registration_period: 접수 기간 (검색 결과에 있으면)
-   - result_announcement: 합격 발표일 (예: "시험 후 2주 내")
+   - next_exam_date: **null로 설정** (시험 일정은 변동이 많아 추측 금지)
+   - registration_period: **null로 설정** (접수 기간은 변동이 많아 추측 금지)
+   - result_announcement: 일반적 발표 기준만 (예: "시험 후 2주 내")
 
 5. **유사 자격증 비교 (similar_certificates)**:
    - "13. 비교 정보" 카테고리 참고
@@ -524,7 +524,6 @@ class LLMService:
   "overview_draft": "1-2문장 초안 (줄바꿈 필요시 \\n 사용)",
   "difficulty": 1-5,
   "study_period_days": 일수 (실제 합격자 평균 준비기간),
-  "passing_rate": 평균 합격률(%) 또는 null (예: 45.5),
   "exam_info": {{
     "subjects": ["과목1 (문항수, 시간)", "과목2 (문항수, 시간)", ...],
     "exam_type": "필기/실기/필기+실기/면접 (CBT/OMR/실기)",
@@ -532,7 +531,9 @@ class LLMService:
     "total_fee": 응시료 또는 null,
     "exam_structure": "시험 구성 설명 (예: 필기 100문항 2시간 30분, 실기 4시간 등)",
     "recent_trends": "최근 출제 경향 (예: 최신 기술 동향 반영, 실무 위주 출제 등)",
-    "pass_rate_trend": "합격률 추이 (예: 2023년 45%, 2024년 48%, 2025년 50% - 상승 추세) 또는 null"
+    "pass_rate_trend": "합격률 추이 (예: 2023년 45%, 2024년 48%, 2025년 50% - 상승 추세) 또는 null",
+    "acquisition_method": "취득 방법 (예: '응시자격: 관련학과 졸업 또는 경력 2년 이상\\n취득절차: 필기시험 → 실기시험 → 자격증 발급')",
+    "exam_criteria_url": "출제 기준 공식 링크 또는 null"
   }},
   "career_info": {{
     "use_cases": ["활용 분야1", "활용 분야2", ...],
@@ -542,11 +543,9 @@ class LLMService:
     "industry": ["관련 산업1", "관련 산업2", ...]
   }},
   "user_reviews": {{
-    "summary": "합격자 후기 요약 1-2문단 서술 (전반적 평가, 구체적 사례, 공통 의견, 준비기간 분포 포함. 예: '대부분 3-6개월 준비하며, 일부는 1개월 만에 합격하기도 함')",
+    "summary": "합격자 후기 요약 1-2문단 서술 (전반적 평가, 구체적 사례, 공통 의견 포함)",
     "difficulty_feedback": "난이도 평가 1-2문장 서술 (체감 난이도와 그 이유)",
     "difficulty_breakdown": {{"overall": 3, "written": 2, "practical": 4, "interview": null}},
-    "study_period_distribution": {{"1개월 이하": "20%", "1-3개월": "35%", "3-6개월": "30%", "6-12개월": "10%", "1년 이상": "5%"}},
-    "study_period_range_days": {{"min": 30, "median": 120, "max": 365}},
     "study_tips": [
       "기출문제를 최소 3회 이상 반복해서 풀면 정답률이 90% 이상으로 올라갑니다.",
       "시험장에서 어려운 문제가 나오면 표시해두고 나중에 다시 풀어보는 것이 시간 관리에 효과적입니다.",
@@ -569,13 +568,19 @@ class LLMService:
       "방법2: 실제 합격자 방법 (예: 강의 1.5배속 수강 후 요약 노트 작성)",
       ...
     ],
-    "learning_sequence": [
-      "1단계 (1-2주): 기초 개념 학습 - 교재 1-3장, 기본 용어 암기",
-      "2단계 (2-3주): 심화 학습 - 교재 4-6장, 응용 문제 풀이",
-      "3단계 (1-2주): 기출문제 분석 - 최근 5개년 기출 3회 반복",
-      "4단계 (1주): 모의고사 - 실전처럼 3회 이상, 취약 과목 집중",
-      "5단계 (3일): 최종 정리 - 오답노트 복습, 핵심 개념 재암기",
-      ...
+    "key_exam_topics": [
+      {{
+        "topic": "소프트웨어 설계",
+        "frequency": "매우 자주",
+        "importance": "상",
+        "description": "UML, 디자인 패턴, 요구사항 분석 등"
+      }},
+      {{
+        "topic": "데이터베이스",
+        "frequency": "자주",
+        "importance": "상",
+        "description": "SQL, 정규화, 인덱스 등"
+      }}
     ],
     "time_allocation": {{
       "theory": "30% (이론 학습, 개념 이해)",
@@ -587,7 +592,15 @@ class LLMService:
         "title": "정보처리기사 필기",
         "publisher": "출판사",
         "type": "필기/실기/종합",
-        "description": "교재 특징 및 장단점 (예: 설명이 자세하나 두꺼움, 요약 위주로 빠른 학습 가능 등)"
+        "description": "교재 특징 및 장단점 (예: 설명이 자세하나 두꺼움, 요약 위주로 빠른 학습 가능 등)",
+        "url": "https://www.yes24.com/... 또는 null (구매 링크)"
+      }},
+      {{
+        "title": "큐넷 공식 기출문제",
+        "publisher": "한국산업인력공단",
+        "type": "기출문제",
+        "description": "공식 홈페이지에서 제공하는 공개 문제입니다. 무료로 다운로드 가능합니다.",
+        "url": "https://www.q-net.or.kr/crf005.do?id=crf00505 (공식 기출 링크)"
       }}
     ],
     "success_tips": [
@@ -620,22 +633,18 @@ class LLMService:
   "job_market_info": {{
     "job_posting_frequency": "채용공고 빈도 ('매우 많음', '많음', '보통', '적음') 또는 null",
     "preferred_industries": ["선호 산업1", "선호 산업2", ...],
-    "preferred_companies": ["우대 기업1", "우대 기업2", ...],
     "requirement_type": "채용 요건 유형 ('필수', '우대', '가산점') 또는 null",
-    "public_sector_points": "공무원/공기업 가산점 또는 null",
-    "salary_premium": "연봉/수당 가산 효과 또는 null"
+    "public_sector_points": "공무원/공기업 가산점 또는 null"
   }},
   "cost_breakdown": {{
     "exam_fee": "응시료 (예: '필기 19,400원 + 실기 22,600원')",
     "exam_fee_refund": "환불 정책 또는 null",
     "textbook_cost": "교재 비용 범위 또는 null",
     "lecture_cost": "인강 비용 범위 또는 null",
-    "total_estimated_cost": "총 예상 비용 또는 null",
     "free_resources": ["무료 자료1", "무료 자료2", ...]
   }},
   "feasibility_info": {{
     "non_major_pass_rate": "비전공자 합격률 추정 또는 null",
-    "working_adult_tips": ["직장인 팁1", "직장인 팁2", ...],
     "self_study_possible": true/false 또는 null,
     "minimum_study_period": 최소 준비기간(일) 또는 null,
     "first_attempt_pass_rate": "1회 합격 비율 또는 null"
@@ -643,10 +652,9 @@ class LLMService:
   "exam_schedule_detail": {{
     "annual_exam_count": 연간 시험 횟수 또는 null,
     "exam_type": "시험 유형 ('CBT', '정기', 'CBT+정기') 또는 null",
-    "cbt_available": true/false 또는 null,
-    "next_exam_date": "다음 시험일 또는 null",
-    "registration_period": "접수 기간 또는 null",
-    "result_announcement": "합격 발표일 또는 null"
+    "next_exam_date": null,
+    "registration_period": null,
+    "result_announcement": "일반적 발표 기준 (예: '시험 후 2주 내') 또는 null"
   }},
   "similar_certificates": [
     {{
@@ -723,7 +731,8 @@ class LLMService:
         """2단계: 추출 데이터를 정제하고 보강합니다."""
 
         system_prompt = f"""당신은 한국 자격증 정보 정제 전문가입니다.
-추출된 정보를 바탕으로 살을 붙이고 완성도를 높이세요.
+추출된 정보를 바탕으로 정리만 하세요. 새로운 정보를 창작하거나 추측하지 마세요.
+검색 결과에 없는 내용은 절대 추가하지 마세요.
 
 자격증명: {certificate_title}
 
@@ -731,10 +740,26 @@ class LLMService:
 1. **서술형 작성**: 단답형 절대 금지, 읽기 쉬운 문장으로
 2. **JSON 줄바꿈**: 문자열 내 줄바꿈은 반드시 \\n 이스케이프 시퀀스 사용 (실제 엔터 금지)
 3. overview: 3-5문장, 문장 사이에 \\n 삽입
-4. job_prospects: 2-3문장, 문장 사이에 \\n 삽입
+4. job_prospects: 4-5문장, \\n으로 구분
 5. user_reviews.summary: 1-2문단, 문단 사이에 \\n\\n 삽입
 6. 강의는 실제 강의 사이트만 (커뮤니티 제외)
 7. 관련성 점수 0.5 미만 제외
+
+**[문체 규칙 - 필수]** ⭐중요:
+- 모든 서술형 텍스트는 존댓말(~입니다, ~합니다, ~됩니다)로 작성하세요.
+- "~이다", "~한다", "~좋다" 등 반말 종결어미는 절대 사용하지 마세요.
+- 친절하고 정중한 어조로 작성하세요.
+- 예시:
+  - 좋음: "이 자격증은 IT 분야에서 필수적입니다."
+  - 나쁨: "이 자격증은 IT 분야에서 필수이다." (반말 금지)
+
+**개요(overview) 작성 규칙**:
+- 각 문장은 독립적으로 주어를 포함해야 합니다.
+- "이 자격증은", "해당 자격증" 같은 지시어 사용을 피해주세요.
+- 매 문장마다 자격증명 또는 구체적 주어를 사용하세요.
+- 예시:
+  - 좋음: "정보처리기사는 IT 분야 국가기술자격증입니다.\\n정보시스템의 분석, 설계, 개발 업무를 담당합니다.\\n소프트웨어 개발 전반의 전문성을 인증합니다."
+  - 나쁨: "정보처리기사는 IT 전문가이다.\\n이 자격증은 개발 업무에 필수이다." (반말 금지)
 
 **시험 정보 강화 규칙**:
 - exam_structure: 필기/실기 구성, 총 문항수, 시험 시간 명시
@@ -743,50 +768,52 @@ class LLMService:
 
 **학습 가이드 강화 규칙**:
 - study_methods: 실제 합격자들의 구체적인 방법 5가지 이상
-- learning_sequence: 주차별 세부 계획 (1-2주 단위), 각 단계에 기간 및 목표 명시
+- key_exam_topics: 핵심 출제 토픽 5개 이상 (topic, frequency, importance, description 포함)
 - success_tips: 구체적이고 실행 가능한 팁 7가지 이상
 **추천 교재 규칙**:
 - 교재명과 출판사 정보가 명확한 경우에만 포함
 - 정보가 부족하면 recommended_books는 빈 배열
+- 교재 구매 링크(yes24, 알라딘, 교보문고)가 있으면 url 필드에 포함
+- 공식 홈페이지 공개 문제/기출문제가 있으면 반드시 포함 (type: "기출문제")
 
 **후기 강화 규칙**:
 - study_tips: 실전 팁 포함 (시험장 노하우, 시간 배분 전략)
 - common_challenges: 각 어려움에 대한 구체적 해결책 포함
 - exam_day_tips 필수: 시험 전날, 당일 준비사항 3가지 이상
-- difficulty_breakdown, study_period_distribution, study_period_range_days는 구조 유지
+- difficulty_breakdown 구조 유지
 
 **공식 출처 필수 규칙**:
 - official_site: 반드시 포함, 시험 일정 및 접수 확인 가능한 링크
 - reference_urls: 시험 일정 공지 페이지 URL 최우선 포함
 
-**연봉 정보 규칙**:
-- 구체적 범위 (예: "연 3,000만원 ~ 5,000만원"), 불확실하면 null
+**연봉 정보 규칙** ⭐중요:
+- 신뢰할 수 있는 출처(통계청, 고용노동부, 워크넷, 잡코리아, 사람인)에서 확인된 경우만
+- 형식: "신입 기준 연 2,800만원 ~ 3,500만원" (경력/직종 기준 명시)
+- 출처 없이 추측 금지 - 불확실하면 null
 
 **[취업준비생 관점 정제 규칙]** ⭐NEW:
 
 1. **채용 시장 정보 (job_market_info)**:
    - job_posting_frequency: 구체적 빈도 ("매우 많음", "많음", "보통", "적음")
    - preferred_industries: 최소 3개 이상의 산업군 나열
-   - preferred_companies: 실제 채용 우대 기업 5개 이상 (대기업/공기업 위주)
    - requirement_type: "필수", "우대", "가산점" 중 가장 일반적인 유형
    - public_sector_points: 공무원/공기업 가산점 구체적으로 (예: "필기 5점, 면접 3점")
-   - salary_premium: 월급/연봉 가산 효과 구체적 범위 (예: "월 10-30만원 자격수당")
 
 2. **비용 상세 (cost_breakdown)**:
    - exam_fee: 필기+실기 각각 분리해서 명시 (예: "필기 19,400원 + 실기 22,600원")
-   - total_estimated_cost: 최소-최대 범위로 명시 (예: "150,000 ~ 400,000원")
    - free_resources: 무료 학습 자료 최소 3개 이상 (유튜브, 큐넷, 블로그 등)
 
 3. **합격 가능성 정보 (feasibility_info)**:
    - non_major_pass_rate: 비전공자 합격률 범위 (예: "약 25-35%")
-   - working_adult_tips: 직장인 특화 팁 최소 3개 이상 (시간 활용법, CBT 전략 등)
    - self_study_possible: 독학 가능 여부와 근거 포함
    - minimum_study_period: 최소 준비기간 일수 (빠른 합격자 기준)
 
-4. **시험 일정 상세 (exam_schedule_detail)**:
-   - annual_exam_count: 정확한 연간 횟수
+4. **시험 일정 상세 (exam_schedule_detail)** ⭐중요:
+   - annual_exam_count: 공식 출처에서 확인된 연간 횟수만
    - exam_type: CBT/정기/상시 구분 명확히
-   - cbt_available: CBT 상시 가능 여부 명확히
+   - next_exam_date: **null 유지** (시험 일정은 변동이 많아 추측하지 마세요)
+   - registration_period: **null 유지** (접수 기간은 변동이 많아 추측하지 마세요)
+   - 사용자는 반드시 공식 사이트에서 최신 일정을 확인해야 합니다
 
 5. **유사 자격증 비교 (similar_certificates)**:
    - 같은 분야 자격증 2-3개 비교
@@ -798,6 +825,11 @@ class LLMService:
 - 0.5-0.7: 제목에 자격증명 일부 포함
 - 0.0-0.4: 다른 자격증 또는 관련 없음 (제외)
 
+**강의 후기 페이지 제외 규칙** ⭐중요:
+- 강의 사이트의 수강 후기 페이지는 추천 강의에서 제외합니다.
+- URL에 "review", "후기", "평가" 등이 포함된 페이지는 제외합니다.
+- 실제 강의 수강 페이지(강좌 소개, 커리큘럼)만 포함합니다.
+
 출력은 반드시 유효한 JSON 형식으로 작성하세요.
 **중요: JSON 문자열 내 줄바꿈은 반드시 \\n 이스케이프 시퀀스를 사용하세요. 실제 줄바꿈 문자를 사용하면 안 됩니다.**
 
@@ -806,7 +838,6 @@ class LLMService:
   "overview": "세무사는 세무 관련 전문가입니다.\\n이 자격증은 세무 업무에 필수적입니다.\\n기업과 개인의 세무 관리를 담당합니다.",
   "difficulty": 3,
   "study_period_days": 180,
-  "passing_rate": 45.5,
   "exam_info": {{
     "subjects": ["세법학 1부 (25문항, 50분)", "세법학 2부 (25문항, 50분)"],
     "exam_type": "필기 (CBT)",
@@ -827,8 +858,6 @@ class LLMService:
     "summary": "합격자들은 난이도가 높다고 평가합니다.\\n\\n실제 합격자들은 1-2년의 준비 기간을 권장합니다.",
     "difficulty_feedback": "난이도가 매우 높습니다.\\n방대한 학습량과 복잡한 세법이 주요 원인입니다.",
     "difficulty_breakdown": {{"overall": 5, "written": 4, "practical": 5, "interview": null}},
-    "study_period_distribution": {{"3-6개월": "10%", "6-12개월": "30%", "1년 이상": "60%"}},
-    "study_period_range_days": {{"min": 90, "median": 365, "max": 730}},
     "study_tips": [
       "기출문제를 3회 이상 반복해서 풀면 정답률 90% 이상 도달이 가능하며, 자주 출제되는 유형을 파악할 수 있습니다.",
       "시험장에서 어려운 문제가 나오면 표시해두고 나중에 다시 풀면 시간 관리에 효과적입니다.",
@@ -853,12 +882,12 @@ class LLMService:
       "스터디 그룹을 만들어 주 1회 모의고사를 함께 풀고 취약 과목에 대해 토론하면 혼자 공부할 때 놓치는 부분을 보완할 수 있습니다.",
       "온라인 무료 강의를 활용하면 비용을 절감하면서 복습용으로 효과적으로 사용할 수 있습니다."
     ],
-    "learning_sequence": [
-      "1단계 (1-2주): 기초 개념 학습 - 교재 1-3장, 기본 용어 암기, 이론 위주",
-      "2단계 (2-3주): 심화 학습 - 교재 4-6장, 응용 문제 풀이",
-      "3단계 (1-2주): 기출문제 분석 - 최근 5개년 기출 3회 반복",
-      "4단계 (1주): 모의고사 - 실전처럼 3회 이상, 취약 과목 집중",
-      "5단계 (3일): 최종 정리 - 오답노트 복습, 핵심 개념 재암기"
+    "key_exam_topics": [
+      {{"topic": "세법학 1부", "frequency": "매우 자주", "importance": "상", "description": "국세기본법, 소득세법, 법인세법"}},
+      {{"topic": "세법학 2부", "frequency": "매우 자주", "importance": "상", "description": "부가가치세법, 상속세 및 증여세법"}},
+      {{"topic": "회계학", "frequency": "자주", "importance": "상", "description": "재무회계, 원가회계, 세무회계"}},
+      {{"topic": "재정학", "frequency": "보통", "importance": "중", "description": "조세론, 재정정책"}},
+      {{"topic": "민법", "frequency": "보통", "importance": "중", "description": "민법총칙, 물권법, 채권법"}}
     ],
     "time_allocation": {{
       "theory": "30% (이론 학습, 개념 이해)",
@@ -870,13 +899,22 @@ class LLMService:
         "title": "세무사 1차 필기",
         "publisher": "에듀윌",
         "type": "필기",
-        "description": "설명이 자세하나 두꺼움, 초보자 추천"
+        "description": "설명이 자세하나 두꺼움, 초보자 추천",
+        "url": "https://www.yes24.com/Product/Goods/12345"
       }},
       {{
         "title": "세무사 요약집",
         "publisher": "해커스",
         "type": "종합",
-        "description": "요약 위주로 빠른 학습 가능, 2-3회독 후 사용 권장"
+        "description": "요약 위주로 빠른 학습 가능, 2-3회독 후 사용 권장",
+        "url": "https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=12345"
+      }},
+      {{
+        "title": "큐넷 공식 기출문제",
+        "publisher": "한국산업인력공단",
+        "type": "기출문제",
+        "description": "공식 홈페이지에서 제공하는 공개 문제입니다. 무료로 다운로드 가능합니다.",
+        "url": "https://www.q-net.or.kr/crf005.do?id=crf00505"
       }}
     ],
     "success_tips": [
@@ -902,26 +940,18 @@ class LLMService:
   "job_market_info": {{
     "job_posting_frequency": "많음",
     "preferred_industries": ["세무법인", "회계법인", "금융업", "대기업 재무팀", "공기업"],
-    "preferred_companies": ["삼일회계법인", "삼정KPMG", "딜로이트", "국세청", "국민은행"],
     "requirement_type": "우대",
-    "public_sector_points": "국세청 5%, 지방세 담당 공무원 가산점",
-    "salary_premium": "세무법인 근무 시 월 20-50만원 수당"
+    "public_sector_points": "국세청 5%, 지방세 담당 공무원 가산점"
   }},
   "cost_breakdown": {{
     "exam_fee": "1차 필기 30,000원 + 2차 실무 50,000원 = 총 80,000원",
     "exam_fee_refund": "시험 7일 전까지 100% 환불 가능",
     "textbook_cost": "50,000 ~ 150,000원 (기본서 + 문제집)",
     "lecture_cost": "300,000 ~ 1,500,000원 (인강 1년 기준)",
-    "total_estimated_cost": "500,000 ~ 2,000,000원",
     "free_resources": ["큐넷 기출문제", "유튜브 세무사 강의", "국세청 세법 자료"]
   }},
   "feasibility_info": {{
     "non_major_pass_rate": "약 15-20% (전체 합격률보다 낮음)",
-    "working_adult_tips": [
-      "출퇴근 시간에 인강 1.5배속 청취로 하루 2시간 확보",
-      "주말 집중 학습 (토 8시간, 일 6시간)",
-      "세법 개정 요약본으로 효율적 학습"
-    ],
     "self_study_possible": false,
     "minimum_study_period": 365,
     "first_attempt_pass_rate": "약 10%"
@@ -929,10 +959,9 @@ class LLMService:
   "exam_schedule_detail": {{
     "annual_exam_count": 1,
     "exam_type": "정기시험 (연 1회)",
-    "cbt_available": false,
-    "next_exam_date": "매년 5월 (1차), 8월 (2차)",
-    "registration_period": "3월 중",
-    "result_announcement": "1차: 6월, 2차: 11월"
+    "next_exam_date": null,
+    "registration_period": null,
+    "result_announcement": "1차: 시험 후 약 1개월, 2차: 시험 후 약 3개월 (공식 사이트에서 최신 일정 확인 필요)"
   }},
   "similar_certificates": [
     {{
@@ -953,10 +982,15 @@ class LLMService:
 **핵심 규칙**:
 1. **JSON 문자열 내 줄바꿈은 반드시 \\n 이스케이프 시퀀스 사용** (실제 줄바꿈 문자 금지)
 2. exam_info는 구체적으로 (문항수, 시간, 출제 경향)
-3. study_guide는 실행 가능하도록 (주차별 계획, 구체적 방법)
+3. study_guide는 key_exam_topics 포함 (핵심 출제 토픽 5개 이상)
 4. user_reviews.exam_day_tips 필수 (시험 전날, 당일, 멘탈 관리)
 5. official_sources.reference_urls에 시험 일정 페이지 필수 포함
-6. job_prospects는 3문장, \\n으로 구분
+6. job_prospects는 4-5문장, \\n으로 구분:
+   - 첫 문장: 해당 자격증의 현재 취업 시장 수요
+   - 둘째 문장: 필수/우대로 요구하는 대표 직무 (예: "SI 개발자, 솔루션 엔지니어 채용 시 필수")
+   - 셋째 문장: 대표 기업 사례 (예: "삼성SDS, LG CNS, 네이버 등 IT 대기업에서 우대")
+   - 넷째 문장: 향후 전망 및 성장 가능성
+   - 다섯째 문장: 커리어 상승 효과 (있으면)
 7. user_reviews.summary는 문단 2개, \\n\\n으로 구분
 8. 모든 필드 값이 완전한 JSON 문자열로 닫혀 있는지 확인
 """
@@ -978,7 +1012,7 @@ class LLMService:
                         {"role": "user", "content": user_prompt},
                     ],
                     response_format={"type": "json_object"},
-                    temperature=0.3 + (attempt * 0.1),  # 재시도 시 온도 약간 증가
+                    temperature=0.1 + (attempt * 0.05),  # 창의성 제거: 낮은 온도 유지
                 )
 
                 content = response.choices[0].message.content

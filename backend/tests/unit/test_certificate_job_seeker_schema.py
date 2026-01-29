@@ -16,15 +16,13 @@ class TestJobMarketInfoSchema:
         info = JobMarketInfo(
             job_posting_frequency="매우 많음",
             preferred_industries=["IT", "금융", "제조"],
-            preferred_companies=["삼성전자", "SK하이닉스", "네이버"],
             requirement_type="우대",
             public_sector_points="필기 5%, 실기 3%",
-            salary_premium="월 10-30만원 자격수당",
         )
 
         assert info.job_posting_frequency == "매우 많음"
         assert len(info.preferred_industries) == 3
-        assert "삼성전자" in info.preferred_companies
+        assert "IT" in info.preferred_industries
 
     def test_job_market_info_optional_fields(self):
         """선택적 필드만 포함."""
@@ -34,7 +32,6 @@ class TestJobMarketInfoSchema:
 
         assert info.job_posting_frequency is None
         assert info.preferred_industries == []
-        assert info.preferred_companies == []
 
 
 class TestCostBreakdownSchema:
@@ -86,14 +83,13 @@ class TestExamScheduleDetailSchema:
         detail = ExamScheduleDetail(
             annual_exam_count=3,
             exam_type="필기(CBT) + 실기(정기)",
-            cbt_available=True,
             next_exam_date="2026-03-15",
             registration_period="2026-02-01 ~ 2026-02-07",
             result_announcement="시험 후 2주 내",
         )
 
         assert detail.annual_exam_count == 3
-        assert detail.cbt_available is True
+        assert detail.exam_type == "필기(CBT) + 실기(정기)"
 
 
 class TestSimilarCertificateSchema:

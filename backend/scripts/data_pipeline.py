@@ -272,21 +272,26 @@ class DataPipeline:
     """데이터 파이프라인: 보강 → 임베딩 순서 실행."""
 
     BATCH_SIZE = 32
+    TEST_COLLECTION_NAME = "certificates-test"  # 테스트용 컬렉션 이름
 
     def __init__(
         self,
         embedding_provider: Optional[str] = None,
+        test_mode: bool = False,
     ):
         """파이프라인 초기화.
 
         Args:
             embedding_provider: 임베딩 서비스 provider ("openai" 또는 "local").
                                None이면 환경변수 EMBEDDING_PROVIDER 또는 기본값 "openai" 사용.
+            test_mode: 테스트 모드 여부. True이면 별도 컬렉션 사용하여 프로덕션 데이터와 격리.
 
         Note:
             검색 서비스는 SearXNG를 기본값으로 사용합니다.
         """
         self.embedding_provider = embedding_provider
+        self.test_mode = test_mode
+        self._collection_name = self.TEST_COLLECTION_NAME if test_mode else None
 
     # --------------------------------------------------------
     # 보강 단계
@@ -666,10 +671,14 @@ class DataPipeline:
 
         try:
             # 세션 및 임베딩 서비스 주입으로 DI 패턴 적용
+            # 테스트 모드에서는 별도 컬렉션 사용
             vector_store = VectorStoreService(
                 session=session,
                 embedding_service=embedding_service,
+                collection_name=self._collection_name,
             )
+            if self.test_mode:
+                logger.info(f"  ⚠️  테스트 모드: '{self.TEST_COLLECTION_NAME}' 컬렉션 사용")
 
             # 1단계: 자격증 조회
             if cert_ids:
@@ -978,6 +987,7 @@ async def main():
 
     pipeline = DataPipeline(
         embedding_provider=embedding_provider,
+        test_mode=args.test,
     )
 
     try:

@@ -9,6 +9,94 @@
 
 // ExamSchedule and Eligibility removed - users should check official sources for these
 
+// ==================== NEW: 채용 시장 정보 (Phase 2 Enhancement) ====================
+
+/**
+ * 채용 시장 정보 (Job Market Info)
+ *
+ * 자격증의 취업 시장 가치를 나타내는 정보
+ */
+export interface JobMarketInfo {
+  job_posting_frequency: string | null    // 채용공고 빈도 (예: "월 500건+")
+  preferred_industries: string[]          // 선호 산업군
+  requirement_type: string | null         // 필수/우대 구분
+  public_sector_points: string | null     // 공무원/공기업 가산점
+}
+
+/**
+ * 비용 상세 정보 (Cost Breakdown)
+ *
+ * 자격증 취득에 필요한 총 비용 breakdown
+ */
+export interface CostBreakdown {
+  exam_fee: string | null                 // 응시료
+  exam_fee_refund: string | null          // 환불 정책
+  textbook_cost: string | null            // 교재비
+  lecture_cost: string | null             // 인강비
+  total_estimated_cost: string | null     // 총 예상 비용
+  free_resources: string[]                // 무료 자료 목록
+}
+
+/**
+ * 합격 가능성 정보 (Feasibility Info)
+ *
+ * 비전공자/직장인의 합격 가능성 분석
+ */
+export interface FeasibilityInfo {
+  non_major_pass_rate: string | null      // 비전공자 합격률
+  working_adult_tips: string[]            // 직장인 학습 팁
+  self_study_possible: boolean | null     // 독학 가능 여부
+  minimum_study_period: number | null     // 최소 준비 기간 (일)
+  first_attempt_pass_rate: string | null  // 1회 응시 합격률
+}
+
+/**
+ * 시험 일정 상세 (Exam Schedule Detail)
+ *
+ * 시험 일정과 관련된 상세 정보
+ */
+export interface ExamScheduleDetail {
+  annual_exam_count: number | null        // 연간 시험 횟수
+  exam_type: string | null                // 시험 유형 (정기/수시)
+  next_exam_date: string | null           // 다음 시험일
+  registration_period: string | null      // 접수 기간
+  result_announcement: string | null      // 결과 발표일
+}
+
+/**
+ * 유사 자격증 정보 (Similar Certificate)
+ *
+ * 비교 가능한 유사 자격증 정보
+ */
+export interface SimilarCertificate {
+  certificate_id?: string | null          // 연결된 자격증 ID (있을 경우)
+  title: string                           // 자격증명
+  comparison: string | null               // 비교 설명
+}
+
+/**
+ * 난이도 세분화 (Difficulty Breakdown)
+ *
+ * 시험 유형별 난이도 세분화
+ */
+export interface DifficultyBreakdown {
+  overall: number                         // 전체 난이도 (1-5)
+  written: number | null                  // 필기 난이도
+  practical: number | null                // 실기 난이도
+  interview: number | null                // 면접 난이도
+}
+
+/**
+ * 준비 기간 범위 (Study Period Range)
+ */
+export interface StudyPeriodRange {
+  min: number                             // 최소 일수
+  median: number                          // 중간값
+  max: number                             // 최대 일수
+}
+
+// ==================== END NEW TYPES ====================
+
 /**
  * 진로 및 활용 정보
  */
@@ -21,13 +109,18 @@ export interface CareerInfo {
 }
 
 /**
- * 실제 후기 요약
+ * 실제 후기 요약 (Extended for Phase 2)
  */
 export interface UserReviews {
-  summary?: string | null              // 전체 요약
-  difficulty_feedback?: string | null  // 난이도 평가
-  study_tips: string[]                 // 학습 팁
-  common_challenges: string[]          // 공통 어려움
+  summary?: string | null                                // 전체 요약
+  difficulty_feedback?: string | null                    // 난이도 평가
+  study_tips: string[]                                   // 학습 팁
+  common_challenges: string[]                            // 공통 어려움
+  // Phase 2 확장 필드
+  difficulty_breakdown?: DifficultyBreakdown | null      // 난이도 세분화
+  study_period_distribution?: Record<string, string> | null  // 준비기간 분포 (예: {"1개월 미만": "20%", "1-3개월": "50%"})
+  study_period_range_days?: StudyPeriodRange | null      // 준비기간 범위 (일)
+  exam_day_tips?: string[]                               // 시험 당일 팁
 }
 
 /**
@@ -143,8 +236,14 @@ export interface Certificate {
   official_sources?: OfficialSources    // 공식 출처
 
   // Statistics
-  passing_rate?: number | null          // 합격률 (%)
   view_count?: number                   // 조회수
+
+  // ==================== Phase 2 Enhanced Fields ====================
+  job_market_info?: JobMarketInfo | null       // 채용 시장 정보
+  cost_breakdown?: CostBreakdown | null        // 비용 상세
+  feasibility_info?: FeasibilityInfo | null    // 합격 가능성 정보
+  exam_schedule_detail?: ExamScheduleDetail | null  // 시험 일정 상세
+  similar_certificates?: SimilarCertificate[] | null  // 유사 자격증 비교
 }
 
 /**
@@ -322,6 +421,52 @@ export function hasStudyGuide(cert: Certificate): cert is Certificate & { study_
 
 export function hasLectures(cert: Certificate): boolean {
   return !!cert.recommended_lectures && cert.recommended_lectures.length > 0
+}
+
+// ==================== Phase 2 Type Guards ====================
+
+export function hasJobMarketInfo(cert: Certificate): cert is Certificate & { job_market_info: JobMarketInfo } {
+  return !!cert.job_market_info && (
+    !!cert.job_market_info.job_posting_frequency ||
+    (cert.job_market_info.preferred_industries?.length ?? 0) > 0 ||
+    !!cert.job_market_info.public_sector_points
+  )
+}
+
+export function hasCostBreakdown(cert: Certificate): cert is Certificate & { cost_breakdown: CostBreakdown } {
+  return !!cert.cost_breakdown && (
+    !!cert.cost_breakdown.total_estimated_cost ||
+    !!cert.cost_breakdown.exam_fee ||
+    (cert.cost_breakdown.free_resources?.length ?? 0) > 0
+  )
+}
+
+export function hasFeasibilityInfo(cert: Certificate): cert is Certificate & { feasibility_info: FeasibilityInfo } {
+  return !!cert.feasibility_info && (
+    !!cert.feasibility_info.non_major_pass_rate ||
+    cert.feasibility_info.self_study_possible !== null ||
+    (cert.feasibility_info.working_adult_tips?.length ?? 0) > 0
+  )
+}
+
+export function hasExamScheduleDetail(cert: Certificate): cert is Certificate & { exam_schedule_detail: ExamScheduleDetail } {
+  return !!cert.exam_schedule_detail && (
+    cert.exam_schedule_detail.annual_exam_count !== null ||
+    !!cert.exam_schedule_detail.next_exam_date ||
+    !!cert.exam_schedule_detail.exam_type
+  )
+}
+
+export function hasSimilarCertificates(cert: Certificate): cert is Certificate & { similar_certificates: SimilarCertificate[] } {
+  return !!cert.similar_certificates && cert.similar_certificates.length > 0
+}
+
+export function hasExtendedReviews(cert: Certificate): boolean {
+  return !!cert.user_reviews && (
+    !!cert.user_reviews.difficulty_breakdown ||
+    !!cert.user_reviews.study_period_distribution ||
+    (cert.user_reviews.exam_day_tips?.length ?? 0) > 0
+  )
 }
 
 // ==================== Analytics Types ⭐ NEW ====================

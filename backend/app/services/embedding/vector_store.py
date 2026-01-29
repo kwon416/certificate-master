@@ -55,6 +55,7 @@ class VectorStoreService:
         max_retries: int = 3,
         session: Optional[Session] = None,
         embedding_service: Optional["EmbeddingServiceProtocol"] = None,
+        collection_name: Optional[str] = None,
     ):
         """벡터 스토어 서비스를 초기화합니다.
 
@@ -64,6 +65,9 @@ class VectorStoreService:
                      주입 시 해당 세션 사용, 미주입 시 내부에서 생성.
             embedding_service: 외부에서 주입할 임베딩 서비스 (선택).
                      주입 시 해당 서비스 사용, 미주입 시 OpenAI EmbeddingService 사용.
+            collection_name: 커스텀 컬렉션 이름 (선택).
+                     주입 시 해당 이름 사용, 미주입 시 설정값 사용.
+                     테스트 환경에서 프로덕션 데이터와 격리하는 데 유용.
 
         Raises:
             ConnectionError: 최대 재시도 횟수 초과 시.
@@ -71,7 +75,7 @@ class VectorStoreService:
         settings = get_settings()
         self.host = settings.CHROMA_HOST
         self.port = settings.CHROMA_PORT
-        self.collection_name = settings.CHROMA_COLLECTION_NAME
+        self.collection_name = collection_name or settings.CHROMA_COLLECTION_NAME
         self._session = session  # 외부 주입 세션 저장
 
         # B2 수정: ChromaDB 연결 재시도 로직
@@ -489,6 +493,28 @@ class VectorStoreService:
             cert_ids: 삭제할 자격증 ID 목록.
         """
         self._collection.delete(ids=cert_ids)
+
+    def clear_all(self) -> int:
+        """컬렉션의 모든 벡터를 삭제합니다.
+
+        컬렉션을 삭제하고 동일한 이름으로 재생성합니다.
+        seed_certificates --clear 실행 시 호출됩니다.
+
+        Returns:
+            삭제된 벡터 수.
+        """
+        # 현재 벡터 수 확인
+        stats = self.get_collection_stats()
+        deleted_count = stats.get("total_vectors", 0)
+
+        # 컬렉션 삭제 후 재생성
+        self._client.delete_collection(name=self.collection_name)
+        self._collection = self._client.get_or_create_collection(
+            name=self.collection_name,
+            metadata={"hnsw:space": "cosine"}
+        )
+
+        return deleted_count
 
     # ==========================================
     # DB 동기화 메서드 (vector_id 관리) - MariaDB/SQLAlchemy

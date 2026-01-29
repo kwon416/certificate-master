@@ -108,9 +108,12 @@ class StudyPlanService:
         subjects = exam_info.get("subjects", [])
         subjects_text = ", ".join(subjects) if subjects else "정보 없음"
 
-        # 학습 순서 추출
-        learning_sequence = study_guide.get("learning_sequence", [])
-        learning_sequence_text = "\n".join(learning_sequence) if learning_sequence else "정보 없음"
+        # 핵심 출제 토픽 추출
+        key_exam_topics = study_guide.get("key_exam_topics", [])
+        key_exam_topics_text = "\n".join([
+            f"- {t.get('topic', '')}: {t.get('frequency', '')} / {t.get('importance', '')} - {t.get('description', '')}"
+            for t in key_exam_topics
+        ]) if key_exam_topics else "정보 없음"
 
         # 시간 배분 가이드 추출
         time_allocation = study_guide.get("time_allocation", {})
@@ -137,8 +140,8 @@ class StudyPlanService:
 - 시험 과목: {subjects_text}
 
 학습 가이드:
-- 학습 순서:
-{learning_sequence_text}
+- 핵심 출제 토픽:
+{key_exam_topics_text}
 
 - 시간 배분:
 {time_allocation_text}
@@ -172,9 +175,10 @@ class StudyPlanService:
    - theory/practice/review 비율을 준수하고 주차별로 배분
    - 시간이 부족하면 마일스톤 기간 연장 + review 조정
    - 시간이 충분하면 심화 학습 모듈 및 과목별 심화 시간 추가
-5. **학습 시퀀스의 기간별 최적화**
-   - study_guide.learning_sequence를 기반으로 단계별 목표, 활동, 시간 배분을 명시
-   - 단계별 목표는 측정 가능해야 함 (예: 기출문제 정답률 70% 이상)
+5. **핵심 출제 토픽 반영**
+   - study_guide.key_exam_topics를 기반으로 주요 학습 토픽과 우선순위 결정
+   - 중요도(importance)가 '상'인 토픽에 더 많은 시간 배분
+   - 출제 빈도(frequency)가 높은 토픽을 우선 학습
 6. **주차별 마일스톤 구체성**
    - 각 주차는 명확한 목표와 활동을 포함
    - "기출문제 3회 풀이", "모의고사 2회"처럼 실행 단위를 구체화
@@ -230,7 +234,7 @@ class StudyPlanService:
 1. 남은 기간({days_remaining}일)과 권장 준비 기간({study_period_days}일)의 차이
 2. 하루 학습 시간({daily_study_hours}시간)의 현실성
 3. 시험 과목({subjects_text})을 모두 커버
-4. 학습 순서 가이드 준수
+4. 핵심 출제 토픽 우선순위 반영
 5. 시간 배분 가이드(theory/practice/review) 비율 적용
 
 현실적이고 실행 가능한 계획을 JSON 형식으로 생성해주세요."""

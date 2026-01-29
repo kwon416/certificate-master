@@ -372,7 +372,18 @@ def main():
             else:
                 print("\n기존 certificates 데이터를 삭제합니다...")
             deleted = clear_certificates_mariadb(session, category_name=category_name)
-            print(f"{deleted}건 삭제 완료")
+            print(f"  MariaDB: {deleted}건 삭제 완료")
+
+            # 전체 삭제일 때만 벡터 DB도 비움
+            if not category_name:
+                print("\n벡터 DB(ChromaDB)도 비웁니다...")
+                try:
+                    from app.services.vector_store import VectorStoreService
+                    vector_store = VectorStoreService()
+                    vector_deleted = vector_store.clear_all()
+                    print(f"  ChromaDB: {vector_deleted}건 삭제 완료")
+                except Exception as e:
+                    print(f"  ChromaDB 삭제 실패 (무시됨): {e}")
 
         print(f"\n{len(certificates)}건을 적재합니다...")
         inserted, category_added, skipped, failed = seed_certificates_mariadb(session, certificates)

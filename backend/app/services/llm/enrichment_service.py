@@ -74,7 +74,7 @@ class CertificateEnrichmentService:
             )
             print(f"    - 커리어 정보: {len(enrichment.career_info.get('use_cases', []))}개 활용 사례")
             print(f"    - 후기 요약 여부: {bool(enrichment.user_reviews.get('summary'))}")
-            print(f"    - 학습 가이드: 방법 {len(enrichment.study_guide.get('study_methods', []))}개, 순서 {len(enrichment.study_guide.get('learning_sequence', []))}단계")
+            print(f"    - 학습 가이드: 방법 {len(enrichment.study_guide.get('study_methods', []))}개, 핵심 토픽 {len(enrichment.study_guide.get('key_exam_topics', []))}개")
             print(f"    - 공식 출처 여부: {bool(enrichment.official_sources.get('official_site'))}")
             print(f"    - 추천 강의: {len(enrichment.recommended_lectures)}개")
             # 취업준비생 관점 로깅 (NEW)

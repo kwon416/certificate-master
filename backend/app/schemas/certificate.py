@@ -93,6 +93,15 @@ class RecommendedBook(BaseModel):
     description: Optional[str] = Field(None, description="교재 설명")
 
 
+class KeyExamTopic(BaseModel):
+    """핵심 출제 토픽 정보."""
+
+    topic: str = Field(..., description="토픽명")
+    frequency: str = Field(..., description="출제 빈도 ('매우 자주', '자주', '보통', '가끔')")
+    importance: str = Field(..., description="중요도 ('상', '중', '하')")
+    description: Optional[str] = Field(None, description="토픽 상세 설명")
+
+
 class StudyGuide(BaseModel):
     """학습 가이드 정보."""
 
@@ -100,9 +109,9 @@ class StudyGuide(BaseModel):
         default_factory=list,
         description="추천 공부 방법 (예: 교재 중심, 기출문제 위주)"
     )
-    learning_sequence: list[str] = Field(
+    key_exam_topics: list[dict[str, Any]] = Field(
         default_factory=list,
-        description="단계별 학습 순서 (예: 1단계: 기초 이론 30일)"
+        description="핵심 출제 토픽 목록 (KeyExamTopic 구조)"
     )
     time_allocation: Optional[dict[str, str]] = Field(
         None,
@@ -132,17 +141,11 @@ class JobMarketInfo(BaseModel):
     preferred_industries: list[str] = Field(
         default_factory=list, description="선호 산업군 (예: ['IT', '금융', '제조'])"
     )
-    preferred_companies: list[str] = Field(
-        default_factory=list, description="우대 기업 예시 (예: ['삼성', 'SK', 'LG'])"
-    )
     requirement_type: Optional[str] = Field(
         None, description="채용 요건 유형 ('필수', '우대', '가산점')"
     )
     public_sector_points: Optional[str] = Field(
         None, description="공무원/공기업 가산점 (예: '5%', '3점')"
-    )
-    salary_premium: Optional[str] = Field(
-        None, description="연봉 가산 효과 (예: '월 10-20만원 수당')"
     )
 
 
@@ -153,7 +156,6 @@ class CostBreakdown(BaseModel):
     exam_fee_refund: Optional[str] = Field(None, description="환불 정책")
     textbook_cost: Optional[str] = Field(None, description="교재 비용 범위 (예: '30,000 ~ 50,000원')")
     lecture_cost: Optional[str] = Field(None, description="인강 비용 범위 (예: '100,000 ~ 300,000원')")
-    total_estimated_cost: Optional[str] = Field(None, description="총 예상 비용 (예: '150,000 ~ 400,000원')")
     free_resources: list[str] = Field(
         default_factory=list, description="무료 학습 자료 (예: ['큐넷 기출문제', '유튜브 무료 강의'])"
     )
@@ -164,9 +166,6 @@ class FeasibilityInfo(BaseModel):
 
     non_major_pass_rate: Optional[str] = Field(
         None, description="비전공자 합격률 추정 (예: '약 30-35%')"
-    )
-    working_adult_tips: list[str] = Field(
-        default_factory=list, description="직장인 합격 팁"
     )
     self_study_possible: Optional[bool] = Field(None, description="독학 가능 여부")
     minimum_study_period: Optional[int] = Field(
@@ -182,7 +181,6 @@ class ExamScheduleDetail(BaseModel):
 
     annual_exam_count: Optional[int] = Field(None, description="연간 시험 횟수")
     exam_type: Optional[str] = Field(None, description="시험 유형 ('CBT', '정기', 'CBT+정기')")
-    cbt_available: Optional[bool] = Field(None, description="CBT 상시 가능 여부")
     next_exam_date: Optional[str] = Field(None, description="다음 시험일 (예상)")
     registration_period: Optional[str] = Field(None, description="접수 기간")
     result_announcement: Optional[str] = Field(None, description="합격 발표일")
@@ -198,11 +196,13 @@ class SimilarCertificate(BaseModel):
 
 class ExamInfo(BaseModel):
     """시험 정보 상세 구조."""
-    
+
     subjects: list[str] = Field(default_factory=list, description="시험 과목")
     exam_type: str = Field(default="", description="시험 형식 (필기/실기/면접)")
     passing_criteria: str = Field(default="", description="합격 기준")
     total_fee: Optional[str] = Field(None, description="총 응시료 (원)")
+    acquisition_method: Optional[str] = Field(None, description="취득 방법 (응시자격, 취득 절차)")
+    exam_criteria_url: Optional[str] = Field(None, description="출제 기준 링크")
 
 
 class RecommendedLecture(BaseModel):
@@ -263,11 +263,6 @@ class CertificateUpdate(BaseModel):
     # 학습 가이드
     study_guide: Optional[dict[str, Any]] = Field(
         None, description="학습 가이드 (StudyGuide 구조)"
-    )
-
-    # 통계
-    passing_rate: Optional[float] = Field(
-        None, ge=0, le=100, description="합격률 (%)"
     )
 
     # ============================================================
@@ -332,9 +327,6 @@ class Certificate(CertificateBase):
     study_guide: dict[str, Any] = Field(
         default_factory=dict, description="학습 가이드 (StudyGuide 구조)"
     )
-
-    # 통계 (Phase 2)
-    passing_rate: Optional[float] = Field(None, description="합격률 (%)")
 
     # ============================================================
     # 취업준비생 관점 필드 (NEW: 2026-01-28)
