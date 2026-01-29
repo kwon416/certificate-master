@@ -1,6 +1,7 @@
 """자격증 데이터 포맷팅 유틸리티.
 
 B4: format 함수 중복 제거 - EmbeddingService와 VectorStoreService에서 공통 사용.
+B5: 사용자 매칭용 임베딩 텍스트 및 메타데이터 추가 (2026-01-29).
 """
 
 
@@ -172,7 +173,48 @@ def format_certificate_text(cert: dict) -> str:
                 comparison = sim.get("comparison", "")
                 parts.append(f"- {sim['title']}: {comparison}")
 
+    # ============================================================
+    # 사용자 매칭 정보 통합 (NEW: 2026-01-29)
+    # ============================================================
+    user_matching_text = _build_user_matching_section(cert)
+    if user_matching_text:
+        parts.append("")
+        parts.append(user_matching_text)
+
     return "\n".join(parts)
+
+
+def _build_user_matching_section(cert: dict) -> str:
+    """사용자 매칭용 섹션을 생성합니다 (format_certificate_text 내부용).
+
+    Args:
+        cert: 자격증 데이터.
+
+    Returns:
+        사용자 매칭 섹션 텍스트.
+    """
+    parts = []
+
+    parts.append("[추천 대상]")
+
+    # 비전공자 정보
+    feasibility = cert.get("feasibility_info", {}) or {}
+    if feasibility.get("self_study_possible"):
+        parts.append("비전공자: 독학 가능, 비전공자도 도전하기 좋음")
+    elif feasibility.get("non_major_pass_rate"):
+        parts.append(f"비전공자 합격률: {feasibility['non_major_pass_rate']}")
+
+    # 직장인 정보
+    if feasibility.get("working_adult_tips"):
+        tips = feasibility["working_adult_tips"][:2]
+        parts.append(f"직장인 학습팁: {' / '.join(tips)}")
+
+    # CBT/시험 형태
+    schedule = cert.get("exam_schedule_detail", {}) or {}
+    if schedule.get("cbt_available"):
+        parts.append("CBT 가능: 상시시험으로 일정 조율 용이")
+
+    return "\n".join(parts) if len(parts) > 1 else ""
 
 
 def build_certificate_metadata(cert: dict) -> dict:
@@ -223,6 +265,11 @@ def build_certificate_metadata(cert: dict) -> dict:
     similar_titles = [s.get("title", "") for s in similar[:3] if s.get("title")]
     similar_certificates_str = ", ".join(similar_titles)
 
+    # 목표 직종/기업 타입 (사용자 매칭용)
+    related_jobs = career.get("related_jobs", [])
+    target_job_types = ", ".join(related_jobs[:5]) if related_jobs else ""
+    target_company_types = ", ".join(preferred_industries[:5]) if preferred_industries else ""
+
     return {
         "title": cert.get("title", ""),
         "categories": categories_str,
@@ -247,4 +294,321 @@ def build_certificate_metadata(cert: dict) -> dict:
         "cbt_available": schedule.get("cbt_available"),
         "annual_exam_count": schedule.get("annual_exam_count"),
         "similar_certificates": similar_certificates_str[:200],
+        # 사용자 매칭용 필드 (NEW: 2026-01-29)
+        "non_major_friendly": _is_non_major_friendly(cert),
+        "working_adult_friendly": _is_working_adult_friendly(cert),
+        "budget_category": _calculate_budget_category(cert),
+        "weekly_hours_required": _calculate_weekly_hours_required(cert),
+        "target_job_types": target_job_types[:200],
+        "target_company_types": target_company_types[:200],
+    }
+
+
+# ============================================================
+# 사용자 매칭용 임베딩 텍스트/메타데이터 (NEW: 2026-01-29)
+# ============================================================
+
+
+def _calculate_weekly_hours_required(cert: dict) -> float:
+    """주당 필요 학습 시간을 계산합니다.
+
+    Args:
+        cert: 자격증 데이터.
+
+    Returns:
+        주당 필요 학습 시간 (시간 단위).
+    """
+    study_days = cert.get("study_period_days")
+    difficulty = cert.get("difficulty")
+    if difficulty is None:
+        difficulty = 3
+
+    if not study_days:
+        # 기본값: 난이도 기반 추정
+        return difficulty * 5  # 난이도 3이면 주 15시간
+
+    # 하루 평균 2시간 기준으로 계산
+    # 난이도가 높을수록 하루 학습 시간 증가
+    daily_hours = 1.5 + (difficulty * 0.5)  # 난이도 3이면 하루 3시간
+    total_hours = study_days * daily_hours
+    weeks = study_days / 7
+
+    if weeks < 1:
+        weeks = 1
+
+    return round(total_hours / weeks, 1)
+
+
+def _calculate_budget_category(cert: dict) -> str:
+    """예산 범주를 계산합니다.
+
+    Args:
+        cert: 자격증 데이터.
+
+    Returns:
+        예산 범주: "low", "medium", "high"
+    """
+    cost = cert.get("cost_breakdown", {}) or {}
+    total_cost_str = cost.get("total_estimated_cost", "")
+
+    if not total_cost_str:
+        # 난이도 기반 추정
+        difficulty = cert.get("difficulty")
+        if difficulty is None:
+            difficulty = 3
+        if difficulty <= 2:
+            return "low"
+        elif difficulty <= 4:
+            return "medium"
+        return "high"
+
+    # 숫자 추출 (예: "30-50만원" -> 50)
+    import re
+
+    numbers = re.findall(r'\d+', total_cost_str)
+    if numbers:
+        max_cost = max(int(n) for n in numbers)
+        # 단위가 만원인 경우
+        if "만원" in total_cost_str or "만" in total_cost_str:
+            if max_cost <= 20:
+                return "low"
+            elif max_cost <= 50:
+                return "medium"
+            return "high"
+
+    return "medium"  # 기본값
+
+
+def _is_non_major_friendly(cert: dict) -> bool:
+    """비전공자 친화도를 판단합니다.
+
+    Args:
+        cert: 자격증 데이터.
+
+    Returns:
+        비전공자 친화 여부.
+    """
+    feasibility = cert.get("feasibility_info", {}) or {}
+
+    # 독학 가능 여부
+    self_study = feasibility.get("self_study_possible")
+    if self_study is True:
+        return True
+
+    # 비전공자 합격률 분석
+    non_major_rate = feasibility.get("non_major_pass_rate", "")
+    if non_major_rate:
+        import re
+
+        numbers = re.findall(r'\d+', non_major_rate)
+        if numbers:
+            rate = int(numbers[0])
+            if rate >= 30:  # 30% 이상이면 비전공자 친화적
+                return True
+
+    # 난이도 기반 (낮으면 비전공자 친화적)
+    difficulty = cert.get("difficulty")
+    if difficulty is not None and difficulty <= 2:
+        return True
+
+    return False
+
+
+def _is_working_adult_friendly(cert: dict) -> bool:
+    """직장인 친화도를 판단합니다.
+
+    Args:
+        cert: 자격증 데이터.
+
+    Returns:
+        직장인 친화 여부.
+    """
+    feasibility = cert.get("feasibility_info", {}) or {}
+
+    # 직장인 팁이 있으면 친화적
+    working_tips = feasibility.get("working_adult_tips", [])
+    if working_tips and len(working_tips) >= 2:
+        return True
+
+    # CBT 가능 여부 (시험 시간 유연)
+    schedule = cert.get("exam_schedule_detail", {}) or {}
+    if schedule.get("cbt_available"):
+        return True
+
+    # 최소 준비 기간이 짧으면 친화적
+    min_period = feasibility.get("minimum_study_period")
+    if min_period and min_period <= 60:
+        return True
+
+    # 연간 시험 횟수가 많으면 친화적
+    exam_count = schedule.get("annual_exam_count")
+    if exam_count and exam_count >= 4:
+        return True
+
+    return False
+
+
+def format_user_matching_text(cert: dict) -> str:
+    """사용자 매칭을 위한 임베딩 텍스트를 생성합니다.
+
+    사용자가 입력하는 조건(비전공자, 직장인, 예산, 학습시간 등)과
+    매칭될 수 있도록 최적화된 텍스트를 생성합니다.
+
+    Args:
+        cert: 자격증 데이터를 담은 딕셔너리.
+
+    Returns:
+        사용자 매칭용으로 포맷된 텍스트 문자열.
+    """
+    parts = []
+
+    # 기본 정보
+    parts.append(f"자격증: {cert.get('title', '')}")
+
+    # ============================================================
+    # [추천 대상] 섹션 - 사용자 프로필 매칭
+    # ============================================================
+    parts.append("")
+    parts.append("[추천 대상]")
+
+    # 비전공자 추천 여부
+    if _is_non_major_friendly(cert):
+        parts.append("비전공자 추천: 비전공자도 독학으로 합격 가능한 자격증입니다.")
+        feasibility = cert.get("feasibility_info", {}) or {}
+        non_major_rate = feasibility.get("non_major_pass_rate", "")
+        if non_major_rate:
+            parts.append(f"비전공자 합격률: {non_major_rate}")
+    else:
+        parts.append("비전공자: 전공 지식이 필요할 수 있어 추가 학습이 필요합니다.")
+
+    # 직장인 추천 여부
+    if _is_working_adult_friendly(cert):
+        parts.append("직장인 추천: 직장인이 준비하기 좋은 자격증입니다.")
+        feasibility = cert.get("feasibility_info", {}) or {}
+        tips = feasibility.get("working_adult_tips", [])
+        if tips:
+            parts.append(f"직장인 팁: {' / '.join(tips[:2])}")
+    else:
+        parts.append("직장인: 충분한 학습 시간 확보가 필요합니다.")
+
+    # ============================================================
+    # 예산/비용 정보
+    # ============================================================
+    cost = cert.get("cost_breakdown", {}) or {}
+    budget_category = _calculate_budget_category(cert)
+    budget_labels = {
+        "low": "저렴 (20만원 이하)",
+        "medium": "보통 (20-50만원)",
+        "high": "고비용 (50만원 이상)",
+    }
+
+    parts.append(f"예산 범위: {budget_labels.get(budget_category, '보통')}")
+    if cost.get("total_estimated_cost"):
+        parts.append(f"총 비용 예상: {cost['total_estimated_cost']}")
+    if cost.get("free_resources"):
+        parts.append(f"무료 학습 자료: {', '.join(cost['free_resources'][:3])}")
+
+    # ============================================================
+    # 학습 시간 요구량
+    # ============================================================
+    weekly_hours = _calculate_weekly_hours_required(cert)
+    parts.append(f"학습 시간 요구량: 주 {weekly_hours}시간 권장")
+
+    study_days = cert.get("study_period_days")
+    if study_days:
+        parts.append(f"공부 시간: 약 {study_days}일 ({study_days // 7}주) 준비 필요")
+
+    # ============================================================
+    # 시험 형태
+    # ============================================================
+    exam = cert.get("exam_info", {}) or {}
+    schedule = cert.get("exam_schedule_detail", {}) or {}
+
+    exam_format_parts = []
+    if exam.get("exam_type"):
+        exam_format_parts.append(exam["exam_type"])
+    if schedule.get("cbt_available"):
+        exam_format_parts.append("CBT 가능 (상시시험)")
+    else:
+        exam_format_parts.append("정기시험")
+
+    if exam_format_parts:
+        parts.append(f"시험 형태: {', '.join(exam_format_parts)}")
+
+    if schedule.get("annual_exam_count"):
+        parts.append(f"연간 시험 횟수: {schedule['annual_exam_count']}회")
+
+    # ============================================================
+    # [목표 직종] 섹션 - 진로 매칭
+    # ============================================================
+    career = cert.get("career_info", {}) or {}
+    job_market = cert.get("job_market_info", {}) or {}
+
+    parts.append("")
+    parts.append("[목표 직종]")
+
+    if career.get("related_jobs"):
+        parts.append(f"관련 직업: {', '.join(career['related_jobs'][:5])}")
+    if career.get("use_cases"):
+        parts.append(f"활용 분야: {', '.join(career['use_cases'][:5])}")
+    if career.get("industry"):
+        industry = career["industry"]
+        if isinstance(industry, list):
+            parts.append(f"산업 분야: {', '.join(industry[:5])}")
+        else:
+            parts.append(f"산업 분야: {industry}")
+
+    # ============================================================
+    # 기업/취업 정보
+    # ============================================================
+    if job_market.get("preferred_industries"):
+        parts.append(f"선호 기업 유형: {', '.join(job_market['preferred_industries'][:5])}")
+    if job_market.get("preferred_companies"):
+        parts.append(f"우대 기업 예시: {', '.join(job_market['preferred_companies'][:5])}")
+    if job_market.get("requirement_type"):
+        parts.append(f"채용 시 요구 수준: {job_market['requirement_type']}")
+    if job_market.get("public_sector_points"):
+        parts.append(f"공공기관/공무원 가산점: {job_market['public_sector_points']}")
+
+    return "\n".join(parts)
+
+
+def build_user_matching_metadata(cert: dict) -> dict:
+    """사용자 매칭을 위한 ChromaDB 메타데이터를 생성합니다.
+
+    필터링에 사용할 수 있는 구조화된 메타데이터를 생성합니다.
+
+    Args:
+        cert: 자격증 데이터를 담은 딕셔너리.
+
+    Returns:
+        메타데이터 딕셔너리.
+    """
+    career = cert.get("career_info", {}) or {}
+    job_market = cert.get("job_market_info", {}) or {}
+    schedule = cert.get("exam_schedule_detail", {}) or {}
+
+    # 목표 직종 타입 (문자열로 결합)
+    related_jobs = career.get("related_jobs", [])
+    target_job_types = ", ".join(related_jobs[:5]) if related_jobs else ""
+
+    # 목표 기업 타입 (문자열로 결합)
+    preferred_industries = job_market.get("preferred_industries", [])
+    target_company_types = ", ".join(preferred_industries[:5]) if preferred_industries else ""
+
+    return {
+        # 사용자 프로필 매칭
+        "non_major_friendly": _is_non_major_friendly(cert),
+        "working_adult_friendly": _is_working_adult_friendly(cert),
+
+        # 예산/시간 제약
+        "budget_category": _calculate_budget_category(cert),
+        "weekly_hours_required": _calculate_weekly_hours_required(cert),
+
+        # 시험 형태
+        "cbt_available": schedule.get("cbt_available"),
+
+        # 목표 직종/기업
+        "target_job_types": target_job_types[:200],
+        "target_company_types": target_company_types[:200],
     }

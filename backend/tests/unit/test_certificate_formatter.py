@@ -153,12 +153,12 @@ class TestFormatterIntegration:
         from unittest.mock import patch, MagicMock
         from app.utils.certificate_formatter import format_certificate_text
 
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()

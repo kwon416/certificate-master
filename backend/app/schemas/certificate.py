@@ -347,6 +347,9 @@ class Certificate(CertificateBase):
         default_factory=list, description="유사 자격증 비교 (SimilarCertificate 구조)"
     )
 
+    # 합격률
+    passing_rate: Optional[float] = Field(None, description="합격률 (%)")
+
     # 조회수
     view_count: int = Field(default=0, description="조회수")
 

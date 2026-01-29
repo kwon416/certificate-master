@@ -7,20 +7,12 @@
 
 import Link from 'next/link'
 import { type ReactNode, useMemo } from 'react'
-import {
-  Clock3,
-  TrendingUp,
-  Sparkles,
-  FileText,
-  Lightbulb,
-  Briefcase,
-} from 'lucide-react'
+import { Clock3, TrendingUp, Sparkles, FileText, Briefcase, Hash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { MatchScoreBadge } from './match-score-badge'
 import type { RecommendedCertificate } from '@/lib/api/recommendations'
 
 interface RecommendationCardProps {
-  recommendation: RecommendedCertificate
+  recommendation: RecommendedCertificate & { rank?: number }
 }
 
 const parseNumericValue = (value: number | string | null | undefined): number | null => {
@@ -49,9 +41,6 @@ const formatDifficulty = (difficulty?: number | null): string => {
 // 핵심 포인트 필터링: 중복/불필요 항목 제거
 const filterKeyPoints = (points: string[]): string[] => {
   return points.filter(point => {
-    const lower = point.toLowerCase()
-    // "학습 팁:" 패턴 제외 (study_insights에서 표시)
-    if (lower.includes('학습 팁:') || lower.includes('학습팁:')) return false
     // "약 N개월 준비" 패턴 제외 (Quick Stats에서 표시)
     if (/약\s*\d+\s*(개월|년)\s*준비/.test(point)) return false
     return true
@@ -60,11 +49,7 @@ const filterKeyPoints = (points: string[]): string[] => {
 
 export function RecommendationCard({ recommendation }: RecommendationCardProps) {
   const { certificate, recommendation_reason, key_points, feasibility } = recommendation
-
-  const matchScore = useMemo(
-    () => parseNumericValue(recommendation.match_score) ?? 0,
-    [recommendation.match_score]
-  )
+  const rank = recommendation.rank ?? 1
 
   const estimatedDays = useMemo(
     () => parseNumericValue(feasibility?.estimated_days),
@@ -73,10 +58,9 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
 
   const effectiveDuration = estimatedDays ?? parseNumericValue(certificate.study_period_days) ?? null
 
-  // 핵심 포인트: 필터링 후 최대 3개
+  // 핵심 포인트: 필터링 후 모두 표시
   const filteredKeyPoints = useMemo(() => {
-    const filtered = filterKeyPoints(key_points ?? [])
-    return filtered.slice(0, 3)
+    return filterKeyPoints(key_points ?? [])
   }, [key_points])
 
   // 시험 유형
@@ -108,7 +92,10 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
             </div>
           </div>
           <div className="flex flex-col items-start sm:items-end gap-1.5 md:gap-2">
-            <MatchScoreBadge score={matchScore} />
+            <div className="inline-flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30">
+              <Hash className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
+              <span className="text-lg md:text-xl font-bold text-white">{rank}</span>
+            </div>
           </div>
         </div>
 
@@ -131,61 +118,48 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
           />
         </div>
 
-        {/* Recommendation Reason - 간결하게 */}
+        {/* Recommendation Reason - 문장별 줄바꿈 */}
         <div className="rounded-lg md:rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 md:p-4">
           <p className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-emerald-200">
             <Briefcase className="w-3.5 h-3.5 md:w-4 md:h-4" />
             추천 이유
           </p>
-          <p className="mt-1.5 md:mt-2 text-sm md:text-base leading-relaxed text-slate-50 line-clamp-3">
-            {recommendation_reason}
-          </p>
+          <div className="mt-1.5 md:mt-2 space-y-1.5">
+            {recommendation_reason.split(/(?<=\.)\s+/).map((sentence, idx) => (
+              <p key={idx} className="text-sm md:text-base leading-relaxed text-slate-50">
+                {sentence.trim()}
+              </p>
+            ))}
+          </div>
         </div>
 
-        {/* Key Points - 최대 3개 */}
+        {/* Key Points */}
         {filteredKeyPoints.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <span className="text-sm md:text-base font-semibold text-slate-200 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-emerald-400" />
               핵심 포인트
             </span>
-            <ul className="space-y-1.5">
-              {filteredKeyPoints.map((point, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2 text-sm md:text-base text-slate-200"
-                >
-                  <span className="text-emerald-400 mt-0.5">•</span>
-                  <span className="line-clamp-1">{point}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {filteredKeyPoints.map((point, index) => {
+                // "라벨: 내용" 패턴 분리
+                const colonIdx = point.indexOf(':')
+                const hasLabel = colonIdx > 0 && colonIdx < 15
+                const label = hasLabel ? point.slice(0, colonIdx).trim() : null
+                const content = hasLabel ? point.slice(colonIdx + 1).trim() : point
 
-        {/* Study Insights - 최대 2개 */}
-        {(recommendation.study_insights?.difficulty_feedback ||
-          (recommendation.study_insights?.study_tips?.length ?? 0) > 0) && (
-          <div className="rounded-lg md:rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 md:p-4">
-            <p className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-cyan-200">
-              <Lightbulb className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              합격자 팁
-            </p>
-            <ul className="mt-2 space-y-1.5">
-              {/* 난이도 피드백 (1개) */}
-              {recommendation.study_insights?.difficulty_feedback && (
-                <li className="text-sm md:text-base text-slate-200 flex items-start gap-2">
-                  <span className="text-amber-400 mt-0.5">📝</span>
-                  <span className="line-clamp-2">{recommendation.study_insights.difficulty_feedback}</span>
-                </li>
-              )}
-              {/* 학습 팁 (1개만) */}
-              {recommendation.study_insights?.study_tips?.slice(0, 1).map((tip, i) => (
-                <li key={`study-${i}`} className="text-sm md:text-base text-slate-200 flex items-start gap-2">
-                  <span className="text-cyan-400 mt-0.5">•</span>
-                  <span className="line-clamp-2">{tip}</span>
-                </li>
-              ))}
+                return (
+                  <li
+                    key={index}
+                    className="flex flex-col gap-1 text-sm md:text-base bg-slate-800/40 rounded-lg px-3 py-2.5"
+                  >
+                    {label && (
+                      <span className="text-xs font-medium text-emerald-400">{label}</span>
+                    )}
+                    <span className="text-slate-200">{content}</span>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         )}
@@ -215,7 +189,7 @@ function InfoChip({ icon, label, value }: InfoChipProps) {
       </div>
       <div className="text-center space-y-0.5">
         <p className="text-[10px] md:text-xs text-slate-400">{label}</p>
-        <p className="text-[11px] md:text-sm font-semibold text-white truncate max-w-[80px] md:max-w-[100px]">{value}</p>
+        <p className="text-[11px] md:text-sm font-semibold text-white text-center leading-tight">{value}</p>
       </div>
     </div>
   )

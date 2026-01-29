@@ -57,6 +57,23 @@ VALID_DIFFICULTY_PREFERENCES = [
     "어려워도 상관없음",
 ]
 
+# 새 필드: 현재 상황
+VALID_CURRENT_STATUS = [
+    "student",          # 학생 (취업 준비 중인 대학생/취준생)
+    "entry_jobseeker",  # 신입 구직자 (첫 직장을 찾고 있어요)
+    "junior_worker",    # 현직자 1-3년차 (경력 개발 또는 이직 준비)
+    "senior_worker",    # 현직자 4년차 이상 (전문성 강화 또는 커리어 전환)
+    "career_break",     # 휴직/전업준비 (재취업 또는 새로운 시작)
+]
+
+# 새 필드: 투자 시간
+VALID_STUDY_COMMITMENT = [
+    "relaxed",    # 여유 있게 (일상과 병행하며 천천히)
+    "moderate",   # 적당히 (주 10시간 정도 투자 가능)
+    "intensive",  # 집중해서 (전업으로 빠르게 취득 목표)
+    "unsure",     # 잘 모르겠어요 (추천받고 결정할게요)
+]
+
 
 class RecommendationRequest(BaseModel):
     """사용자 컨텍스트 기반 추천 요청 스키마."""
@@ -81,6 +98,14 @@ class RecommendationRequest(BaseModel):
     user_summary: str | None = Field(
         default=None,
         description="사용자가 작성한 한 문장 요약 (선택, 없으면 자동 생성)",
+    )
+    current_status: str | None = Field(
+        default=None,
+        description="현재 상황 (student, entry_jobseeker, junior_worker, senior_worker, career_break)",
+    )
+    study_commitment: str | None = Field(
+        default=None,
+        description="투자 시간 (relaxed, moderate, intensive, unsure)",
     )
 
     @field_validator("purpose")
@@ -138,6 +163,28 @@ class RecommendationRequest(BaseModel):
             return None
         text = v.strip()
         return text or None
+
+    @field_validator("current_status")
+    @classmethod
+    def validate_current_status(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        if v not in VALID_CURRENT_STATUS:
+            raise ValueError(
+                f"Invalid current_status. Must be one of: {VALID_CURRENT_STATUS}"
+            )
+        return v
+
+    @field_validator("study_commitment")
+    @classmethod
+    def validate_study_commitment(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        if v not in VALID_STUDY_COMMITMENT:
+            raise ValueError(
+                f"Invalid study_commitment. Must be one of: {VALID_STUDY_COMMITMENT}"
+            )
+        return v
 
 
 class Feasibility(BaseModel):

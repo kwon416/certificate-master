@@ -15,6 +15,7 @@ import {
   useRecommendStore,
   WIZARD_STEPS,
   areAllAnswersComplete,
+  mapAnswersToApiRequest,
   type WizardAnswers,
 } from '@/stores/recommend-store'
 import { useRecommendations } from '@/hooks/use-recommendations'
@@ -64,12 +65,18 @@ export function InteractionWizard() {
         ? [answers.interest_domains]
         : []
       const summary = answers.user_summary?.trim() ?? ''
+
+      // 통합 필드 → API 필드 매핑
+      const apiFields = mapAnswersToApiRequest(answers)
+
       getRecommendations({
-        purpose: answers.purpose!,
+        purpose: apiFields.purpose,
         interest_domains: selectedDomain,
-        study_timeline: answers.study_timeline!,
-        difficulty_preference: answers.difficulty_preference!,
+        study_timeline: apiFields.study_timeline,
+        difficulty_preference: apiFields.difficulty_preference,
         user_summary: summary || undefined,
+        current_status: apiFields.current_status,
+        study_commitment: apiFields.study_commitment,
       })
     } else if (!isLastStep) {
       nextStep()

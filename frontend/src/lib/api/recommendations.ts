@@ -10,9 +10,12 @@ import type { Certificate } from './types'
 export interface RecommendationRequest {
   purpose: string                  // 추천 목적 (취업, 이직, 전문성 강화 등)
   interest_domains: string[]       // 관심 분야(단일 선택을 배열로 전송)
-  study_timeline: string           // 예상 공부 기간
-  difficulty_preference: string    // 난이도 선호
+  study_timeline: string           // 예상 공부 기간 (하위 호환성)
+  difficulty_preference: string    // 난이도 선호 (하위 호환성)
   user_summary?: string            // 최종 한 문장 요약 (선택)
+  // 새 필드 (선택, 소프트 필터에 사용)
+  current_status?: string          // 현재 상황 (student, entry_jobseeker, etc.)
+  study_commitment?: string        // 투자 시간 (relaxed, moderate, intensive, unsure)
 }
 
 // Response types

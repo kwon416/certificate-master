@@ -2,24 +2,30 @@
  * Recommendation Store (Zustand)
  *
  * 자격증 추천 위자드의 상태를 관리합니다.
+ * 4단계 통합 버전 (2026-01-29)
  */
 import { create } from 'zustand'
 import type { Certificate } from '@/lib/api/types'
 
 // Wizard 답변 타입
 export interface WizardAnswers {
-  purpose: string | null              // Step 1: 추천 목적/맥락
-  interest_domains: string | null     // Step 2: 관심 분야(단일 선택)
-  study_timeline: string | null       // Step 3: 예상 공부 기간
-  difficulty_preference: string | null// Step 4: 난이도 선호
-  user_summary: string | null         // Step 5: 최종 한 문장 요약 (선택)
+  situation_goal: string | null       // Step 1: 상황+목표 통합 (NEW)
+  interest_domains: string | null     // Step 2: 관심 분야
+  study_commitment: string | null     // Step 3: 투자 시간
+  user_summary: string | null         // Step 4: 추가 정보 (선택)
+  // 하위 호환성을 위해 유지 (API 호출 시 매핑)
+  purpose: string | null
+  current_status: string | null
+  study_timeline: string | null
+  difficulty_preference: string | null
 }
 
 export interface WizardOption {
   value: string
   label: string
   icon?: string
-  matchingTypes?: string[]  // 매칭되는 자격증 유형
+  description?: string  // 부가 설명
+  matchingTypes?: string[]
 }
 
 export type WizardStepType = 'options' | 'slider' | 'input' | 'combo'
@@ -55,30 +61,24 @@ export interface RecommendedCertificate {
 export interface RecommendationResponse {
   recommendations: RecommendedCertificate[]
   query_summary: string
-  user_summary?: string | null  // 사용자가 입력한 원본 요청 문장
+  user_summary?: string | null
   total_matched: number
 }
 
 interface RecommendState {
-  // Wizard 상태
   currentStep: number
   answers: WizardAnswers
-
-  // 추천 결과
   recommendations: RecommendedCertificate[] | null
   querySummary: string | null
   totalMatched: number
   isLoading: boolean
   error: string | null
 
-  // Wizard Actions
   setAnswer: (key: keyof WizardAnswers, value: WizardAnswers[keyof WizardAnswers]) => void
   nextStep: () => void
   prevStep: () => void
   goToStep: (step: number) => void
   resetWizard: () => void
-
-  // Recommendation Actions
   setRecommendations: (response: RecommendationResponse) => void
   setLoading: (isLoading: boolean) => void
   setError: (error: string | null) => void
@@ -86,15 +86,18 @@ interface RecommendState {
 }
 
 const defaultAnswers: WizardAnswers = {
-  purpose: null,
+  situation_goal: null,
   interest_domains: null,
+  study_commitment: null,
+  user_summary: null,
+  // 하위 호환성 필드 (API 호출 시 매핑됨)
+  purpose: null,
+  current_status: null,
   study_timeline: null,
   difficulty_preference: null,
-  user_summary: null,
 }
 
 export const useRecommendStore = create<RecommendState>((set, get) => ({
-  // Initial state
   currentStep: 1,
   answers: { ...defaultAnswers },
   recommendations: null,
@@ -103,7 +106,6 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  // Wizard Actions
   setAnswer: (key, value) => {
     set((state) => ({
       answers: {
@@ -144,7 +146,6 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
     })
   },
 
-  // Recommendation Actions
   setRecommendations: (response) => {
     set({
       recommendations: response.recommendations,
@@ -172,96 +173,183 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
   },
 }))
 
-// Validation helper: 모든 답변이 완료되었는지 확인
+// Validation helper: 필수 답변 완료 확인
 export function areAllAnswersComplete(answers: WizardAnswers): boolean {
   return (
-    answers.purpose !== null &&
+    answers.situation_goal !== null &&
     answers.interest_domains !== null &&
-    answers.study_timeline !== null &&
-    answers.difficulty_preference !== null
+    answers.study_commitment !== null
   )
 }
 
-// Options for each step (Updated 2026-01-25)
-export const WIZARD_OPTIONS = {
-  purpose: [
-    {
-      value: '취업',
-      label: '취업 준비',
-      icon: '🎯',
-      matchingTypes: ['국가기술자격', '과정평가형자격'],
-    },
-    {
-      value: '이직',
-      label: '이직 · 연봉 상승',
-      icon: '📈',
-      matchingTypes: ['국가기술자격(기사·산업기사)', '국가전문자격'],
-    },
-    {
-      value: '커리어 전문성 강화',
-      label: '전문성 증명',
-      icon: '🏆',
-      matchingTypes: ['국가전문자격', '상위 국가기술자격'],
-    },
-    {
-      value: '창업 / 실무 활용',
-      label: '실무에 바로 활용',
-      icon: '💼',
-      matchingTypes: ['일학습병행자격', '과정평가형자격'],
-    },
-    {
-      value: '개인 관심 / 교양',
-      label: '관심 · 교양',
-      icon: '✨',
-      matchingTypes: ['난이도 낮은 국가기술자격', '일부 전문자격'],
-    },
-  ] as WizardOption[],
-  interest_domains: [
-    '기획/전략',
-    '마케팅/홍보/조사',
-    '회계/세무/재무',
-    '인사/노무/HRD',
-    '총무/법무/사무',
-    'IT개발',
-    '데이터',
-    '디자인',
-    '영업/판매/무역',
-    '고객상담/TM',
-    '구매/자재/물류',
-    '상품기획/MD',
-    '운전/운송/배송',
-    '서비스',
-    '생산',
-    '건설/건축',
-    '의료',
-    '연구/R&D',
-    '교육',
-    '미디어/문화/스포츠',
-    '금융/보험',
-    '공공/복지',
-  ],
-  study_timeline: [
-    '3개월 이하',
-    '6개월 이하',
-    '1년 이하',
-    '1년 이상',
-    '상관없음',
-  ],
-  difficulty_preference: [
-    '쉬운 편',
-    '중간',
-    '어려워도 상관없음',
-  ],
+// 통합 필드 → API 필드 매핑
+export function mapSituationGoalToFields(situationGoal: string): {
+  purpose: string
+  current_status: string
+} {
+  const mapping: Record<string, { purpose: string; current_status: string }> = {
+    'student_employment': { purpose: '취업', current_status: 'student' },
+    'jobseeker_employment': { purpose: '취업', current_status: 'entry_jobseeker' },
+    'junior_career': { purpose: '이직', current_status: 'junior_worker' },
+    'senior_expertise': { purpose: '커리어 전문성 강화', current_status: 'senior_worker' },
+    'career_break_restart': { purpose: '취업', current_status: 'career_break' },
+    'anyone_hobby': { purpose: '개인 관심 / 교양', current_status: 'entry_jobseeker' },
+  }
+
+  return mapping[situationGoal] || { purpose: '취업', current_status: 'student' }
 }
 
-// Step configurations (intent-first flow)
+// 전체 필드 매핑 (API 호출용)
+export function mapAnswersToApiRequest(answers: WizardAnswers): {
+  purpose: string
+  current_status: string
+  study_timeline: string
+  difficulty_preference: string
+  study_commitment: string
+} {
+  // 1. situation_goal → purpose + current_status
+  const { purpose, current_status } = mapSituationGoalToFields(answers.situation_goal || '')
+
+  // 2. current_status → study_timeline
+  const statusToTimeline: Record<string, string> = {
+    student: '6개월 이하',
+    entry_jobseeker: '3개월 이하',
+    junior_worker: '6개월 이하',
+    senior_worker: '1년 이하',
+    career_break: '6개월 이하',
+  }
+
+  // 3. study_commitment → difficulty_preference
+  const commitmentToDifficulty: Record<string, string> = {
+    relaxed: '쉬운 편',
+    moderate: '중간',
+    intensive: '어려워도 상관없음',
+    unsure: '어려워도 상관없음',
+  }
+
+  const commitment = answers.study_commitment || 'moderate'
+
+  const timeline = commitment === 'unsure'
+    ? '상관없음'
+    : statusToTimeline[current_status] || '6개월 이하'
+
+  const difficulty = commitmentToDifficulty[commitment] || '중간'
+
+  return {
+    purpose,
+    current_status,
+    study_timeline: timeline,
+    difficulty_preference: difficulty,
+    study_commitment: commitment,
+  }
+}
+
+// Step 1: 상황+목표 통합 옵션
+export const WIZARD_OPTIONS = {
+  situation_goal: [
+    {
+      value: 'student_employment',
+      label: '학생 · 취준생',
+      icon: '🎓',
+      description: '취업 준비 중이에요',
+    },
+    {
+      value: 'jobseeker_employment',
+      label: '신입 구직자',
+      icon: '🔍',
+      description: '첫 직장을 찾고 있어요',
+    },
+    {
+      value: 'junior_career',
+      label: '주니어 현직자',
+      icon: '💼',
+      description: '이직 · 연봉 협상 준비',
+    },
+    {
+      value: 'senior_expertise',
+      label: '시니어 현직자',
+      icon: '📈',
+      description: '전문성 강화 · 커리어 전환',
+    },
+    {
+      value: 'career_break_restart',
+      label: '휴직 · 전업준비',
+      icon: '🔄',
+      description: '재취업 · 새로운 시작',
+    },
+    {
+      value: 'anyone_hobby',
+      label: '누구나',
+      icon: '✨',
+      description: '관심 · 교양 · 자기계발',
+    },
+  ] as WizardOption[],
+
+  interest_domains: [
+    { value: '기획/전략', label: '기획/전략', icon: '🎯' },
+    { value: '마케팅/홍보/조사', label: '마케팅/홍보/조사', icon: '📣' },
+    { value: '회계/세무/재무', label: '회계/세무/재무', icon: '💰' },
+    { value: '인사/노무/HRD', label: '인사/노무/HRD', icon: '👥' },
+    { value: '총무/법무/사무', label: '총무/법무/사무', icon: '⚖️' },
+    { value: 'IT개발', label: 'IT개발', icon: '💻' },
+    { value: '데이터', label: '데이터', icon: '📊' },
+    { value: '디자인', label: '디자인', icon: '🎨' },
+    { value: '영업/판매/무역', label: '영업/판매/무역', icon: '🤝' },
+    { value: '고객상담/TM', label: '고객상담/TM', icon: '📞' },
+    { value: '구매/자재/물류', label: '구매/자재/물류', icon: '📦' },
+    { value: '상품기획/MD', label: '상품기획/MD', icon: '🛍️' },
+    { value: '운전/운송/배송', label: '운전/운송/배송', icon: '🚛' },
+    { value: '서비스', label: '서비스', icon: '🙋' },
+    { value: '생산', label: '생산', icon: '🏭' },
+    { value: '건설/건축', label: '건설/건축', icon: '🏗️' },
+    { value: '의료', label: '의료', icon: '🏥' },
+    { value: '연구/R&D', label: '연구/R&D', icon: '🔬' },
+    { value: '교육', label: '교육', icon: '📚' },
+    { value: '미디어/문화/스포츠', label: '미디어/문화/스포츠', icon: '🎬' },
+    { value: '금융/보험', label: '금융/보험', icon: '🏦' },
+    { value: '공공/복지', label: '공공/복지', icon: '🏛️' },
+  ] as WizardOption[],
+
+  study_commitment: [
+    {
+      value: 'relaxed',
+      label: '여유 있게',
+      icon: '🧘',
+      description: '일상과 병행하며 천천히',
+    },
+    {
+      value: 'moderate',
+      label: '적당히',
+      icon: '⚖️',
+      description: '주 10시간 정도 투자 가능',
+    },
+    {
+      value: 'intensive',
+      label: '집중해서',
+      icon: '🔥',
+      description: '전업으로 빠르게 취득 목표',
+    },
+    {
+      value: 'unsure',
+      label: '잘 모르겠어요',
+      icon: '🤷',
+      description: '추천받고 결정할게요',
+    },
+  ] as WizardOption[],
+
+  // 기존 필드 (하위 호환성)
+  study_timeline: ['3개월 이하', '6개월 이하', '1년 이하', '1년 이상', '상관없음'],
+  difficulty_preference: ['쉬운 편', '중간', '어려워도 상관없음'],
+}
+
+// 4단계 Wizard 설정
 export const WIZARD_STEPS: WizardStepConfig[] = [
   {
     step: 1,
-    key: 'purpose' as keyof WizardAnswers,
-    title: '자격증이 필요한 이유는 무엇인가요?',
-    description: '지금 상황과 가장 가까운 항목을 선택해 주세요.',
-    options: WIZARD_OPTIONS.purpose,
+    key: 'situation_goal' as keyof WizardAnswers,
+    title: '지금 상황과 목표를 알려주세요',
+    description: '가장 가까운 항목을 선택해 주세요.',
+    options: WIZARD_OPTIONS.situation_goal,
   },
   {
     step: 2,
@@ -272,25 +360,18 @@ export const WIZARD_STEPS: WizardStepConfig[] = [
   },
   {
     step: 3,
-    key: 'study_timeline' as keyof WizardAnswers,
-    title: '예상 공부 기간은?',
-    description: '현실적인 준비 기간을 선택하세요.',
-    options: WIZARD_OPTIONS.study_timeline,
+    key: 'study_commitment' as keyof WizardAnswers,
+    title: '어느 정도 시간을 투자할 수 있나요?',
+    description: '완벽하지 않아도 괜찮아요. 대략적인 계획만 알려주세요.',
+    options: WIZARD_OPTIONS.study_commitment,
   },
   {
     step: 4,
-    key: 'difficulty_preference' as keyof WizardAnswers,
-    title: '난이도 선호는 어떤가요?',
-    description: '선호하는 난이도를 선택하세요.',
-    options: WIZARD_OPTIONS.difficulty_preference,
-  },
-  {
-    step: 5,
     key: 'user_summary' as keyof WizardAnswers,
-    title: '추가 정보 입력',
-    description: '선택하지 않아도 됩니다.',
+    title: '추가로 알려주실 게 있나요?',
+    description: '선택사항이에요. 건너뛰어도 됩니다.',
     optional: true,
     type: 'input',
-    placeholder: '예) 데이터 분석 직무로 이직하고싶어',
+    placeholder: '예) 데이터 분석 직무로 이직하고 싶어요',
   },
 ]

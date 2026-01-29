@@ -19,18 +19,18 @@ class TestVectorStoreDbSync:
 
     def test_sync_vector_id_to_db_success(self):
         """ChromaDB 업로드 후 DB에 vector_id 저장 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()
@@ -58,18 +58,18 @@ class TestVectorStoreDbSync:
 
     def test_sync_vector_id_to_db_batch(self):
         """배치로 여러 자격증의 vector_id 저장 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()
@@ -99,18 +99,18 @@ class TestVectorStoreDbSync:
 
     def test_clear_vector_id_in_db(self):
         """DB에서 vector_id 초기화 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()
@@ -135,18 +135,18 @@ class TestVectorStoreDbSync:
 
     def test_get_certificates_without_vector_id(self):
         """vector_id가 없는 자격증 조회 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()
@@ -175,18 +175,18 @@ class TestVectorStoreDbSync:
 
     def test_get_certificates_with_vector_id(self):
         """vector_id가 있는 자격증 조회 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()
@@ -215,18 +215,18 @@ class TestVectorStoreDbSync:
 
     def test_upsert_with_db_sync(self):
         """ChromaDB 업로드 + DB 동기화 통합 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()
@@ -255,18 +255,18 @@ class TestVectorStoreDbSync:
 
     def test_delete_with_db_sync(self):
         """ChromaDB 삭제 + DB 동기화 통합 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()
@@ -301,19 +301,19 @@ class TestSyncResultTracking:
 
         B5: 성공 개수만 반환하는 대신 상세 결과 딕셔너리 반환.
         """
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
                 mock_client.heartbeat.return_value = 1234567890
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()
@@ -348,19 +348,19 @@ class TestSyncResultTracking:
 
     def test_sync_batch_returns_errors_on_failure(self):
         """DB 에러 발생 시 에러 정보를 반환하는지 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
                 mock_client.heartbeat.return_value = 1234567890
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     from app.services.vector_store import VectorStoreService
 
                     service = VectorStoreService()

@@ -11,12 +11,12 @@ class TestVectorStoreService:
 
     def test_init_from_settings(self):
         """Test service initialization from settings."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -35,12 +35,12 @@ class TestVectorStoreService:
 
     def test_upsert_certificate_success(self):
         """Test upserting a single certificate embedding."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -68,12 +68,12 @@ class TestVectorStoreService:
 
     def test_upsert_certificates_batch(self):
         """Test batch upserting multiple certificates."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -99,12 +99,12 @@ class TestVectorStoreService:
 
     def test_query_similar_basic(self):
         """Test querying similar certificates."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -144,12 +144,12 @@ class TestVectorStoreService:
 
     def test_query_similar_with_filter(self):
         """Test querying similar certificates with filter."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -183,12 +183,12 @@ class TestVectorStoreService:
 
     def test_query_similar_empty_results(self):
         """Test querying when no similar certificates found."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -211,12 +211,12 @@ class TestVectorStoreService:
 
     def test_get_by_id_success(self):
         """Test retrieving certificate by ID."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -245,12 +245,12 @@ class TestVectorStoreService:
 
     def test_get_by_id_not_found(self):
         """Test retrieving non-existent certificate."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -277,12 +277,12 @@ class TestVectorStoreService:
         except ImportError:
             pytest.skip("numpy not installed")
 
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -306,12 +306,12 @@ class TestVectorStoreService:
 
     def test_list_vectors_metadata_only(self):
         """Test listing vectors without embeddings for dashboard view."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -346,12 +346,12 @@ class TestVectorStoreService:
 
     def test_list_vectors_with_embeddings(self):
         """Test listing vectors with embeddings when explicitly requested."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -380,12 +380,12 @@ class TestVectorStoreService:
 
     def test_get_collection_stats(self):
         """Test retrieving collection statistics for dashboard header."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -406,12 +406,12 @@ class TestVectorStoreService:
 
     def test_delete_certificate_success(self):
         """Test deleting a certificate."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -429,12 +429,12 @@ class TestVectorStoreService:
 
     def test_delete_certificates_batch(self):
         """Test batch deleting certificates."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -457,12 +457,12 @@ class TestVectorStoreServiceSearchRecords:
 
     def test_search_records_with_text(self):
         """Test text-based search using EmbeddingService."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -474,7 +474,7 @@ class TestVectorStoreServiceSearchRecords:
                     "metadatas": [[{"title": "정보처리기사"}]]
                 }
 
-                with patch("app.services.vector_store.EmbeddingService") as mock_embed:
+                with patch("app.services.embedding.vector_store.EmbeddingService") as mock_embed:
                     mock_embed_instance = MagicMock()
                     mock_embed.return_value = mock_embed_instance
                     mock_embed_instance.create_embedding.return_value = [0.1] * 1024
@@ -500,12 +500,12 @@ class TestVectorStoreServiceFormatRecord:
 
     def test_format_record_for_upsert_basic(self):
         """Test formatting a certificate for upsert."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -546,12 +546,12 @@ class TestVectorStoreUpsertVerification:
 
     def test_upsert_certificates_batch_integrated_returns_result(self):
         """upsert_certificates_batch_integrated가 결과를 반환하는지 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -563,7 +563,7 @@ class TestVectorStoreUpsertVerification:
                 }
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store.EmbeddingService") as mock_embed:
+                with patch("app.services.embedding.vector_store.EmbeddingService") as mock_embed:
                     mock_embed_instance = MagicMock()
                     mock_embed.return_value = mock_embed_instance
                     mock_embed_instance.create_embeddings_batch.return_value = [[0.1] * 1024]
@@ -600,12 +600,12 @@ class TestVectorStoreUpsertVerification:
 
     def test_upsert_certificates_batch_integrated_verifies_upload(self):
         """업로드 후 실제로 ChromaDB에 저장되었는지 검증하는지 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -617,7 +617,7 @@ class TestVectorStoreUpsertVerification:
                 }
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store.EmbeddingService") as mock_embed:
+                with patch("app.services.embedding.vector_store.EmbeddingService") as mock_embed:
                     mock_embed_instance = MagicMock()
                     mock_embed.return_value = mock_embed_instance
                     mock_embed_instance.create_embeddings_batch.return_value = [
@@ -643,12 +643,12 @@ class TestVectorStoreUpsertVerification:
 
     def test_upsert_certificates_batch_integrated_handles_partial_upload(self):
         """일부만 업로드된 경우 처리 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -660,7 +660,7 @@ class TestVectorStoreUpsertVerification:
                 }
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store.EmbeddingService") as mock_embed:
+                with patch("app.services.embedding.vector_store.EmbeddingService") as mock_embed:
                     mock_embed_instance = MagicMock()
                     mock_embed.return_value = mock_embed_instance
                     mock_embed_instance.create_embeddings_batch.return_value = [
@@ -688,19 +688,19 @@ class TestVectorStoreUpsertVerification:
 
     def test_upsert_certificates_batch_integrated_raises_on_connection_error(self):
         """ChromaDB 연결 실패 시 예외 발생 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_collection.upsert.side_effect = Exception("Connection refused")
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store.EmbeddingService") as mock_embed:
+                with patch("app.services.embedding.vector_store.EmbeddingService") as mock_embed:
                     mock_embed_instance = MagicMock()
                     mock_embed.return_value = mock_embed_instance
                     mock_embed_instance.create_embeddings_batch.return_value = [[0.1] * 1024]
@@ -725,12 +725,12 @@ class TestVectorStoreDuplicateCheck:
 
     def test_check_existing_vectors_returns_existing_ids(self):
         """ChromaDB에 이미 존재하는 ID를 반환하는지 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -754,12 +754,12 @@ class TestVectorStoreDuplicateCheck:
 
     def test_check_existing_vectors_empty_result(self):
         """ChromaDB에 아무것도 없을 때 빈 리스트 반환 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -780,12 +780,12 @@ class TestVectorStoreDuplicateCheck:
 
     def test_upsert_with_skip_existing_skips_duplicates(self):
         """이미 존재하는 벡터는 스킵하는지 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -802,7 +802,7 @@ class TestVectorStoreDuplicateCheck:
                 mock_collection.upsert.return_value = None
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store.EmbeddingService") as mock_embed:
+                with patch("app.services.embedding.vector_store.EmbeddingService") as mock_embed:
                     mock_embed_instance = MagicMock()
                     mock_embed.return_value = mock_embed_instance
                     # id-2만 임베딩 생성 (1개)
@@ -833,12 +833,12 @@ class TestVectorStoreConnectionRetry:
         B2 Critical Issue: ChromaDB 서버가 일시적으로 다운되었을 때
         재시도 로직이 동작해야 합니다.
         """
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -851,7 +851,7 @@ class TestVectorStoreConnectionRetry:
                     1234567890,  # 성공 (timestamp)
                 ]
 
-                with patch("app.services.vector_store.time") as mock_time:
+                with patch("app.services.embedding.vector_store.time") as mock_time:
                     mock_time.sleep = MagicMock()
 
                     from app.services.vector_store import VectorStoreService
@@ -871,19 +871,19 @@ class TestVectorStoreConnectionRetry:
         B2 Critical Issue: 재시도 횟수 초과 시 명확한 에러 메시지와 함께
         ConnectionError를 발생시켜야 합니다.
         """
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
 
                 # heartbeat가 항상 실패
                 mock_client.heartbeat.side_effect = Exception("Connection refused")
 
-                with patch("app.services.vector_store.time") as mock_time:
+                with patch("app.services.embedding.vector_store.time") as mock_time:
                     mock_time.sleep = MagicMock()
 
                     from app.services.vector_store import VectorStoreService
@@ -899,12 +899,12 @@ class TestVectorStoreConnectionRetry:
 
         재시도 간격이 지수적으로 증가해야 합니다 (1초, 2초, 4초...).
         """
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -917,7 +917,7 @@ class TestVectorStoreConnectionRetry:
                     1234567890,
                 ]
 
-                with patch("app.services.vector_store.time") as mock_time:
+                with patch("app.services.embedding.vector_store.time") as mock_time:
                     sleep_calls = []
                     mock_time.sleep = lambda x: sleep_calls.append(x)
 
@@ -935,12 +935,12 @@ class TestVectorStorePartialFailure:
 
     def test_upsert_batch_handles_partial_embedding_failure(self):
         """배치 임베딩 생성 중 일부 실패 처리 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -972,12 +972,12 @@ class TestVectorStorePartialFailure:
 
     def test_search_handles_none_metadata(self):
         """검색 결과 중 메타데이터가 None인 경우 처리 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -1012,12 +1012,12 @@ class TestVectorStoreSyncOrphanedVectorIds:
 
     def test_find_certs_existing_in_chroma_without_vector_id(self):
         """MariaDB에 vector_id 없지만 ChromaDB에 존재하는 자격증 찾기 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -1048,18 +1048,18 @@ class TestVectorStoreSyncOrphanedVectorIds:
 
     def test_sync_vector_ids_for_existing_chroma_records(self):
         """ChromaDB에 존재하는 자격증의 vector_id를 MariaDB에 동기화하는 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store._get_db_session") as mock_get_session:
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
                     mock_session = MagicMock()
                     mock_get_session.return_value = mock_session
 
@@ -1098,12 +1098,12 @@ class TestVectorStoreSyncOrphanedVectorIds:
 
     def test_reconcile_certs_without_vector_id(self):
         """vector_id 없는 자격증에 대해 ChromaDB 조회 후 동기화/생성 분리 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()

@@ -14,12 +14,14 @@ function DifficultyBar({
   label,
   icon: Icon,
   value,
-  colorClass,
+  textColorClass,
+  bgColorClass,
 }: {
   label: string
   icon: React.ElementType
   value: number | null
-  colorClass: string
+  textColorClass: string
+  bgColorClass: string
 }) {
   if (value === null) return null
 
@@ -30,7 +32,7 @@ function DifficultyBar({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={cn('h-4 w-4', colorClass)} />
+          <Icon className={cn('h-4 w-4', textColorClass)} />
           <span className="text-sm text-slate-300">{label}</span>
         </div>
         <div className="flex items-center gap-1">
@@ -39,7 +41,7 @@ function DifficultyBar({
               key={star}
               className={cn(
                 'h-3.5 w-3.5',
-                star <= value ? `fill-current ${colorClass}` : 'text-slate-700'
+                star <= value ? `fill-current ${textColorClass}` : 'text-slate-700'
               )}
             />
           ))}
@@ -48,7 +50,7 @@ function DifficultyBar({
       </div>
       <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
         <div
-          className={cn('h-full rounded-full transition-all', colorClass.replace('text-', 'bg-'))}
+          className={cn('h-full rounded-full transition-all', bgColorClass)}
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -115,19 +117,22 @@ export function DifficultyBreakdown({ difficulty, className }: DifficultyBreakdo
               label="필기시험"
               icon={FileText}
               value={difficulty.written}
-              colorClass="text-cyan-400"
+              textColorClass="text-cyan-400"
+              bgColorClass="bg-cyan-400"
             />
             <DifficultyBar
               label="실기시험"
               icon={Wrench}
               value={difficulty.practical}
-              colorClass="text-emerald-400"
+              textColorClass="text-emerald-400"
+              bgColorClass="bg-emerald-400"
             />
             <DifficultyBar
               label="면접"
               icon={Users}
               value={difficulty.interview}
-              colorClass="text-violet-400"
+              textColorClass="text-violet-400"
+              bgColorClass="bg-violet-400"
             />
           </div>
         )}

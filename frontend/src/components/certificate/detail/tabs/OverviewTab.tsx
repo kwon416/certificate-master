@@ -1,17 +1,12 @@
 'use client'
 
 import {
-  TrendingUp,
-  Clock,
-  DollarSign,
-  Calendar,
   FileText,
   ExternalLink,
   Building2,
   Info,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { StatCard, StatCardGrid } from '../StatCard'
 import { CostBreakdownCard } from '../CostBreakdownCard'
 import { ExamScheduleCard } from '../ExamScheduleCard'
 import { SimilarCertificatesTable } from '../SimilarCertificatesTable'
@@ -56,21 +51,6 @@ function SentenceSections({ text }: { text: string }) {
   )
 }
 
-function formatStudyPeriod(days: number | null | undefined): string | null {
-  if (!days) return null
-  const months = Math.max(1, Math.round(days / 30))
-  return `약 ${months}개월`
-}
-
-function formatPassingRate(rate: number | null | undefined): string | null {
-  if (rate === null || rate === undefined) return null
-  // 0~1 범위면 퍼센트로 변환
-  if (rate <= 1) {
-    return `${(rate * 100).toFixed(0)}%`
-  }
-  return `${rate.toFixed(0)}%`
-}
-
 /**
  * OverviewTab - 한눈에 보기 탭
  *
@@ -81,39 +61,6 @@ export function OverviewTab({ certificate }: OverviewTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* 핵심 지표 카드 그리드 */}
-      <StatCardGrid columns={4}>
-        <StatCard
-          icon={TrendingUp}
-          label="합격률"
-          value={formatPassingRate(cert.passing_rate)}
-          colorScheme="emerald"
-        />
-        <StatCard
-          icon={Clock}
-          label="준비기간"
-          value={formatStudyPeriod(cert.study_period_days)}
-          colorScheme="cyan"
-        />
-        <StatCard
-          icon={DollarSign}
-          label="총 비용"
-          value={cert.cost_breakdown?.total_estimated_cost ?? cert.exam_info?.total_fee ?? null}
-          colorScheme="amber"
-        />
-        <StatCard
-          icon={Calendar}
-          label="연간 시험"
-          value={
-            cert.exam_schedule_detail?.annual_exam_count !== null &&
-            cert.exam_schedule_detail?.annual_exam_count !== undefined
-              ? `${cert.exam_schedule_detail.annual_exam_count}회`
-              : null
-          }
-          colorScheme="violet"
-        />
-      </StatCardGrid>
-
       {/* 자격증 개요 */}
       <Card className="bg-slate-900/50 border-slate-800/50">
         <CardHeader>

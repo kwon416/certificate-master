@@ -11,12 +11,12 @@ class TestVectorStoreServiceIntegrated:
 
     def test_search_records_with_text(self):
         """텍스트 기반 검색 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -34,7 +34,7 @@ class TestVectorStoreServiceIntegrated:
                     ]
                 }
 
-                with patch("app.services.vector_store.EmbeddingService") as mock_embed:
+                with patch("app.services.embedding.vector_store.EmbeddingService") as mock_embed:
                     mock_embed_instance = MagicMock()
                     mock_embed.return_value = mock_embed_instance
                     mock_embed_instance.create_embedding.return_value = [0.1] * 1024
@@ -56,12 +56,12 @@ class TestVectorStoreServiceIntegrated:
 
     def test_format_record_for_upsert(self):
         """자격증 데이터를 upsert용 레코드로 포맷 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -92,12 +92,12 @@ class TestVectorStoreServiceIntegrated:
 
     def test_format_record_with_career_info(self):
         """진로 정보가 포함된 자격증 포맷 테스트."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
@@ -127,19 +127,19 @@ class TestVectorStoreServiceIntegrated:
 
     def test_upsert_certificates_batch_integrated(self):
         """배치 업서트 테스트 (BGE-M3 임베딩)."""
-        with patch("app.services.vector_store.get_settings") as mock_settings:
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
             mock_settings.return_value.BGE_M3_BATCH_SIZE = 32
 
-            with patch("app.services.vector_store.chromadb") as mock_chromadb:
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()
                 mock_chromadb.HttpClient.return_value = mock_client
                 mock_collection = MagicMock()
                 mock_client.get_or_create_collection.return_value = mock_collection
 
-                with patch("app.services.vector_store.EmbeddingService") as mock_embed:
+                with patch("app.services.embedding.vector_store.EmbeddingService") as mock_embed:
                     mock_embed_instance = MagicMock()
                     mock_embed.return_value = mock_embed_instance
                     mock_embed_instance.create_embeddings_batch.return_value = [

@@ -780,6 +780,157 @@ class DataPipeline:
             session.close()
 
     # --------------------------------------------------------
+    # 특정 자격증 재생성
+    # --------------------------------------------------------
+
+    async def recreate_certificate(self, cert_id: str) -> dict:
+        """특정 자격증의 보강 데이터를 완전히 새로 생성한다.
+
+        기존 보강 데이터(overview, key_points 등)와 벡터를 삭제하고
+        웹 검색 + LLM으로 새로 보강 후 임베딩을 생성한다.
+
+        Args:
+            cert_id: 자격증 UUID.
+
+        Returns:
+            처리 결과 딕셔너리.
+        """
+        from app.services.embedding_factory import get_embedding_service
+        from app.services.vector_store import VectorStoreService
+
+        logger.info("=" * 70)
+        logger.info(f"[RECREATE] 자격증 재생성: {cert_id}")
+        logger.info("=" * 70)
+
+        session = get_mariadb_session()
+
+        try:
+            # 1단계: 자격증 조회
+            cert = session.query(Certificate).filter(
+                Certificate.id == cert_id
+            ).first()
+
+            if not cert:
+                logger.error(f"자격증을 찾을 수 없습니다: {cert_id}")
+                return {
+                    "status": "error",
+                    "message": f"Certificate not found: {cert_id}",
+                }
+
+            logger.info(f"  자격증 발견: {cert.title}")
+
+            # 2단계: ChromaDB에서 기존 벡터 삭제
+            if cert.vector_id:
+                logger.info(f"  기존 벡터 삭제: {cert.vector_id}")
+                try:
+                    embedding_service = get_embedding_service(self.embedding_provider)
+                    vector_store = VectorStoreService(
+                        session=session,
+                        embedding_service=embedding_service,
+                        collection_name=self._collection_name,
+                    )
+                    # cert_id를 사용하여 삭제 (ChromaDB에서 id로 저장됨)
+                    vector_store.delete_certificate(cert.id)
+                    logger.info("  ChromaDB 벡터 삭제 완료")
+                except Exception as e:
+                    logger.warning(f"  ChromaDB 벡터 삭제 실패 (무시): {e}")
+
+            # 3단계: 기존 보강 데이터 클리어
+            logger.info("  기존 보강 데이터 클리어...")
+            cert.overview = None
+            cert.key_points = None
+            cert.difficulty_info = None
+            cert.cost_info = None
+            cert.job_prospects = None
+            cert.similar_certificates = None
+            cert.latest_trends = None
+            cert.free_resources = None
+            cert.official_resources = None
+            cert.vector_id = None
+            session.commit()
+            logger.info("  보강 데이터 클리어 완료")
+
+            # 4단계: 보강 실행
+            enrich_result = await self.enrich_step(cert_ids=[cert_id])
+
+            if enrich_result["failed"] > 0:
+                return {
+                    "status": "error",
+                    "message": "Enrichment failed",
+                    "enrich": enrich_result,
+                    "cleared": True,
+                }
+
+            # 5단계: 임베딩 실행
+            embedding_result = await self.embedding_step(cert_ids=[cert_id])
+
+            logger.info("=" * 70)
+            logger.info("[RECREATE] 재생성 완료")
+            logger.info("=" * 70)
+            logger.info(f"  보강: {'성공' if enrich_result['success'] > 0 else '실패'}")
+            logger.info(f"  임베딩: {'성공' if embedding_result['uploaded'] > 0 else '실패'}")
+
+            return {
+                "status": "success",
+                "message": f"Certificate {cert.title} recreated successfully",
+                "cert_id": cert_id,
+                "cleared": True,
+                "enrich": enrich_result,
+                "embedding": embedding_result,
+            }
+
+        except Exception as e:
+            logger.exception(f"재생성 중 오류 발생: {e}")
+            return {
+                "status": "error",
+                "message": str(e),
+            }
+        finally:
+            session.close()
+
+    async def recreate_certificate_by_name(self, name: str) -> dict:
+        """자격증 이름으로 검색하여 재생성한다.
+
+        Args:
+            name: 자격증 이름 (부분 일치 검색).
+
+        Returns:
+            처리 결과 딕셔너리.
+        """
+        logger.info("=" * 70)
+        logger.info(f"[RECREATE] 자격증 검색: {name}")
+        logger.info("=" * 70)
+
+        session = get_mariadb_session()
+
+        try:
+            # 이름으로 검색 (LIKE)
+            cert = session.query(Certificate).filter(
+                Certificate.title.like(f"%{name}%")
+            ).first()
+
+            if not cert:
+                logger.error(f"자격증을 찾을 수 없습니다: {name}")
+                return {
+                    "status": "error",
+                    "message": f"Certificate not found with name: {name}",
+                }
+
+            logger.info(f"  자격증 발견: {cert.title} (ID: {cert.id})")
+            session.close()
+
+            # ID로 재생성 실행
+            return await self.recreate_certificate(cert.id)
+
+        except Exception as e:
+            logger.exception(f"검색 중 오류 발생: {e}")
+            session.close()
+            return {
+                "status": "error",
+                "message": str(e),
+            }
+
+    # --------------------------------------------------------
     # 파이프라인 실행
     # --------------------------------------------------------
 
@@ -943,6 +1094,14 @@ async def main():
     parser.add_argument(
         "--retry", action="store_true", help="실패한 자격증 재시도"
     )
+    parser.add_argument(
+        "--recreate", type=str, metavar="CERT_ID",
+        help="특정 자격증 ID의 보강 데이터를 완전히 새로 생성"
+    )
+    parser.add_argument(
+        "--recreate-by-name", type=str, metavar="NAME",
+        help="자격증 이름으로 검색하여 보강 데이터를 완전히 새로 생성"
+    )
 
     # 단계 건너뛰기 옵션
     parser.add_argument(
@@ -974,9 +1133,9 @@ async def main():
     setup_logging(verbose=args.verbose)
 
     # 인자 검증
-    if not (args.test or args.limit or args.all or args.retry):
+    if not (args.test or args.limit or args.all or args.retry or args.recreate or args.recreate_by_name):
         parser.print_help()
-        logger.error("\n--test, --limit N, --all 또는 --retry 옵션을 지정하세요.")
+        logger.error("\n--test, --limit N, --all, --retry, --recreate 또는 --recreate-by-name 옵션을 지정하세요.")
         return
 
     # Provider 로깅
@@ -991,6 +1150,22 @@ async def main():
     )
 
     try:
+        # --recreate 또는 --recreate-by-name 처리
+        if args.recreate:
+            result = await pipeline.recreate_certificate(args.recreate)
+            if result["status"] == "error":
+                logger.error(f"재생성 실패: {result['message']}")
+                sys.exit(1)
+            return
+
+        if args.recreate_by_name:
+            result = await pipeline.recreate_certificate_by_name(args.recreate_by_name)
+            if result["status"] == "error":
+                logger.error(f"재생성 실패: {result['message']}")
+                sys.exit(1)
+            return
+
+        # 기존 파이프라인 실행
         await pipeline.run(
             test_mode=args.test,
             limit=args.limit if not args.all else None,

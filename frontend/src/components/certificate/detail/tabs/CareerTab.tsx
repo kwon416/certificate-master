@@ -10,10 +10,8 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { JobMarketCard } from '../JobMarketCard'
 import {
   type Certificate,
-  hasJobMarketInfo,
   hasCareerInfo,
 } from '@/lib/api/types'
 
@@ -57,12 +55,9 @@ function SentenceSections({ text }: { text: string }) {
  */
 export function CareerTab({ certificate }: CareerTabProps) {
   const cert = certificate
-  const hasJobMarket = hasJobMarketInfo(cert)
   const hasCareer = hasCareerInfo(cert)
 
-  const hasAnyData = hasJobMarket || hasCareer
-
-  if (!hasAnyData) {
+  if (!hasCareer) {
     return (
       <Card className="bg-slate-900/50 border-slate-800/50">
         <CardContent className="py-8">
@@ -74,9 +69,6 @@ export function CareerTab({ certificate }: CareerTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* 채용 시장 정보 (신규 Phase 2 데이터) */}
-      {hasJobMarket && <JobMarketCard jobMarketInfo={cert.job_market_info!} />}
-
       {/* 활용 분야 */}
       {hasCareer && (cert.career_info?.use_cases?.length ?? 0) > 0 && (
         <Card className="bg-slate-900/50 border-slate-800/50">
@@ -148,49 +140,24 @@ export function CareerTab({ certificate }: CareerTabProps) {
         </Card>
       )}
 
-      {/* 평균 연봉 & 취업 전망 */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* 평균 연봉 */}
-        {hasCareer && cert.career_info?.average_salary && (
-          <Card className="bg-slate-900/50 border-slate-800/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-amber-400" />
-                평균 연봉
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 bg-amber-900/10 rounded-lg border border-amber-500/20 text-center">
-                <p className="text-3xl font-bold text-amber-400">
-                  {cert.career_info.average_salary}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 연봉 프리미엄 (신규) */}
-        {hasJobMarket && cert.job_market_info?.salary_premium && (
-          <Card className="bg-slate-900/50 border-slate-800/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-emerald-400" />
-                자격증 연봉 프리미엄
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 bg-emerald-900/10 rounded-lg border border-emerald-500/20 text-center">
-                <p className="text-3xl font-bold text-emerald-400">
-                  {cert.job_market_info.salary_premium}
-                </p>
-                <p className="text-xs text-slate-500 mt-2">
-                  자격증 보유자 대비 비보유자 연봉 차이
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {/* 평균 연봉 */}
+      {hasCareer && cert.career_info?.average_salary && (
+        <Card className="bg-slate-900/50 border-slate-800/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-amber-400" />
+              평균 연봉
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 bg-amber-900/10 rounded-lg border border-amber-500/20 text-center">
+              <p className="text-3xl font-bold text-amber-400">
+                {cert.career_info.average_salary}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 취업 전망 */}
       {hasCareer && cert.career_info?.job_prospects && (
