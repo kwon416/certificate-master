@@ -110,8 +110,8 @@ docker-compose -f "$COMPOSE_FILE" down --remove-orphans 2>/dev/null || true
 log "4/6. Docker 이미지 빌드..."
 
 if [[ "$ENV" == "prod" || "$ENV" == "production" ]]; then
-    # 운영: BuildKit 비활성화 (buildx 미설치 환경 대응)
-    DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker-compose -f "$COMPOSE_FILE" build --no-cache || error "빌드 실패"
+    # 운영: BuildKit + 클린 빌드 (캐시 마운트는 유지)
+    DOCKER_BUILDKIT=1 docker-compose -f "$COMPOSE_FILE" build --no-cache || error "빌드 실패"
 else
     # 개발: BuildKit + 캐시 활용
     DOCKER_BUILDKIT=1 docker-compose -f "$COMPOSE_FILE" build || error "빌드 실패"
