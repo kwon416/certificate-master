@@ -19,8 +19,10 @@
 export interface JobMarketInfo {
   job_posting_frequency: string | null    // 채용공고 빈도 (예: "월 500건+")
   preferred_industries: string[]          // 선호 산업군
+  preferred_companies: string[]           // 선호 기업 목록
   requirement_type: string | null         // 필수/우대 구분
   public_sector_points: string | null     // 공무원/공기업 가산점
+  salary_premium: string | null           // 연봉 프리미엄 효과
 }
 
 /**
