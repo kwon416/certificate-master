@@ -28,6 +28,9 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-dev --frozen
 
+# Change ownership of .venv to appuser (권한 문제 해결)
+RUN chown -R appuser:appuser /app/.venv
+
 # Copy application code with correct ownership
 COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser scripts ./scripts
