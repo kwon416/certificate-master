@@ -154,6 +154,26 @@ class Phase1Extraction(BaseModel):
     overview_draft: str = Field(..., description="초안 개요 (1-2문장)")
     difficulty: int = Field(..., ge=1, le=5)
     study_period_days: int = Field(..., ge=1)
+
+    @field_validator("difficulty", mode="before")
+    @classmethod
+    def coerce_difficulty_to_int(cls, v):
+        """None 또는 유효하지 않은 difficulty를 기본값 3으로 변환합니다."""
+        if v is None:
+            return 3  # 기본값: 보통 난이도
+        if isinstance(v, (int, float)):
+            return int(v)
+        return v
+
+    @field_validator("study_period_days", mode="before")
+    @classmethod
+    def coerce_study_period_to_int(cls, v):
+        """None 또는 유효하지 않은 study_period_days를 기본값 90으로 변환합니다."""
+        if v is None:
+            return 90  # 기본값: 3개월
+        if isinstance(v, (int, float)):
+            return int(v)
+        return v
     exam_info: ExtractedExamInfo
     career_info: ExtractedCareerInfo
     user_reviews: ExtractedUserReviews
