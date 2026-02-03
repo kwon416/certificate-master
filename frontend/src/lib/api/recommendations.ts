@@ -16,6 +16,11 @@ export interface RecommendationRequest {
   // 새 필드 (선택, 소프트 필터에 사용)
   current_status?: string          // 현재 상황 (student, entry_jobseeker, etc.)
   study_commitment?: string        // 투자 시간 (relaxed, moderate, intensive, unsure)
+  // 향상된 검색 필드 (선택, 키워드 매칭 보너스에 사용)
+  target_jobs?: string[]           // 목표 직종 키워드 (예: ["전기기술자", "전기안전관리자"])
+  target_industries?: string[]     // 산업 분야 키워드 (예: ["전기공사", "제조업"])
+  certificate_level?: string       // 자격증 등급 선호 (기능장, 기사, 산업기사, 기능사, 상관없음)
+  specific_keywords?: string[]     // 특정 키워드 (예: ["전기"])
 }
 
 // Response types

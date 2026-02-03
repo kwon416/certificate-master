@@ -18,6 +18,11 @@ export interface WizardAnswers {
   current_status: string | null
   study_timeline: string | null
   difficulty_preference: string | null
+  // 향상된 검색 필드 (선택)
+  target_jobs: string[] | null           // 목표 직종 키워드
+  target_industries: string[] | null     // 산업 분야 키워드
+  certificate_level: string | null       // 자격증 등급 선호
+  specific_keywords: string[] | null     // 특정 키워드
 }
 
 export interface WizardOption {
@@ -95,6 +100,11 @@ const defaultAnswers: WizardAnswers = {
   current_status: null,
   study_timeline: null,
   difficulty_preference: null,
+  // 향상된 검색 필드 (선택)
+  target_jobs: null,
+  target_industries: null,
+  certificate_level: null,
+  specific_keywords: null,
 }
 
 export const useRecommendStore = create<RecommendState>((set, get) => ({
@@ -340,6 +350,40 @@ export const WIZARD_OPTIONS = {
   // 기존 필드 (하위 호환성)
   study_timeline: ['3개월 이하', '6개월 이하', '1년 이하', '1년 이상', '상관없음'],
   difficulty_preference: ['쉬운 편', '중간', '어려워도 상관없음'],
+
+  // 자격증 등급 선호 (향상된 검색)
+  certificate_level: [
+    {
+      value: '기능장',
+      label: '기능장',
+      icon: '🏆',
+      description: '최고급 기술자격 (전문가 수준)',
+    },
+    {
+      value: '기사',
+      label: '기사',
+      icon: '📜',
+      description: '전문 기술자격 (대졸 수준)',
+    },
+    {
+      value: '산업기사',
+      label: '산업기사',
+      icon: '📋',
+      description: '중급 기술자격 (전문대졸 수준)',
+    },
+    {
+      value: '기능사',
+      label: '기능사',
+      icon: '📝',
+      description: '기초 기술자격 (입문 수준)',
+    },
+    {
+      value: '상관없음',
+      label: '상관없음',
+      icon: '✨',
+      description: '등급 상관없이 추천받기',
+    },
+  ] as WizardOption[],
 }
 
 // 4단계 Wizard 설정

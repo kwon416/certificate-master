@@ -74,6 +74,15 @@ VALID_STUDY_COMMITMENT = [
     "unsure",     # 잘 모르겠어요 (추천받고 결정할게요)
 ]
 
+# 새 필드: 자격증 등급 선호
+VALID_CERTIFICATE_LEVELS = [
+    "기능장",      # 기능장 등급 (최고급)
+    "기사",        # 기사 등급
+    "산업기사",    # 산업기사 등급
+    "기능사",      # 기능사 등급 (입문)
+    "상관없음",    # 등급 상관없음
+]
+
 
 class RecommendationRequest(BaseModel):
     """사용자 컨텍스트 기반 추천 요청 스키마."""
@@ -106,6 +115,22 @@ class RecommendationRequest(BaseModel):
     study_commitment: str | None = Field(
         default=None,
         description="투자 시간 (relaxed, moderate, intensive, unsure)",
+    )
+    target_jobs: list[str] | None = Field(
+        default=None,
+        description="목표 직종 키워드 (예: ['전기기술자', '전기안전관리자'])",
+    )
+    target_industries: list[str] | None = Field(
+        default=None,
+        description="산업 분야 키워드 (예: ['전기공사', '제조업'])",
+    )
+    certificate_level: str | None = Field(
+        default=None,
+        description="자격증 등급 선호 (기능장, 기사, 산업기사, 기능사, 상관없음)",
+    )
+    specific_keywords: list[str] | None = Field(
+        default=None,
+        description="특정 키워드 (예: ['전기', '정보처리'])",
     )
 
     @field_validator("purpose")
@@ -185,6 +210,51 @@ class RecommendationRequest(BaseModel):
                 f"Invalid study_commitment. Must be one of: {VALID_STUDY_COMMITMENT}"
             )
         return v
+
+    @field_validator("target_jobs")
+    @classmethod
+    def validate_target_jobs(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        # 공백만 있는 항목 제거
+        filtered = [item.strip() for item in v if item and item.strip()]
+        return filtered if filtered else None
+
+    @field_validator("target_industries")
+    @classmethod
+    def validate_target_industries(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        # 공백만 있는 항목 제거
+        filtered = [item.strip() for item in v if item and item.strip()]
+        return filtered if filtered else None
+
+    @field_validator("certificate_level")
+    @classmethod
+    def validate_certificate_level(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        if v not in VALID_CERTIFICATE_LEVELS:
+            raise ValueError(
+                f"Invalid certificate_level. Must be one of: {VALID_CERTIFICATE_LEVELS}"
+            )
+        return v
+
+    @field_validator("specific_keywords")
+    @classmethod
+    def validate_specific_keywords(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        # 공백만 있는 항목 제거 및 중복 제거
+        seen = set()
+        deduped = []
+        for item in v:
+            if item and item.strip():
+                cleaned = item.strip()
+                if cleaned not in seen:
+                    deduped.append(cleaned)
+                    seen.add(cleaned)
+        return deduped if deduped else None
 
 
 class Feasibility(BaseModel):

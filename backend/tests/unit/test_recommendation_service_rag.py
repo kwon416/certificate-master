@@ -187,7 +187,8 @@ class TestRAGRecommendationService:
 
         mock_vector_store.search_records.assert_called_once()
         call_args = mock_vector_store.search_records.call_args
-        assert call_args[1]['top_k'] == 5
+        # TOP_K는 설정에서 로드됨 (기본값 10)
+        assert call_args[1]['top_k'] == 10
         assert len(response.recommendations) > 0
 
     @pytest.mark.asyncio

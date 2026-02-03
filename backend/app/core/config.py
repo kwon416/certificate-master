@@ -77,8 +77,9 @@ class Settings(BaseSettings):
     BGE_M3_BATCH_SIZE: int = 32
 
     # Recommendation Service Configuration (B7: 하드코딩 제거)
-    RECOMMENDATION_MIN_SIMILARITY_SCORE: float = 0.35
-    RECOMMENDATION_TOP_K: int = 5
+    # 0.5로 상향: 관련 없는 자격증 추천 방지 (기존 0.35)
+    RECOMMENDATION_MIN_SIMILARITY_SCORE: float = 0.5
+    RECOMMENDATION_TOP_K: int = 10
 
     # Search Configuration (SearXNG)
     SEARCH_PROVIDER: str = "searxng"  # 검색 프로바이더 (searxng)

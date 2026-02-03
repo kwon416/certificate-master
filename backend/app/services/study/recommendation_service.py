@@ -215,9 +215,17 @@ class RecommendationService:
         )
 
     def _filter_by_similarity(self, results: list[dict]) -> list[dict]:
-        """유사도 점수 기반 필터링을 적용합니다."""
+        """유사도 점수 기반 필터링을 적용합니다.
+
+        절대 최소 임계값(0.2)을 적용하여 관련 없는 자격증이 추천되지 않도록 합니다.
+        MIN_SIMILARITY_SCORE(0.35) 이상 결과가 없으면, 절대 최소 임계값 이상인 경우에만 폴백합니다.
+        """
         if not results:
             return []
+
+        # 절대 최소 임계값: 이보다 낮으면 폴백도 하지 않음
+        # 0.45로 설정하여 관련 없는 자격증 추천 방지
+        ABSOLUTE_MIN_SCORE = 0.45
 
         filtered_results = [
             result for result in results
@@ -231,7 +239,17 @@ class RecommendationService:
             )
             return filtered_results
 
+        # MIN_SIMILARITY_SCORE 미만이지만 ABSOLUTE_MIN_SCORE 이상인 결과 확인
         top_result = max(results, key=lambda r: r["score"])
+
+        if top_result["score"] < ABSOLUTE_MIN_SCORE:
+            # 절대 최소 임계값 미만이면 폴백 없이 빈 결과 반환
+            logger.info(
+                f"[RAG] Top result score ({top_result['score']:.4f}) is below "
+                f"absolute minimum ({ABSOLUTE_MIN_SCORE}). Returning empty results."
+            )
+            return []
+
         logger.info(
             f"[RAG] No matches above {MIN_SIMILARITY_SCORE}; "
             f"returning top result with score {top_result['score']:.4f} for fallback."
@@ -791,8 +809,9 @@ class RecommendationService:
     def _build_query_text(self, request: RecommendationRequest) -> str:
         """사용자 요청을 벡터 검색용 쿼리 텍스트로 변환합니다.
 
-        자연어 문장으로 구성하여 더 정확한 의미 임베딩을 생성합니다.
-        user_summary가 있으면 가장 높은 가중치를 부여합니다 (3중 강조).
+        자격증 임베딩 형식과 유사하게 구조화하여 벡터 유사도를 높입니다.
+        새 필드(target_jobs, target_industries, certificate_level, specific_keywords)를
+        활용하여 더 정확한 검색을 수행합니다.
 
         Args:
             request: 사용자 추천 요청.
@@ -800,12 +819,52 @@ class RecommendationService:
         Returns:
             임베딩 생성용 쿼리 텍스트.
         """
+        parts = []
+
+        # 1. 특정 키워드 (가장 높은 우선순위)
+        specific_keywords = getattr(request, "specific_keywords", None)
+        if specific_keywords:
+            keywords_text = ", ".join(specific_keywords)
+            parts.append(f"[핵심 키워드] {keywords_text}")
+
+        # 2. 자격증 등급 (계열)
+        certificate_level = getattr(request, "certificate_level", None)
+        if certificate_level and certificate_level != "상관없음":
+            parts.append(f"계열: {certificate_level}")
+
+        # 3. 산업 분야 (자격증 임베딩 형식과 유사하게)
+        target_industries = getattr(request, "target_industries", None)
+        if target_industries:
+            industries_text = ", ".join(target_industries)
+            parts.append(f"산업분야: {industries_text}")
+
+        # 4. 관련 직업 (자격증 임베딩 형식과 유사하게)
+        target_jobs = getattr(request, "target_jobs", None)
+        if target_jobs:
+            jobs_text = ", ".join(target_jobs)
+            parts.append(f"관련직업: {jobs_text}")
+
+        # 5. user_summary (사용자 자유 입력)
+        user_summary = (request.user_summary or "").strip()
+        if user_summary:
+            parts.append(f"[사용자 요청] {user_summary}")
+
+        # 6. 관심 분야 (interest_domains)
         domain_text = ", ".join(request.interest_domains)
+        parts.append(f"분야: {domain_text}")
+
+        # 7. 기본 조건
         timeline = request.study_timeline
         difficulty = request.difficulty_preference
-        user_summary = (request.user_summary or "").strip()
+        parts.append(f"목적: {request.purpose}")
+        parts.append(f"난이도: {difficulty}")
+        parts.append(f"준비기간: {timeline}")
 
-        # user_summary가 있으면 3중 강조로 임베딩 가중치 극대화
+        # 새 필드가 있으면 구조화된 형식 사용
+        if specific_keywords or certificate_level or target_industries or target_jobs:
+            return "\n".join(parts)
+
+        # user_summary가 있으면 3중 강조 (기존 로직 유지)
         if user_summary:
             return (
                 f"[최우선 요청] {user_summary}\n\n"
@@ -815,7 +874,7 @@ class RecommendationService:
                 f"[사용자 요청] {user_summary}"
             )
 
-        # user_summary가 없으면 기존 로직 (구조화된 쿼리)
+        # 새 필드도 user_summary도 없으면 기존 로직
         intent_sentence = (
             f"{request.purpose} 목적의 사용자가 {domain_text} 분야와 연관된 자격증을 찾고 있습니다. "
             "career_info의 industry/use_cases/related_jobs가 유사한 자격증을 우선 고려해주세요."
@@ -825,6 +884,86 @@ class RecommendationService:
         )
 
         return f"{intent_sentence}\n\n{constraint_sentence}"
+
+    def _calculate_keyword_matching_bonus(
+        self, cert: Certificate, request: RecommendationRequest
+    ) -> int:
+        """새 필드 키워드와 자격증 데이터 매칭 보너스를 계산합니다.
+
+        target_jobs, target_industries, certificate_level, specific_keywords가
+        자격증 데이터와 매칭될 때 보너스 점수를 부여합니다.
+
+        Args:
+            cert: 자격증 객체.
+            request: 사용자 추천 요청.
+
+        Returns:
+            보너스 점수 (0-25).
+        """
+        bonus = 0
+        career_info = cert.career_info or {}
+        job_market = cert.job_market_info or {}
+
+        # 1. specific_keywords 매칭 (+5점: 제목, +3점: 개요/산업)
+        specific_keywords = getattr(request, "specific_keywords", None)
+        if specific_keywords:
+            title_lower = cert.title.lower()
+            overview_lower = (cert.overview or "").lower()
+
+            # 산업 분야 텍스트
+            industry = career_info.get("industry", [])
+            if isinstance(industry, list):
+                industry_text = " ".join(industry).lower()
+            else:
+                industry_text = str(industry).lower()
+
+            for keyword in specific_keywords:
+                kw_lower = keyword.lower()
+                if kw_lower in title_lower:
+                    bonus += 5  # 제목 매칭
+                elif kw_lower in overview_lower or kw_lower in industry_text:
+                    bonus += 3  # 개요/산업 매칭
+
+        # 2. certificate_level 매칭 (+10점: 정확히 일치)
+        certificate_level = getattr(request, "certificate_level", None)
+        if certificate_level and certificate_level != "상관없음":
+            series = cert.series or ""
+            if certificate_level in series:
+                bonus += 10
+
+        # 3. target_jobs 매칭 (+5점: 관련 직업에 포함)
+        target_jobs = getattr(request, "target_jobs", None)
+        if target_jobs:
+            related_jobs = career_info.get("related_jobs", [])
+            related_jobs_text = " ".join(related_jobs).lower()
+            for job in target_jobs:
+                if job.lower() in related_jobs_text:
+                    bonus += 5
+                    break  # 최대 1회
+
+        # 4. target_industries 매칭 (+3점: 산업 분야에 포함)
+        target_industries = getattr(request, "target_industries", None)
+        if target_industries:
+            # career_info의 industry
+            industry = career_info.get("industry", [])
+            if isinstance(industry, list):
+                industry_text = " ".join(industry).lower()
+            else:
+                industry_text = str(industry).lower()
+
+            # job_market_info의 preferred_industries
+            preferred = job_market.get("preferred_industries", [])
+            preferred_text = " ".join(preferred).lower() if preferred else ""
+
+            combined_text = f"{industry_text} {preferred_text}"
+
+            for ind in target_industries:
+                if ind.lower() in combined_text:
+                    bonus += 3
+                    break  # 최대 1회
+
+        # 최대 25점으로 제한
+        return min(bonus, 25)
 
     def _calculate_user_summary_bonus(
         self, cert: Certificate, user_summary: str | None
@@ -970,6 +1109,10 @@ class RecommendationService:
             # user_summary 키워드 매칭 보너스 적용
             user_bonus = self._calculate_user_summary_bonus(cert, request.user_summary)
             match_score = min(100, match_score + user_bonus)
+
+            # 새 필드 키워드 매칭 보너스 적용
+            keyword_bonus = self._calculate_keyword_matching_bonus(cert, request)
+            match_score = min(100, match_score + keyword_bonus)
 
             # Generate recommendation reason
             reason = self._generate_reason(cert, request)

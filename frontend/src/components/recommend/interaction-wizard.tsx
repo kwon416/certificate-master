@@ -77,6 +77,11 @@ export function InteractionWizard() {
         user_summary: summary || undefined,
         current_status: apiFields.current_status,
         study_commitment: apiFields.study_commitment,
+        // 향상된 검색 필드 (선택)
+        target_jobs: answers.target_jobs || undefined,
+        target_industries: answers.target_industries || undefined,
+        certificate_level: answers.certificate_level || undefined,
+        specific_keywords: answers.specific_keywords || undefined,
       })
     } else if (!isLastStep) {
       nextStep()

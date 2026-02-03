@@ -41,8 +41,8 @@ const formatDifficulty = (difficulty?: number | null): string => {
 // 핵심 포인트 필터링: 중복/불필요 항목 제거
 const filterKeyPoints = (points: string[]): string[] => {
   return points.filter(point => {
-    // "약 N개월 준비" 패턴 제외 (Quick Stats에서 표시)
-    if (/약\s*\d+\s*(개월|년)\s*준비/.test(point)) return false
+    // "약 N개월 준비" 또는 "약 N-M개월 준비 기간" 패턴 제외 (Quick Stats에서 표시)
+    if (/약\s*\d+(-\d+)?\s*(개월|년)\s*준비/.test(point)) return false
     return true
   })
 }
