@@ -33,7 +33,7 @@ export interface WizardOption {
   matchingTypes?: string[]
 }
 
-export type WizardStepType = 'options' | 'slider' | 'input' | 'combo'
+export type WizardStepType = 'options' | 'slider' | 'input' | 'combo' | 'enhanced-input'
 
 export interface WizardStepConfig {
   step: number
@@ -44,6 +44,8 @@ export interface WizardStepConfig {
   options?: (string | WizardOption)[]
   secondaryKey?: keyof WizardAnswers
   secondaryOptions?: (string | WizardOption)[]
+  tertiaryKey?: keyof WizardAnswers
+  tertiaryOptions?: (string | WizardOption)[]
   min?: number
   max?: number
   sliderStep?: number

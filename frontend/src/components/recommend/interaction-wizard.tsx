@@ -29,6 +29,7 @@ export function InteractionWizard() {
   const isLastStep = currentStep === WIZARD_STEPS.length
   const isFirstStep = currentStep === 1
   const secondaryKey = currentStepConfig.secondaryKey
+  const tertiaryKey = currentStepConfig.tertiaryKey
 
   // 스텝 변경 시 위자드 상단으로 스크롤 (헤더 높이 고려)
   useEffect(() => {
@@ -139,6 +140,17 @@ export function InteractionWizard() {
               : undefined
           }
           secondaryOptions={currentStepConfig.secondaryOptions}
+          tertiaryAnswer={
+            tertiaryKey
+              ? answers[tertiaryKey]
+              : undefined
+          }
+          onTertiaryAnswer={
+            tertiaryKey
+              ? (value) => setAnswer(tertiaryKey, value)
+              : undefined
+          }
+          tertiaryOptions={currentStepConfig.tertiaryOptions}
         />
       </div>
 

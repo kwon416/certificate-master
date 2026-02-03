@@ -15,6 +15,7 @@ interface OptionCardProps {
   disabled?: boolean
   icon?: string  // Optional icon (emoji)
   description?: string
+  compact?: boolean  // 작은 크기로 표시
 }
 
 export function OptionCard({
@@ -24,6 +25,7 @@ export function OptionCard({
   disabled = false,
   icon,
   description,
+  compact = false,
 }: OptionCardProps) {
   return (
     <button
@@ -31,40 +33,58 @@ export function OptionCard({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'relative p-3 md:p-4 rounded-xl transition-all duration-200',
+        'relative rounded-xl transition-all duration-200',
         'border-2 text-left w-full',
         'focus:outline-none focus:ring-2 focus:ring-emerald-500/50',
         'active:scale-[0.98] touch-manipulation',
+        compact ? 'p-2 md:p-3' : 'p-3 md:p-4',
         selected
           ? 'border-emerald-500 bg-emerald-500/10'
           : 'border-slate-700 hover:border-emerald-500 hover:bg-slate-800/50',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
-      <div className="flex items-center justify-between gap-2 md:gap-3">
-        <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+      <div className={cn(
+        'flex items-center gap-2',
+        compact ? 'justify-center' : 'justify-between md:gap-3'
+      )}>
+        <div className={cn(
+          'flex items-center gap-2 flex-1 min-w-0',
+          compact && 'justify-center'
+        )}>
           {icon && (
-            <span className="text-xl md:text-2xl flex-shrink-0" role="img" aria-label="icon">
+            <span
+              className={cn(
+                'flex-shrink-0',
+                compact ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'
+              )}
+              role="img"
+              aria-label="icon"
+            >
               {icon}
             </span>
           )}
-          <div className="flex flex-col gap-0.5 md:gap-1 min-w-0">
+          <div className={cn(
+            'flex flex-col min-w-0',
+            compact ? 'gap-0' : 'gap-0.5 md:gap-1'
+          )}>
             <span
               className={cn(
-                'text-base md:text-lg font-medium transition-colors truncate',
+                'font-medium transition-colors truncate',
+                compact ? 'text-sm md:text-base' : 'text-base md:text-lg',
                 selected ? 'text-emerald-400' : 'text-white'
               )}
             >
               {label}
             </span>
-            {description && (
+            {description && !compact && (
               <span className="text-xs md:text-sm text-slate-400 line-clamp-2">
                 {description}
               </span>
             )}
           </div>
         </div>
-        {selected && (
+        {selected && !compact && (
           <Check className="w-4 h-4 md:w-5 md:h-5 text-emerald-400 flex-shrink-0" />
         )}
       </div>
