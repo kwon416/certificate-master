@@ -7,16 +7,76 @@ LLM에 더 풍부한 컨텍스트를 제공합니다.
 - Trafilatura를 사용한 본문 추출
 - 병렬 크롤링 지원
 - 콘텐츠 길이 제한
+- 파일 다운로드 URL 필터링
+- JS 렌더링 사이트 사전 감지 (크롤링 스킵)
 """
 import asyncio
+import re
 from dataclasses import dataclass
 from typing import Optional, List
+from urllib.parse import urlparse
 import logging
 
 from trafilatura import fetch_url, extract
 from trafilatura.metadata import extract_metadata
 
 logger = logging.getLogger(__name__)
+
+
+# 크롤링 불가능한 URL 패턴 (파일 다운로드)
+_DOWNLOAD_URL_PATTERNS = [
+    r'downloadFile\.do',      # moel.go.kr 등
+    r'flDownload\.do',        # law.go.kr
+    r'BOARD_ATTACH',          # 대학교 게시판 첨부파일
+    r'/download/',            # 일반적인 다운로드 경로
+    r'/attach/',              # 첨부파일 경로
+    r'/files?/',              # 파일 경로
+]
+
+# 크롤링 불가능한 파일 확장자
+_NON_HTML_EXTENSIONS = {
+    '.pdf', '.hwp', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+    '.zip', '.rar', '.7z', '.tar', '.gz',
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp',
+    '.mp3', '.mp4', '.avi', '.mov', '.wmv',
+}
+
+# 컴파일된 정규식 패턴
+_DOWNLOAD_PATTERN = re.compile(
+    '|'.join(_DOWNLOAD_URL_PATTERNS),
+    re.IGNORECASE
+)
+
+
+def is_crawlable_url(url: str) -> bool:
+    """URL이 크롤링 가능한지 확인합니다.
+
+    파일 다운로드 URL이나 비-HTML 파일 확장자를 가진 URL은
+    크롤링 대상에서 제외합니다.
+
+    Args:
+        url: 확인할 URL.
+
+    Returns:
+        bool: 크롤링 가능하면 True, 불가능하면 False.
+    """
+    # 다운로드 URL 패턴 확인
+    if _DOWNLOAD_PATTERN.search(url):
+        return False
+
+    # URL 경로에서 파일 확장자 확인
+    try:
+        parsed = urlparse(url)
+        path = parsed.path.lower()
+
+        # 경로의 마지막 부분에서 확장자 추출
+        for ext in _NON_HTML_EXTENSIONS:
+            if path.endswith(ext):
+                return False
+    except Exception:
+        pass
+
+    return True
 
 
 @dataclass
@@ -83,11 +143,38 @@ class ContentCrawlerService:
             CrawlResult: 추출된 콘텐츠와 메타데이터.
         """
         import sys
+        from app.services.search.url_filter import is_js_rendered_domain
+
+        # 파일 다운로드 URL 필터링 (크롤링 시도 전에 스킵)
+        if not is_crawlable_url(url):
+            short_url = url[:60] + "..." if len(url) > 60 else url
+            print(f"    ⏭️  [SKIP] {short_url} (download URL)")
+            sys.stdout.flush()
+            return CrawlResult(
+                content="",
+                title="",
+                success=False,
+                method="trafilatura",
+                error="Skipped: File download URL (not HTML)",
+            )
+
+        # JS 렌더링 사이트 필터링 (크롤링 시도 없이 바로 snippet fallback 유도)
+        if is_js_rendered_domain(url):
+            short_url = url[:60] + "..." if len(url) > 60 else url
+            print(f"    ⏭️  [SKIP] {short_url} (JS-rendered site)")
+            sys.stdout.flush()
+            return CrawlResult(
+                content="",
+                title="",
+                success=False,
+                method="trafilatura",
+                error="Skipped: JS-rendered site (use snippet fallback)",
+            )
 
         try:
             # URL 짧게 표시
             short_url = url[:60] + "..." if len(url) > 60 else url
-            print(f"    [FETCH] {short_url}")
+            print(f"    🔗 [FETCH] {short_url}")
             sys.stdout.flush()
 
             # 비동기 컨텍스트에서 동기 함수 실행
@@ -100,14 +187,15 @@ class ContentCrawlerService:
             )
 
             if not downloaded:
-                print(f"    [FAIL] Fetch failed")
+                error_msg = "Connection failed or empty response (possible SSL/timeout/404)"
+                print(f"    ❌ [ERROR] {error_msg}")
                 sys.stdout.flush()
                 return CrawlResult(
                     content="",
                     title="",
                     success=False,
                     method="trafilatura",
-                    error="Failed to fetch URL or empty response",
+                    error=error_msg,
                 )
 
             # 본문 추출 (Context7 Trafilatura 문서 기반 최적화)
@@ -131,14 +219,15 @@ class ContentCrawlerService:
             )
 
             if not content:
-                print(f"    [FAIL] No content extracted")
+                error_msg = "No text content extracted (JS-rendered or non-text page)"
+                print(f"    ⚠️  [WARN] {error_msg}")
                 sys.stdout.flush()
                 return CrawlResult(
                     content="",
                     title="",
                     success=False,
                     method="trafilatura",
-                    error="No text content extracted",
+                    error=error_msg,
                 )
 
             # 메타데이터 추출 (제목)
@@ -148,7 +237,7 @@ class ContentCrawlerService:
             )
             title = metadata.title if metadata and metadata.title else ""
 
-            print(f"    [OK] {len(content)}자 추출")
+            print(f"    ✅ [OK] {len(content)}자 추출")
             sys.stdout.flush()
 
             # 콘텐츠 길이 제한
@@ -171,13 +260,18 @@ class ContentCrawlerService:
             )
 
         except Exception as e:
-            logger.error(f"Error crawling {url}: {e}")
+            short_url = url[:60] + "..." if len(url) > 60 else url
+            error_type = type(e).__name__
+            error_msg = f"{error_type}: {str(e)[:100]}"
+            print(f"    ❌ [ERROR] {error_msg}")
+            sys.stdout.flush()
+            logger.debug(f"Crawl exception for {url}: {e}")
             return CrawlResult(
                 content="",
                 title="",
                 success=False,
                 method="trafilatura",
-                error=str(e),
+                error=error_msg,
             )
 
     async def extract_multiple(self, urls: List[str]) -> List[CrawlResult]:

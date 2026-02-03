@@ -144,7 +144,18 @@ def setup_logging(verbose: bool = False) -> None:
         format=format_str,
         datefmt=date_format,
         handlers=[logging.StreamHandler(sys.stdout)],
+        force=True,  # 이미 설정된 로거 재설정
     )
+
+    # 라이브러리 로그 억제 (불필요한 내부 로그 제거)
+    # trafilatura: "discarding data: None", "download error" 등
+    logging.getLogger("trafilatura").setLevel(logging.CRITICAL)
+    # urllib3: "Retrying (Retry...)" SSL 재시도 로그
+    logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+    # httpx: "HTTP Request: GET ..." 매 요청마다 출력
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    # httpcore: httpx 내부 로그
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 # ============================================================

@@ -31,11 +31,6 @@ export function LectureCard({ lecture, className }: LectureCardProps) {
             <Badge variant="outline" className="border-cyan-500/30 text-cyan-400">
               {lecture.platform}
             </Badge>
-            {lecture.price === '무료' && (
-              <Badge variant="secondary" className="bg-amber-900/30 text-amber-400">
-                무료
-              </Badge>
-            )}
           </div>
 
           {/* 제목 */}
@@ -45,13 +40,13 @@ export function LectureCard({ lecture, className }: LectureCardProps) {
 
           {/* 메타 정보 */}
           <div className="flex flex-wrap gap-3 text-sm text-slate-400">
-            {lecture.instructor && (
+            {lecture.instructor && lecture.instructor !== 'null' && (
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
                 {lecture.instructor}
               </span>
             )}
-            {lecture.price && lecture.price !== '무료' && (
+            {lecture.price && lecture.price !== '무료' && lecture.price !== 'null' && (
               <span className="flex items-center gap-1">
                 <DollarSign className="h-3 w-3" />
                 {lecture.price}

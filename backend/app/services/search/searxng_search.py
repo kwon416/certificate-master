@@ -19,7 +19,15 @@ from typing import Optional
 import httpx
 
 from app.core.config import get_settings
-from app.services.search.content_crawler import ContentCrawlerService, get_content_crawler
+from app.services.search.content_crawler import (
+    ContentCrawlerService,
+    get_content_crawler,
+    is_crawlable_url,
+)
+from app.services.search.url_filter import (
+    DomainFailureCache,
+    is_valid_snippet,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +66,9 @@ class SearXNGSearchService:
         self.crawl_top_n = crawl_top_n
         self.crawl_target_success = crawl_target_success
         self._crawler: Optional[ContentCrawlerService] = None
+
+        # 도메인 실패 캐싱 (같은 도메인에서 연속 실패 시 크롤링 스킵)
+        self._failure_cache = DomainFailureCache(max_failures=2)
 
     def _get_crawler(self) -> ContentCrawlerService:
         """크롤러 인스턴스를 반환합니다 (lazy initialization)."""
@@ -235,6 +246,8 @@ class SearXNGSearchService:
     ) -> list[dict]:
         """검색 결과를 추출하고 품질 점수를 계산합니다.
 
+        PDF, 파일 다운로드 URL은 제외합니다.
+
         Args:
             search_response: search() 메서드의 응답.
             keyword_hints: 관련성 점수 가중치를 위한 키워드.
@@ -246,8 +259,16 @@ class SearXNGSearchService:
         hints = keyword_hints or []
 
         extracted = []
+        skipped_count = 0
+
         for result in web_results:
             url = result.get("url", "")
+
+            # PDF/파일 다운로드 URL 필터링
+            if not is_crawlable_url(url):
+                skipped_count += 1
+                continue
+
             text = f"{result.get('title', '')} {result.get('description', '')}"
 
             extracted.append({
@@ -260,6 +281,9 @@ class SearXNGSearchService:
                 "recency_score": self._calculate_recency_score(result.get("age", "")),
                 "keyword_score": self._calculate_keyword_score(text, hints),
             })
+
+        if skipped_count > 0:
+            logger.debug(f"파일 다운로드 URL {skipped_count}개 제외됨")
 
         # 복합 점수 기반 정렬
         if hints:
@@ -289,6 +313,11 @@ class SearXNGSearchService:
         PDF/파일은 후순위로 정렬하고, 웹페이지를 우선 크롤링합니다.
         목표 성공 수(crawl_target_success)에 도달하면 크롤링을 중단합니다.
         크롤링 실패 시 검색 snippet을 fallback으로 사용합니다.
+
+        최적화:
+        - JS 렌더링 사이트는 크롤링 시도 없이 바로 snippet fallback
+        - 동일 도메인에서 연속 실패 시 해당 도메인 크롤링 스킵
+        - 품질이 낮은 snippet은 성공으로 카운트하지 않음
 
         Args:
             search_response: search() 메서드의 응답.
@@ -322,6 +351,15 @@ class SearXNGSearchService:
             url = result["url"]
             description = result.get("description", "")
 
+            # 도메인 실패 캐싱: 해당 도메인이 이미 여러 번 실패했으면 크롤링 스킵
+            if self._failure_cache.should_skip(url):
+                # 크롤링 스킵, 유효한 snippet이 있으면 사용
+                if is_valid_snippet(description):
+                    crawled_content[url] = (description, "snippet_fallback")
+                    success_count += 1
+                    logger.info(f"도메인 캐시 스킵 + snippet ({success_count}/{self.crawl_target_success}): {url[:50]}")
+                continue
+
             try:
                 crawl_result = await crawler.extract_content(url)
 
@@ -329,18 +367,25 @@ class SearXNGSearchService:
                     # 크롤링 성공
                     crawled_content[url] = (crawl_result.content, crawl_result.method)
                     success_count += 1
+                    self._failure_cache.record_success(url)
                     logger.info(f"크롤링 성공 ({success_count}/{self.crawl_target_success}): {url[:50]}")
-                elif description:
-                    # 크롤링 실패 → snippet fallback
-                    crawled_content[url] = (description, "snippet_fallback")
-                    success_count += 1
-                    logger.info(f"Snippet fallback ({success_count}/{self.crawl_target_success}): {url[:50]}")
                 else:
-                    logger.warning(f"크롤링 실패 (snippet 없음): {url[:50]}")
+                    # 크롤링 실패 → 실패 캐시 기록
+                    self._failure_cache.record_failure(url)
+
+                    # snippet fallback: 유효한 snippet만 성공으로 카운트
+                    if is_valid_snippet(description):
+                        crawled_content[url] = (description, "snippet_fallback")
+                        success_count += 1
+                        logger.info(f"Snippet fallback ({success_count}/{self.crawl_target_success}): {url[:50]}")
+                    else:
+                        logger.warning(f"크롤링 실패 (유효한 snippet 없음): {url[:50]}")
 
             except Exception as e:
                 logger.error(f"크롤링 예외: {url[:50]} - {e}")
-                if description:
+                self._failure_cache.record_failure(url)
+
+                if is_valid_snippet(description):
                     crawled_content[url] = (description, "snippet_fallback")
                     success_count += 1
 
@@ -710,6 +755,9 @@ class SearXNGSearchService:
         Returns:
             카테고리별 검색 결과 딕셔너리.
         """
+        # 새로운 검색 세션 시작 시 실패 캐시 초기화
+        self._failure_cache.clear()
+
         results = {}
 
         for category, payload in queries.items():
