@@ -206,6 +206,9 @@ class LLMService:
     OpenAI API (GPT-4o-mini)를 사용합니다.
     """
 
+    # temperature를 지원하지 않는 모델 목록
+    MODELS_WITHOUT_TEMPERATURE = {"gpt-5-nano"}
+
     def __init__(self, api_key: Optional[str] = None):
         """LLM 서비스를 초기화합니다.
 
@@ -222,6 +225,47 @@ class LLMService:
             self.client = AsyncOpenAI(api_key=self.api_key)
         else:
             self.client = None
+
+    def should_skip_temperature(self) -> bool:
+        """현재 모델이 temperature 파라미터를 지원하지 않는지 확인합니다.
+
+        Returns:
+            True: temperature를 건너뛰어야 함 (지원하지 않는 모델)
+            False: temperature를 사용해야 함 (지원하는 모델)
+        """
+        return self.model in self.MODELS_WITHOUT_TEMPERATURE
+
+    def build_completion_params(
+        self,
+        messages: list[dict],
+        temperature: Optional[float] = None,
+        response_format: Optional[dict] = None,
+    ) -> dict:
+        """LLM API 호출을 위한 파라미터를 생성합니다.
+
+        temperature를 지원하지 않는 모델의 경우 해당 파라미터를 제외합니다.
+
+        Args:
+            messages: 메시지 목록.
+            temperature: 응답의 창의성 정도 (0.0 ~ 2.0).
+            response_format: 응답 형식 지정.
+
+        Returns:
+            API 호출용 파라미터 딕셔너리.
+        """
+        params = {
+            "model": self.model,
+            "messages": messages,
+        }
+
+        # temperature를 지원하는 모델일 때만 추가
+        if temperature is not None and not self.should_skip_temperature():
+            params["temperature"] = temperature
+
+        if response_format is not None:
+            params["response_format"] = response_format
+
+        return params
 
     @staticmethod
     def _try_repair_json(failed_json: str) -> Optional[dict]:
@@ -672,15 +716,17 @@ class LLMService:
         last_error = None
         for attempt in range(MAX_RETRIES + 1):
             try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
+                # temperature를 지원하지 않는 모델 처리
+                temperature = 0.2 + (attempt * 0.1)  # 재시도 시 온도 약간 증가
+                params = self.build_completion_params(
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
+                    temperature=temperature,
                     response_format={"type": "json_object"},
-                    temperature=0.2 + (attempt * 0.1),  # 재시도 시 온도 약간 증가
                 )
+                response = await self.client.chat.completions.create(**params)
 
                 content = response.choices[0].message.content
                 if not content:
@@ -1005,15 +1051,17 @@ class LLMService:
         last_error = None
         for attempt in range(MAX_RETRIES + 1):
             try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
+                # temperature를 지원하지 않는 모델 처리
+                temperature = 0.1 + (attempt * 0.05)  # 창의성 제거: 낮은 온도 유지
+                params = self.build_completion_params(
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
+                    temperature=temperature,
                     response_format={"type": "json_object"},
-                    temperature=0.1 + (attempt * 0.05),  # 창의성 제거: 낮은 온도 유지
                 )
+                response = await self.client.chat.completions.create(**params)
 
                 content = response.choices[0].message.content
                 if not content:

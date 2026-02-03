@@ -1,4 +1,8 @@
-# Backend - Certificate Master
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Backend - Certificate Master
 
 자격증 정보 + 맞춤형 학습 플랜 + AI 가이드 플랫폼 백엔드
 
@@ -7,117 +11,10 @@
 | Layer | Stack |
 |-------|-------|
 | Framework | FastAPI (Python 3.11+) |
-| Database | MariaDB, Supabase (PostgreSQL) |
-| Auth | Supabase Auth |
-| Vector Store | ChromaDB, Pinecone |
+| Database | MariaDB (SQLAlchemy), Supabase Auth |
+| Vector Store | ChromaDB |
 | AI/LLM | OpenAI API (GPT-4o-mini, text-embedding-3-small) |
 | Search | SearXNG (메타 검색 엔진) |
-| Cache | Redis |
-| Task Queue | Celery |
-
----
-
-## Project Structure
-
-```
-backend/
-├── app/
-│   ├── api/v1/                    # API 엔드포인트
-│   │   ├── certificates.py        # 자격증 CRUD & 검색
-│   │   ├── study_plans.py         # 학습 계획 관리
-│   │   ├── checkins.py            # 체크인 트래킹
-│   │   ├── analytics.py           # 학습 분석
-│   │   ├── progress_analytics.py  # 진행도 분석
-│   │   └── recommendations.py     # 추천 시스템
-│   ├── core/
-│   │   ├── config.py              # Settings (Pydantic)
-│   │   ├── database.py            # MariaDB 연결
-│   │   ├── supabase.py            # Supabase 클라이언트
-│   │   └── security.py            # 인증 미들웨어
-│   ├── models/                    # SQLAlchemy 모델
-│   ├── schemas/                   # Pydantic 스키마
-│   └── services/                  # 비즈니스 로직
-│       ├── search/                # 검색 서비스
-│       │   ├── protocol.py        # SearchServiceProtocol
-│       │   ├── factory.py         # get_search_service()
-│       │   ├── searxng_search.py  # SearXNG 구현
-│       │   └── content_crawler.py # trafilatura 크롤러
-│       ├── embedding/             # 임베딩 서비스
-│       │   ├── protocol.py        # EmbeddingProtocol
-│       │   ├── factory.py         # get_embedding_service()
-│       │   ├── service.py         # OpenAI/Local 구현
-│       │   └── vector_store.py    # 벡터 스토어
-│       ├── llm/                   # LLM 서비스
-│       │   ├── service.py         # LLM 호출
-│       │   └── enrichment_service.py # 데이터 강화
-│       ├── analytics/             # 분석 서비스
-│       │   ├── analytics_service.py
-│       │   ├── learning_pattern_service.py
-│       │   └── velocity_calculator.py
-│       └── study/                 # 학습 서비스
-│           ├── study_plan_service.py
-│           └── recommendation_service.py
-├── data/
-│   ├── raw/                       # 원본 데이터
-│   └── processed/                 # 처리된 데이터
-├── scripts/
-│   ├── data_pipeline.py           # 데이터 파이프라인
-│   ├── enrich_certificates.py     # 자격증 강화
-│   └── migrations/                # DB 마이그레이션
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── conftest.py
-├── .env.example
-├── pyproject.toml
-└── Dockerfile
-```
-
----
-
-## Environment Variables
-
-```env
-# Supabase
-SUPABASE_URL=http://localhost:54321
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:54322/postgres
-
-# MariaDB
-MARIADB_HOST=localhost
-MARIADB_PORT=3306
-MARIADB_USER=your_user
-MARIADB_PASSWORD=your_password
-MARIADB_DATABASE=certificate_master
-
-# OpenAI API
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_MODEL_NAME=gpt-4o-mini
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
-OPENAI_EMBEDDING_DIMENSIONS=1024
-
-# Search Provider (SearXNG)
-SEARCH_PROVIDER=searxng
-SEARXNG_BASE_URL=http://localhost:8888
-SEARXNG_TIMEOUT=30.0
-
-# Embedding Provider (openai | local)
-EMBEDDING_PROVIDER=openai
-
-# Vector Store
-PINECONE_API_KEY=your_pinecone_api_key
-PINECONE_INDEX=certificate-master
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# Application
-ENVIRONMENT=development
-DEBUG=true
-LOG_LEVEL=INFO
-CORS_ORIGINS=http://localhost:5100
-```
 
 ---
 
@@ -130,189 +27,85 @@ uv sync --extra dev
 # 개발 서버 실행
 uv run uvicorn app.main:app --reload --port 8000
 
-# 테스트 실행
+# 전체 테스트
 uv run pytest
+
+# 단일 테스트 파일
+uv run pytest tests/unit/test_analytics_service.py -v
+
+# 특정 테스트 함수
+uv run pytest tests/unit/test_analytics_service.py::test_function_name -v
 
 # 테스트 (커버리지)
 uv run pytest --cov=app --cov-report=html
 
+# 마커별 테스트
+uv run pytest -m unit        # 단위 테스트
+uv run pytest -m integration # 통합 테스트
+uv run pytest -m e2e         # E2E 테스트 (서버 실행 필요)
+
 # SearXNG 실행 (Docker)
 docker run -d -p 8888:8080 searxng/searxng
 
-# 데이터 강화 (테스트)
-uv run python -m scripts.enrich_certificates --test
-
-# 데이터 강화 (전체)
-uv run python -m scripts.enrich_certificates --all
+# 데이터 강화
+uv run python -m scripts.enrich_certificates --test  # 테스트
+uv run python -m scripts.enrich_certificates --all   # 전체
 ```
 
 ---
 
-## API Endpoints
+## Architecture
 
-### Certificates
-- `GET /api/v1/certificates/search` - 자격증 검색
-- `GET /api/v1/certificates/autocomplete` - 자동완성
-- `GET /api/v1/certificates/categories` - 카테고리 목록
-- `GET /api/v1/certificates/{id}` - 자격증 상세
+### Protocol Pattern (의존성 역전)
 
-### Study Plans
-- `GET /api/v1/study-plans` - 학습 계획 목록
-- `POST /api/v1/study-plans` - 학습 계획 생성 (LLM 자동 생성)
-- `GET /api/v1/study-plans/{id}` - 학습 계획 상세
-- `PATCH /api/v1/study-plans/{id}` - 학습 계획 수정
-- `DELETE /api/v1/study-plans/{id}` - 학습 계획 삭제
+서비스는 Protocol 인터페이스 + Factory 패턴을 사용:
 
-### Check-ins
-- `GET /api/v1/checkins` - 체크인 목록
-- `POST /api/v1/checkins` - 체크인 생성
-- `GET /api/v1/checkins/{id}/stats` - 통계
-- `GET /api/v1/checkins/{id}/streak` - 연속 학습일
+```
+services/
+├── search/
+│   ├── protocol.py         # SearchServiceProtocol (인터페이스)
+│   ├── factory.py          # get_search_service() → 구현체 반환
+│   └── searxng_search.py   # SearXNG 구현체
+├── embedding/
+│   ├── protocol.py         # EmbeddingServiceProtocol
+│   ├── factory.py          # get_embedding_service()
+│   └── service.py          # OpenAI/Local 구현체
+```
 
-### Analytics
-- `GET /api/v1/analytics/progress/{study_plan_id}` - 진행도 분석
-- `GET /api/v1/analytics/learning-pattern/{study_plan_id}` - 학습 패턴 분석
+**새 서비스 추가 시**: Protocol 정의 → Factory 등록 → 구현체 작성
 
-### Recommendations
-- `POST /api/v1/recommendations` - AI 추천
+### 핵심 서비스 흐름
+
+```
+API Endpoint → Service → Protocol → 구현체 (SearXNG/OpenAI/ChromaDB)
+                 ↓
+            LLM Service (GPT-4o-mini)
+```
+
+### 데이터 흐름
+
+1. **검색**: `certificates.py` → `SearXNGSearchService` → 메타 검색 → 크롤링
+2. **추천**: `recommendations.py` → `VectorStore` (ChromaDB) → LLM 프롬프트
+3. **학습계획**: `study_plans.py` → `StudyPlanService` → LLM 자동 생성
 
 ---
 
-## Core Services
+## Test Fixtures (conftest.py)
 
-### 1. Search Service (SearXNG)
-
-SearXNG 메타 검색 엔진을 사용한 자격증 정보 검색:
-
-```python
-from app.services.search.factory import get_search_service
-
-service = get_search_service()
-
-# 자격증 종합 검색 (크롤링 포함)
-results = await service.search_certificate_comprehensive("정보처리기사")
-```
-
-**검색 카테고리:**
-| 카테고리 | 검색 목적 |
-|---------|----------|
-| `job_postings` | 채용공고 우대/필수 조건 |
-| `public_sector` | 공무원/공기업 가산점 |
-| `cost_breakdown` | 총 비용 (교재+인강+응시료) |
-| `non_major_reviews` | 비전공자/직장인 합격기 |
-| `free_resources` | 기출문제/무료 자료 |
-| `comparison` | 유사 자격증 비교 |
-
-**URL 품질 점수:**
-- 공식 사이트 (q-net.or.kr, .go.kr): 100점
-- 채용 사이트 (saramin, jobkorea, wanted): 95점
-- 교육 플랫폼 (eduwill, hackers): 90점
-
-### 2. Study Plan Service (LLM)
-
-GPT-4o-mini 기반 맞춤형 학습 계획 자동 생성:
-
-```python
-from app.services.study.study_plan_service import StudyPlanService
-
-service = StudyPlanService()
-
-# LLM 기반 학습 계획 생성
-plan = await service.generate_study_plan(
-    certificate=certificate_data,
-    target_date="2026-06-30",
-    daily_study_hours=2.0
-)
-```
-
-**생성 데이터:**
-- 주차별 마일스톤 (milestones)
-- 학습 주제 (topics)
-- 시간 배분 권장
-
-### 3. Analytics Service
-
-복합 진행도 분석 및 학습 패턴 분석:
-
-**진행도 지표:**
-| 지표 | 계산 방식 |
-|------|----------|
-| 진도율 | `완료 마일스톤 / 전체 마일스톤 * 100` |
-| 시간 이행률 | `실제 학습 시간 / 계획 시간 * 100` |
-| 일정 준수율 | `현재 진도 / 예상 진도 * 100` |
-| 일관성 점수 | `변동계수(CV) = std / mean` 기반 |
-
-**학습자 상태 분류:**
-| 상태 | 기준 |
-|------|------|
-| 초과 달성 | 일정 준수율 > 120% |
-| 정상 진행 | 80% <= 일정 준수율 <= 120% |
-| 주의 필요 | 50% <= 일정 준수율 < 80% |
-| 이탈 위험 | 일정 준수율 < 50% |
-
----
-
-## Database Schema
-
-### study_plans
-```sql
-CREATE TABLE study_plans (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    certificate_id UUID NOT NULL,
-    title VARCHAR NOT NULL,
-    target_date DATE NOT NULL,
-    daily_study_hours NUMERIC,
-    status VARCHAR,
-    progress_percentage NUMERIC,
-    topics JSONB,
-    milestones JSONB,
-    created_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ
-);
-```
-
-### checkins
-```sql
-CREATE TABLE checkins (
-    id UUID PRIMARY KEY,
-    study_plan_id UUID NOT NULL,
-    user_id UUID NOT NULL,
-    checkin_date DATE NOT NULL,
-    hours_studied DECIMAL(3,1) NOT NULL,
-    notes TEXT,
-    mood VARCHAR(20),
-    created_at TIMESTAMPTZ,
-    UNIQUE(study_plan_id, checkin_date)
-);
-```
-
----
-
-## Testing
-
-```bash
-# 전체 테스트
-uv run pytest
-
-# Unit 테스트만
-uv run pytest tests/unit/ -v
-
-# Integration 테스트만
-uv run pytest tests/integration/ -v
-
-# 특정 테스트 파일
-uv run pytest tests/unit/test_searxng_search_service.py -v
-
-# 커버리지 리포트
-uv run pytest --cov=app --cov-report=html
-```
+| Fixture | Scope | 설명 |
+|---------|-------|------|
+| `client` | module | FastAPI TestClient |
+| `authenticated_client` | function | 인증 우회된 TestClient |
+| `test_db_session` | function | SQLAlchemy Session |
+| `mock_user` | function | MockUser 인스턴스 |
+| `sample_certificate_data` | function | 테스트용 자격증 데이터 |
+| `clean_test_certificates` | function | TEST_ prefix 데이터 정리 |
 
 ---
 
 ## Code Style
 
-- **Formatter**: Black
+- **Formatter**: Black (line-length: 88)
 - **Linter**: Ruff
 - **Type Hints**: 필수
 - **Indent**: 4 spaces
@@ -332,9 +125,6 @@ uv run pytest --cov=app --cov-report=html
 
 ### SearXNG 연결 실패
 ```bash
-# SearXNG 상태 확인
-curl http://localhost:8888/healthz
-
-# Docker 재시작
-docker restart searxng
+curl http://localhost:8888/healthz  # 상태 확인
+docker restart searxng              # Docker 재시작
 ```

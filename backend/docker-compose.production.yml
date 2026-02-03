@@ -1,0 +1,54 @@
+# ============================================================
+# Certificate Master Backend - 운영 환경 Docker Compose
+# ============================================================
+# 사용법: docker-compose -f docker-compose.production.yml up -d
+# ============================================================
+
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: certificate-master-backend:latest
+    container_name: certificate-master-backend
+    restart: unless-stopped
+
+    # Host 네트워크 사용
+    network_mode: host
+
+    # 환경 파일
+    env_file:
+      - .env
+
+    # 환경 변수 (운영)
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # 로그 설정
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+    # 리소스 제한 (선택)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M

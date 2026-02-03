@@ -45,12 +45,12 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: str
     SUPABASE_DB_URL: Optional[str] = None
 
-    # MariaDB Configuration
-    MARIADB_HOST: str = "localhost"
-    MARIADB_PORT: int = 3306
-    MARIADB_USER: str = "root"
-    MARIADB_PASSWORD: str = ""
-    MARIADB_DATABASE: str = "certificate_master"
+    # MariaDB Configuration (환경변수에서 로드)
+    MARIADB_HOST: str  # 필수: .env에서 설정
+    MARIADB_PORT: int # 필수 .env에서 설정
+    MARIADB_USER: str  # 필수: .env에서 설정
+    MARIADB_PASSWORD: str  # 필수: .env에서 설정
+    MARIADB_DATABASE: str # 필수 .env에서 설정
 
     # Redis (Optional for MVP)
     REDIS_URL: str = "redis://localhost:6379"
@@ -61,14 +61,14 @@ class Settings(BaseSettings):
 
     # OpenAI API Configuration
     OPENAI_API_KEY: Optional[str] = None
-    OPENAI_MODEL_NAME: str = "gpt-4o-mini"  # 빠르고 저렴한 모델
-    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"  # 임베딩 모델
-    OPENAI_EMBEDDING_DIMENSIONS: int = 1024  # 임베딩 차원 (BGE-M3와 호환)
+    OPENAI_MODEL_NAME: str # 필수 .env에서 설정
+    OPENAI_EMBEDDING_MODEL: str # 필수 .env에서 설정
+    OPENAI_EMBEDDING_DIMENSIONS: int # 필수 .env에서 설정
 
-    # ChromaDB Configuration (외부 서버)
-    CHROMA_HOST: str = "db01.server.ivetech.co.kr"
-    CHROMA_PORT: int = 38000
-    CHROMA_COLLECTION_NAME: str = "certificate-master-index"
+    # ChromaDB Configuration (환경변수에서 로드)
+    CHROMA_HOST: str  # 필수: .env에서 설정
+    CHROMA_PORT: int # 필수 .env에서 설정
+    CHROMA_COLLECTION_NAME: str # 필수 .env에서 설정
 
     # BGE-M3 Configuration (Deprecated - kept for backward compatibility)
     # Now using OpenAI Embedding API instead
@@ -96,11 +96,11 @@ class Settings(BaseSettings):
     # Embedding Provider Configuration
     # "openai": OpenAI API 사용 (서버용, 기본값)
     # "local": BGE-M3 로컬 모델 사용 (파이프라인용, FlagEmbedding 필요)
-    EMBEDDING_PROVIDER: str = "openai"
+    EMBEDDING_PROVIDER: str # 필수 .env에서 설정
 
     # SearXNG Configuration (오픈소스 검색 엔진)
     # Docker: docker run -d -p 8888:8080 searxng/searxng
-    SEARXNG_BASE_URL: str = "http://localhost:8888"
+    SEARXNG_BASE_URL: str  # 필수: .env에서 설정
     SEARXNG_TIMEOUT: float = 30.0
 
     # Application Settings
