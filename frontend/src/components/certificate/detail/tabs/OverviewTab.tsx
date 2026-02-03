@@ -12,7 +12,6 @@ import { ExamScheduleCard } from '../ExamScheduleCard'
 import { SimilarCertificatesTable } from '../SimilarCertificatesTable'
 import {
   type Certificate,
-  hasCostBreakdown,
   hasExamScheduleDetail,
   hasSimilarCertificates,
   hasOfficialSources,
@@ -80,9 +79,10 @@ export function OverviewTab({ certificate }: OverviewTabProps) {
 
       {/* 비용 상세 & 시험 일정 (2열 그리드) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {hasCostBreakdown(cert) && (
-          <CostBreakdownCard costBreakdown={cert.cost_breakdown} />
-        )}
+        <CostBreakdownCard
+          costBreakdown={cert.cost_breakdown}
+          certificateTitle={cert.title}
+        />
         {hasExamScheduleDetail(cert) && (
           <ExamScheduleCard scheduleDetail={cert.exam_schedule_detail} />
         )}

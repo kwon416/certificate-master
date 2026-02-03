@@ -124,3 +124,24 @@ class TestLLMServicePhaseIntegration:
         # API 호출 시 temperature가 포함되었는지 확인
         call_kwargs = service.client.chat.completions.create.call_args.kwargs
         assert "temperature" in call_kwargs
+
+    async def test_phase1_extract_logs_error_message_on_failure(self, capsys):
+        """오류 발생 시 실제 오류 메시지가 로그에 출력되어야 합니다."""
+        service = LLMService()
+        service.model = "gpt-5-nano"
+
+        # API 호출 시 오류 발생하도록 설정
+        error_message = "Test error: Invalid request"
+        service.client = MagicMock()
+        service.client.chat = MagicMock()
+        service.client.chat.completions = MagicMock()
+        service.client.chat.completions.create = AsyncMock(
+            side_effect=Exception(error_message)
+        )
+
+        with pytest.raises(Exception):
+            await service._phase1_extract("테스트 자격증", "검색 결과")
+
+        # 오류 메시지가 출력되었는지 확인
+        captured = capsys.readouterr()
+        assert error_message in captured.out

@@ -766,7 +766,9 @@ class LLMService:
                 last_error = e
                 if attempt < MAX_RETRIES:
                     print(f"    [Phase 1] 오류 발생, 재시도 중... ({attempt + 2}/{MAX_RETRIES + 1}) [model: {self.model}]")
+                    print(f"    [Phase 1] 오류 내용: {e}")
                     continue
+                print(f"    [Phase 1] 최종 오류: {e}")
                 raise last_error
 
         raise last_error or ValueError("Unknown error in Phase 1")
@@ -1101,7 +1103,9 @@ class LLMService:
                 last_error = e
                 if attempt < MAX_RETRIES:
                     print(f"    [Phase 2] 오류 발생, 재시도 중... ({attempt + 2}/{MAX_RETRIES + 1}) [model: {self.model}]")
+                    print(f"    [Phase 2] 오류 내용: {e}")
                     continue
+                print(f"    [Phase 2] 최종 오류: {e}")
                 raise last_error
 
         raise last_error or ValueError("Unknown error in Phase 2")
