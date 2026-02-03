@@ -237,6 +237,7 @@ export interface Certificate {
 
   // Statistics
   view_count?: number                   // 조회수
+  passing_rate?: number | null          // 합격률 (%, 0.0-100.0)
 
   // ==================== Phase 2 Enhanced Fields ====================
   job_market_info?: JobMarketInfo | null       // 채용 시장 정보
