@@ -32,7 +32,7 @@ export function Header() {
             <GraduationCap className="h-5 w-5 text-slate-900" />
           </div>
           <span className="font-bold text-lg tracking-tight text-white">
-            Certificate Master
+            자격증 마스터
           </span>
         </Link>
 

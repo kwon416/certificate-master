@@ -1,0 +1,27 @@
+# 자격증 마스터 - robots.txt
+# https://cert.i-ve.ai
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /study-plans
+
+# Sitemap
+Sitemap: https://cert.i-ve.ai/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Google
+User-agent: Googlebot
+Allow: /
+
+# Naver
+User-agent: Yeti
+Allow: /
+
+# Bing
+User-agent: Bingbot
+Allow: /

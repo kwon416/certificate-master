@@ -1,0 +1,148 @@
+import Script from 'next/script'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+
+interface JsonLdProps {
+  type: 'WebSite' | 'Organization' | 'BreadcrumbList' | 'Course' | 'FAQPage'
+  data?: Record<string, unknown>
+}
+
+export function JsonLd({ type, data }: JsonLdProps) {
+  let structuredData: Record<string, unknown> = {}
+
+  switch (type) {
+    case 'WebSite':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: '자격증 마스터',
+        alternateName: ['자격증마스터', 'Certificate Master'],
+        url: SITE_URL,
+        description: '3,500개 이상의 자격증 정보를 한눈에! 난이도, 합격률, 시험일정까지 비교하고 나에게 맞는 자격증을 찾아보세요.',
+        inLanguage: 'ko-KR',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+          },
+          'query-input': 'required name=search_term_string',
+        },
+        ...data,
+      }
+      break
+
+    case 'Organization':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: '자격증 마스터',
+        url: SITE_URL,
+        logo: `${SITE_URL}/web-app-manifest-512x512.png`,
+        sameAs: [],
+        contactPoint: {
+          '@type': 'ContactPoint',
+          email: 'contact@certmaster.kr',
+          contactType: 'customer service',
+          availableLanguage: 'Korean',
+        },
+        ...data,
+      }
+      break
+
+    case 'BreadcrumbList':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        ...data,
+      }
+      break
+
+    case 'Course':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'Course',
+        provider: {
+          '@type': 'Organization',
+          name: '자격증 마스터',
+          url: SITE_URL,
+        },
+        ...data,
+      }
+      break
+
+    case 'FAQPage':
+      structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        ...data,
+      }
+      break
+  }
+
+  return (
+    <Script
+      id={`json-ld-${type}`}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      strategy="afterInteractive"
+    />
+  )
+}
+
+// 자격증 상세 페이지용 JSON-LD
+interface CertificateJsonLdProps {
+  certificate: {
+    id: string
+    title: string
+    overview?: string
+    category?: string
+    difficulty?: string
+    passing_rate?: string
+  }
+}
+
+export function CertificateJsonLd({ certificate }: CertificateJsonLdProps) {
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: certificate.title,
+    description: certificate.overview || `${certificate.title} 자격증 정보, 시험일정, 합격률, 난이도 등을 확인하세요.`,
+    provider: {
+      '@type': 'Organization',
+      name: '자격증 마스터',
+      url: SITE_URL,
+    },
+    educationalCredentialAwarded: certificate.title,
+    ...(certificate.category && { courseCode: certificate.category }),
+    ...(certificate.difficulty && {
+      educationalLevel: certificate.difficulty,
+    }),
+    offers: {
+      '@type': 'Offer',
+      category: '자격증',
+      availability: 'https://schema.org/InStock',
+    },
+  }
+
+  return (
+    <Script
+      id="json-ld-certificate"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      strategy="afterInteractive"
+    />
+  )
+}
+
+// Breadcrumb 생성 헬퍼
+export function createBreadcrumbData(items: { name: string; url: string }[]) {
+  return {
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  }
+}

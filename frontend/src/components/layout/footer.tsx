@@ -26,7 +26,7 @@ export function Footer() {
                 <GraduationCap className="h-5 w-5 text-slate-900" />
               </div>
               <span className="font-bold text-lg text-white">
-                Certificate Master
+                자격증 마스터
               </span>
             </Link>
             <p className="mt-4 text-sm text-slate-500 leading-relaxed">
@@ -111,7 +111,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-slate-800/50">
           <p className="text-center text-sm text-slate-600">
-            © {new Date().getFullYear()} Certificate Master. All rights reserved.
+            © {new Date().getFullYear()} 자격증 마스터. All rights reserved.
           </p>
         </div>
       </div>
