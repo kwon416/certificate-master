@@ -9,13 +9,28 @@ from typing import Optional
 import json
 
 from openai import AsyncOpenAI, BadRequestError
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.core.config import get_settings
 
 
 # JSON 복구 설정
 MAX_RETRIES = 2  # 최대 재시도 횟수
+
+# 난이도별 허용 study_period_days 범위 (프롬프트 난이도 기준과 동기화)
+DIFFICULTY_PERIOD_RANGES: dict[int, tuple[int, int]] = {
+    1: (1, 21),      # 1~3주: 누구나 쉽게 합격 가능
+    2: (14, 90),     # 2주~3개월: 기초 지식으로 합격 가능
+    3: (60, 210),    # 2~7개월: 체계적 학습 필요
+    4: (150, 540),   # 5개월~1.5년: 전문 지식 및 집중 학습 필요
+    5: (300, 1095),  # 10개월~3년: 매우 높은 난이도, 장기 준비 필수
+}
+
+
+def clamp_study_period(difficulty: int, study_period_days: int) -> int:
+    """difficulty 기준으로 study_period_days를 허용 범위 내로 클램핑합니다."""
+    min_days, max_days = DIFFICULTY_PERIOD_RANGES.get(difficulty, (1, 1095))
+    return max(min_days, min(study_period_days, max_days))
 
 # LLM이 정보 없을 때 생성하는 placeholder 교재 제목들
 PLACEHOLDER_BOOK_TITLES: set[str] = {
@@ -261,7 +276,7 @@ class Phase1Extraction(BaseModel):
 
     overview_draft: str = Field(..., description="초안 개요 (1-2문장)")
     difficulty: int = Field(..., ge=1, le=5)
-    study_period_days: int = Field(..., ge=1)
+    study_period_days: int = Field(..., ge=1, le=1095)
 
     @field_validator("difficulty", mode="before")
     @classmethod
@@ -280,8 +295,18 @@ class Phase1Extraction(BaseModel):
         if v is None:
             return 90  # 기본값: 3개월
         if isinstance(v, (int, float)):
-            return int(v)
+            clamped = max(1, min(int(v), 1095))
+            return clamped
         return v
+
+    @model_validator(mode="after")
+    def validate_difficulty_period_consistency(self):
+        """difficulty와 study_period_days 간 정합성을 검증하고 보정합니다."""
+        self.study_period_days = clamp_study_period(
+            self.difficulty, self.study_period_days
+        )
+        return self
+
     exam_info: ExtractedExamInfo
     career_info: ExtractedCareerInfo
     user_reviews: ExtractedUserReviews
@@ -313,7 +338,7 @@ class CertificateEnrichment(BaseModel):
 
     overview: str = Field(..., description="정제된 개요 (3-5문장)")
     difficulty: int = Field(..., ge=1, le=5)
-    study_period_days: int = Field(..., ge=1)
+    study_period_days: int = Field(..., ge=1, le=1095)
     exam_info: dict
     career_info: dict
     user_reviews: dict
@@ -326,6 +351,24 @@ class CertificateEnrichment(BaseModel):
     feasibility_info: dict = Field(default_factory=dict)
     exam_schedule_detail: dict = Field(default_factory=dict)
     similar_certificates: list[dict] = Field(default_factory=list)
+
+    @field_validator("study_period_days", mode="before")
+    @classmethod
+    def coerce_enrichment_study_period(cls, v):
+        """study_period_days를 정수로 변환하고 상한을 적용합니다."""
+        if v is None:
+            return 90
+        if isinstance(v, (int, float)):
+            return max(1, min(int(v), 1095))
+        return v
+
+    @model_validator(mode="after")
+    def validate_difficulty_period_consistency(self):
+        """difficulty와 study_period_days 간 정합성을 검증하고 보정합니다."""
+        self.study_period_days = clamp_study_period(
+            self.difficulty, self.study_period_days
+        )
+        return self
 
 
 class LLMService:
@@ -682,12 +725,13 @@ class LLMService:
    - title: 유사 자격증명 (예: "정보처리산업기사")
    - comparison: 비교 설명 (예: "기사보다 난이도 낮음, 실무 경력 대신 취득 가능")
 
-난이도 기준:
-- 1: 1-2주 소요, 누구나 쉽게 합격 가능
-- 2: 1-2개월 소요, 기초 지식으로 합격 가능
-- 3: 3-6개월 소요, 체계적 학습 필요
-- 4: 6개월-1년 소요, 전문 지식 및 집중 학습 필요
-- 5: 1년 이상 소요, 매우 높은 난이도, 장기 준비 필수
+난이도 기준 및 study_period_days 정합성 규칙 ⭐필수:
+- difficulty=1: study_period_days 1~21일 범위 (1~3주, 누구나 쉽게 합격 가능)
+- difficulty=2: study_period_days 14~90일 범위 (2주~3개월, 기초 지식으로 합격 가능)
+- difficulty=3: study_period_days 60~210일 범위 (2~7개월, 체계적 학습 필요)
+- difficulty=4: study_period_days 150~540일 범위 (5개월~1.5년, 전문 지식 및 집중 학습 필요)
+- difficulty=5: study_period_days 300~1095일 범위 (10개월~3년, 매우 높은 난이도, 장기 준비 필수)
+⚠️ difficulty와 study_period_days는 반드시 위 범위가 일치해야 합니다. 범위를 벗어나면 difficulty를 study_period_days에 맞게 조정하세요.
 
 출력은 반드시 유효한 JSON 형식으로 작성하세요.
 **중요: JSON 문자열 내 줄바꿈은 반드시 \\n 이스케이프 시퀀스를 사용하세요. 실제 줄바꿈 문자를 사용하면 안 됩니다.**
@@ -1159,18 +1203,24 @@ class LLMService:
 1. **JSON 문자열 내 줄바꿈은 반드시 \\n 이스케이프 시퀀스 사용** (실제 줄바꿈 문자 금지)
 2. **difficulty 필수** ⭐절대생략금지: 1-5 범위 정수 (정보 없으면 3 사용)
 3. **study_period_days 필수** ⭐절대생략금지: 준비기간 일수 (정보 없으면 90 사용)
-4. exam_info는 구체적으로 (문항수, 시간, 출제 경향)
-5. study_guide는 key_exam_topics 포함 (핵심 출제 토픽 5개 이상)
-6. user_reviews.exam_day_tips 필수 (시험 전날, 당일, 멘탈 관리)
-7. official_sources.reference_urls에 시험 일정 페이지 필수 포함
-8. job_prospects는 4-5문장, \\n으로 구분:
+4. **difficulty-study_period_days 정합성** ⭐필수: 아래 범위를 반드시 일치시키세요.
+   - difficulty=1 → study_period_days 1~21일
+   - difficulty=2 → study_period_days 14~90일
+   - difficulty=3 → study_period_days 60~210일
+   - difficulty=4 → study_period_days 150~540일
+   - difficulty=5 → study_period_days 300~1095일
+5. exam_info는 구체적으로 (문항수, 시간, 출제 경향)
+6. study_guide는 key_exam_topics 포함 (핵심 출제 토픽 5개 이상)
+7. user_reviews.exam_day_tips 필수 (시험 전날, 당일, 멘탈 관리)
+8. official_sources.reference_urls에 시험 일정 페이지 필수 포함
+9. job_prospects는 4-5문장, \\n으로 구분:
    - 첫 문장: 해당 자격증의 현재 취업 시장 수요
    - 둘째 문장: 필수/우대로 요구하는 대표 직무 (예: "SI 개발자, 솔루션 엔지니어 채용 시 필수")
    - 셋째 문장: 대표 기업 사례 (예: "삼성SDS, LG CNS, 네이버 등 IT 대기업에서 우대")
    - 넷째 문장: 향후 전망 및 성장 가능성
    - 다섯째 문장: 커리어 상승 효과 (있으면)
-9. user_reviews.summary는 문단 2개, \\n\\n으로 구분
-10. 모든 필드 값이 완전한 JSON 문자열로 닫혀 있는지 확인
+10. user_reviews.summary는 문단 2개, \\n\\n으로 구분
+11. 모든 필드 값이 완전한 JSON 문자열로 닫혀 있는지 확인
 """
 
         user_prompt = f"""추출된 데이터:
