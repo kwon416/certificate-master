@@ -37,11 +37,14 @@ dev = [
     "ruff>=0.1.0",
     "requests>=2.31.0",
 ]
-# 로컬 임베딩 (BGE-M3) - 데이터 파이프라인용
-# 서버에서는 불필요 (OpenAI API 사용)
-local = [
-    "FlagEmbedding>=1.2.0",
-    "torch>=2.0.0",
+# 데이터 파이프라인용 (Playwright 크롤러)
+# 서버에서는 불필요
+# 설치: uv sync --extra pipeline && uv run playwright install chromium
+pipeline = [
+    "playwright>=1.40.0",
+]
+crawler = [
+    "playwright>=1.40.0",
 ]
 
 [tool.pytest.ini_options]

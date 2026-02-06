@@ -10,6 +10,17 @@ const nextConfig = {
     ],
   },
 
+  // /search → / 리다이렉트
+  async redirects() {
+    return [
+      {
+        source: '/search',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
+
   // API 프록시 설정 (Docker 환경용)
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL;

@@ -1,13 +1,13 @@
-"""ChromaDB BGE-M3 임베딩 통합 테스트.
+"""ChromaDB OpenAI 임베딩 통합 테스트.
 
-TDD: RED phase - ChromaDB의 BGE-M3 임베딩 기능 사용 테스트.
+TDD: RED phase - ChromaDB의 OpenAI 임베딩 기능 사용 테스트.
 """
 import pytest
 from unittest.mock import MagicMock, patch
 
 
 class TestVectorStoreServiceIntegrated:
-    """ChromaDB + BGE-M3 임베딩을 사용하는 VectorStoreService 테스트."""
+    """ChromaDB + OpenAI 임베딩을 사용하는 VectorStoreService 테스트."""
 
     def test_search_records_with_text(self):
         """텍스트 기반 검색 테스트."""
@@ -126,12 +126,11 @@ class TestVectorStoreServiceIntegrated:
                 assert "관세사" in record["chunk_text"]
 
     def test_upsert_certificates_batch_integrated(self):
-        """배치 업서트 테스트 (BGE-M3 임베딩)."""
+        """배치 업서트 테스트 (OpenAI 임베딩)."""
         with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
             mock_settings.return_value.CHROMA_PORT = 8000
             mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
-            mock_settings.return_value.BGE_M3_BATCH_SIZE = 32
 
             with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
                 mock_client = MagicMock()

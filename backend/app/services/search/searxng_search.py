@@ -24,12 +24,37 @@ from app.services.search.content_crawler import (
     get_content_crawler,
     is_crawlable_url,
 )
+from app.services.search.crawler.smart_crawler import (
+    SmartCrawler,
+    get_smart_crawler,
+)
 from app.services.search.url_filter import (
     DomainFailureCache,
     is_valid_snippet,
 )
+from app.services.search.query_generator import is_official_domain, OFFICIAL_DOMAINS
 
 logger = logging.getLogger(__name__)
+
+
+def has_official_source(results: list[dict]) -> bool:
+    """검색 결과에 공식 출처가 포함되어 있는지 확인합니다.
+
+    Args:
+        results: 검색 결과 목록.
+
+    Returns:
+        bool: 공식 출처가 포함되어 있으면 True.
+    """
+    if not results:
+        return False
+
+    for result in results:
+        url = result.get("url", "")
+        if is_official_domain(url):
+            return True
+
+    return False
 
 
 class SearXNGSearchService:
@@ -46,6 +71,7 @@ class SearXNGSearchService:
         crawl_enabled: bool = True,
         crawl_top_n: int = 10,
         crawl_target_success: int = 3,
+        use_smart_crawler: bool = True,
     ):
         """SearXNG 검색 서비스를 초기화합니다.
 
@@ -55,6 +81,7 @@ class SearXNGSearchService:
             crawl_enabled: 크롤링 활성화 여부 (기본: True).
             crawl_top_n: 크롤링 시도할 최대 결과 수 (기본: 10).
             crawl_target_success: 크롤링 성공 목표 수 (기본: 3).
+            use_smart_crawler: SmartCrawler 사용 여부 (기본: True).
         """
         settings = get_settings()
         self.base_url = base_url or settings.SEARXNG_BASE_URL
@@ -65,16 +92,50 @@ class SearXNGSearchService:
         self.crawl_enabled = crawl_enabled
         self.crawl_top_n = crawl_top_n
         self.crawl_target_success = crawl_target_success
+
+        # SmartCrawler 설정
+        self.use_smart_crawler = use_smart_crawler
         self._crawler: Optional[ContentCrawlerService] = None
+        self._smart_crawler: Optional[SmartCrawler] = None
 
         # 도메인 실패 캐싱 (같은 도메인에서 연속 실패 시 크롤링 스킵)
         self._failure_cache = DomainFailureCache(max_failures=2)
 
-    def _get_crawler(self) -> ContentCrawlerService:
-        """크롤러 인스턴스를 반환합니다 (lazy initialization)."""
-        if self._crawler is None:
-            self._crawler = get_content_crawler()
-        return self._crawler
+    def _get_crawler(self):
+        """크롤러 인스턴스를 반환합니다 (lazy initialization).
+
+        use_smart_crawler가 True이면 SmartCrawler를,
+        False이면 기존 ContentCrawlerService를 반환합니다.
+        """
+        if self.use_smart_crawler:
+            if self._smart_crawler is None:
+                self._smart_crawler = get_smart_crawler()
+            return self._smart_crawler
+        else:
+            if self._crawler is None:
+                self._crawler = get_content_crawler()
+            return self._crawler
+
+    def get_crawling_metrics(self) -> dict:
+        """크롤링 메트릭을 반환합니다.
+
+        SmartCrawler 사용 시 상세 메트릭을 반환하고,
+        기존 크롤러 사용 시 기본 메트릭을 반환합니다.
+
+        Returns:
+            크롤링 메트릭 딕셔너리.
+        """
+        if self.use_smart_crawler and self._smart_crawler is not None:
+            return self._smart_crawler.get_metrics_summary()
+        else:
+            return {
+                "total_requests": 0,
+                "trafilatura_success": 0,
+                "playwright_success": 0,
+                "fallback_count": 0,
+                "failed_count": 0,
+                "success_rate": 0.0,
+            }
 
     @property
     def provider_name(self) -> str:
@@ -197,6 +258,58 @@ class SearXNGSearchService:
                 continue
         return None
 
+    async def _ensure_official_source(
+        self,
+        certificate_title: str,
+        results: dict[str, list[dict]],
+    ) -> dict[str, list[dict]]:
+        """공식 출처가 최소 1개 포함되도록 보장합니다.
+
+        검색 결과에 공식 출처(Q-Net, HRD Korea 등)가 없으면
+        site: 연산자를 사용한 fallback 검색을 수행합니다.
+
+        Args:
+            certificate_title: 자격증 한글명.
+            results: 카테고리별 검색 결과 딕셔너리.
+
+        Returns:
+            공식 출처가 포함된 검색 결과 딕셔너리.
+        """
+        official_results = results.get("official", [])
+
+        # 이미 공식 출처가 있는지 확인
+        if has_official_source(official_results):
+            logger.info("공식 출처가 이미 포함되어 있습니다.")
+            return results
+
+        # 다른 카테고리에서도 공식 출처 확인
+        for category, category_results in results.items():
+            if has_official_source(category_results):
+                logger.info(f"공식 출처가 [{category}] 카테고리에 포함되어 있습니다.")
+                return results
+
+        # Fallback: site: 연산자로 직접 검색
+        logger.warning("공식 출처가 없습니다. Fallback 검색을 수행합니다.")
+
+        try:
+            fallback_query = f"{certificate_title} site:q-net.or.kr"
+            fallback_response = await self.search(fallback_query, count=3)
+            fallback_results = self._extract_results(fallback_response)
+
+            if fallback_results:
+                # official 카테고리에 추가
+                if "official" not in results:
+                    results["official"] = []
+                results["official"].extend(fallback_results)
+                logger.info(f"Fallback 검색으로 {len(fallback_results)}개 공식 출처 추가됨")
+            else:
+                logger.warning("Fallback 검색에서도 공식 출처를 찾지 못했습니다.")
+
+        except Exception as e:
+            logger.error(f"Fallback 검색 실패: {e}")
+
+        return results
+
     async def search_certificate_comprehensive(
         self, certificate_title: str
     ) -> dict[str, list[dict]]:
@@ -210,11 +323,17 @@ class SearXNGSearchService:
         """
         settings = get_settings()
         queries = self._build_comprehensive_queries(certificate_title)
-        return await self._run_categorized_queries(
+        results = await self._run_categorized_queries(
             queries,
             delay_seconds=0.5,  # SearXNG은 로컬이므로 짧은 지연
             default_count=settings.SEARCH_RESULTS_PER_CATEGORY,
         )
+
+        # 공식 출처 필수 확보
+        if settings.SEARCH_OFFICIAL_SOURCE_REQUIRED:
+            results = await self._ensure_official_source(certificate_title, results)
+
+        return results
 
     async def search_study_plan_context(
         self,
@@ -555,6 +674,13 @@ class SearXNGSearchService:
             "books": "6. 추천 교재",
             "lectures": "7. 추천 강의",
             "official": "8. 공식 출처",
+            "exam_schedule": "9. 시험 일정",
+            "job_postings": "10. 채용공고 우대 조건",
+            "public_sector": "11. 공무원/공기업 가산점",
+            "cost_breakdown": "12. 비용 정보",
+            "non_major_reviews": "13. 비전공자 합격 후기",
+            "free_resources": "14. 기출문제/무료 자료",
+            "comparison": "15. 유사 자격증 비교",
         }
 
         for category_key, category_name in categories.items():
@@ -675,12 +801,17 @@ class SearXNGSearchService:
                 "keywords": ["비전공자", "직장인", "독학", "문과", "0베이스", "초시생"],
             },
             "free_resources": {
-                "query": f"{certificate_title} 기출문제 무료 다운로드 PDF 모의고사 유튜브",
-                "keywords": ["기출문제", "무료", "다운로드", "PDF", "모의고사", "유튜브"],
+                "query": f"{certificate_title} 기출문제 무료 풀이 해설 유튜브 블로그",
+                "keywords": ["기출문제", "무료", "풀이", "해설", "유튜브", "블로그"],
             },
             "comparison": {
                 "query": f"{certificate_title} vs 비교 차이점 어떤 자격증 선택",
                 "keywords": ["vs", "비교", "차이점", "어떤", "선택", "추천"],
+            },
+            # 시험 일정 카테고리 (NEW)
+            "exam_schedule": {
+                "query": f"{certificate_title} 시험 일정 접수 기간 2025 2026",
+                "keywords": ["시험 일정", "접수 기간", "시행계획", "공고", "시험일", "원서접수"],
             },
         }
 

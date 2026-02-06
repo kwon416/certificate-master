@@ -140,3 +140,130 @@ class TestPhase1ExtractionNullHandling:
 
         with pytest.raises(ValidationError):
             Phase1Extraction(**data)
+
+
+class TestExtractedExamInfoNullHandling:
+    """ExtractedExamInfo 모델의 None 값 처리 테스트."""
+
+    def test_exam_type_with_none_should_use_default(self):
+        """exam_type이 None이면 기본값 빈 문자열을 사용해야 합니다."""
+        data = {
+            "overview_draft": "테스트 개요",
+            "difficulty": 3,
+            "study_period_days": 30,
+            "exam_info": {
+                "exam_type": None,  # None 값
+                "passing_criteria": "60점 이상",
+            },
+            "career_info": {},
+            "user_reviews": {},
+            "study_guide": {},
+            "official_sources": {},
+        }
+
+        result = Phase1Extraction(**data)
+        assert result.exam_info.exam_type == ""  # 기본값 빈 문자열
+
+    def test_passing_criteria_with_none_should_use_default(self):
+        """passing_criteria가 None이면 기본값 빈 문자열을 사용해야 합니다."""
+        data = {
+            "overview_draft": "테스트 개요",
+            "difficulty": 3,
+            "study_period_days": 30,
+            "exam_info": {
+                "exam_type": "필기",
+                "passing_criteria": None,  # None 값
+            },
+            "career_info": {},
+            "user_reviews": {},
+            "study_guide": {},
+            "official_sources": {},
+        }
+
+        result = Phase1Extraction(**data)
+        assert result.exam_info.passing_criteria == ""  # 기본값 빈 문자열
+
+    def test_both_exam_info_fields_with_none_should_use_defaults(self):
+        """exam_type과 passing_criteria 모두 None이면 기본값을 사용해야 합니다."""
+        data = {
+            "overview_draft": "테스트 개요",
+            "difficulty": 3,
+            "study_period_days": 30,
+            "exam_info": {
+                "exam_type": None,
+                "passing_criteria": None,
+            },
+            "career_info": {},
+            "user_reviews": {},
+            "study_guide": {},
+            "official_sources": {},
+        }
+
+        result = Phase1Extraction(**data)
+        assert result.exam_info.exam_type == ""
+        assert result.exam_info.passing_criteria == ""
+
+    def test_valid_exam_info_values_should_be_preserved(self):
+        """유효한 exam_info 값이 주어지면 그대로 유지해야 합니다."""
+        data = {
+            "overview_draft": "테스트 개요",
+            "difficulty": 3,
+            "study_period_days": 30,
+            "exam_info": {
+                "exam_type": "필기+실기",
+                "passing_criteria": "평균 60점 이상",
+            },
+            "career_info": {},
+            "user_reviews": {},
+            "study_guide": {},
+            "official_sources": {},
+        }
+
+        result = Phase1Extraction(**data)
+        assert result.exam_info.exam_type == "필기+실기"
+        assert result.exam_info.passing_criteria == "평균 60점 이상"
+
+
+class TestExtractedJobMarketInfoNullHandling:
+    """ExtractedJobMarketInfo 모델의 None 값 처리 테스트."""
+
+    def test_preferred_industries_with_none_should_use_default(self):
+        """preferred_industries가 None이면 기본값 빈 리스트를 사용해야 합니다."""
+        data = {
+            "overview_draft": "테스트 개요",
+            "difficulty": 3,
+            "study_period_days": 30,
+            "exam_info": {},
+            "career_info": {},
+            "user_reviews": {},
+            "study_guide": {},
+            "official_sources": {},
+            "job_market_info": {
+                "job_posting_frequency": "많음",
+                "preferred_industries": None,  # None 값 - 이것이 오류를 발생시킴
+                "requirement_type": "우대",
+                "public_sector_points": "5%",
+            },
+        }
+
+        result = Phase1Extraction(**data)
+        assert result.job_market_info.preferred_industries == []  # 빈 리스트로 변환
+
+    def test_preferred_industries_with_valid_list_should_be_preserved(self):
+        """preferred_industries가 유효한 리스트면 그대로 유지해야 합니다."""
+        data = {
+            "overview_draft": "테스트 개요",
+            "difficulty": 3,
+            "study_period_days": 30,
+            "exam_info": {},
+            "career_info": {},
+            "user_reviews": {},
+            "study_guide": {},
+            "official_sources": {},
+            "job_market_info": {
+                "preferred_industries": ["IT", "금융", "제조"],
+            },
+        }
+
+        result = Phase1Extraction(**data)
+        assert result.job_market_info.preferred_industries == ["IT", "금융", "제조"]

@@ -408,3 +408,188 @@ class TestCertificateSchemaVectorId:
 
         fields = CertificateUpdate.model_fields
         assert "vector_id" in fields, "CertificateUpdate 스키마에 vector_id 필드가 필요합니다"
+
+
+class TestResetCertificateData:
+    """벡터 삭제 시 DB 자격증 데이터 리셋 테스트.
+
+    요구사항:
+    - 유지: id, series, title, raw_id, categories
+    - 리셋: 나머지 모든 필드 (overview, difficulty, study_period_days 등)
+    """
+
+    def test_reset_certificate_data_in_db(self):
+        """단일 자격증 데이터 리셋 테스트."""
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
+            mock_settings.return_value.CHROMA_HOST = "test-host"
+            mock_settings.return_value.CHROMA_PORT = 8000
+            mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
+
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
+                mock_client = MagicMock()
+                mock_chromadb.HttpClient.return_value = mock_client
+                mock_collection = MagicMock()
+                mock_client.get_or_create_collection.return_value = mock_collection
+
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
+                    from app.services.vector_store import VectorStoreService
+
+                    service = VectorStoreService()
+
+                    # Mock SQLAlchemy session
+                    mock_session = MagicMock()
+                    mock_get_session.return_value = mock_session
+
+                    # Mock certificate with enriched data
+                    mock_cert = MagicMock()
+                    mock_cert.overview = "기존 개요"
+                    mock_cert.difficulty = 3
+                    mock_cert.study_period_days = 90
+                    mock_cert.vector_id = "vec-123"
+                    mock_cert.passing_rate = 45.5
+                    mock_cert.view_count = 100
+                    mock_session.query.return_value.filter.return_value.first.return_value = mock_cert
+
+                    # Execute
+                    result = service.reset_certificate_data_in_db("cert-123")
+
+                    # Verify - 보강 데이터가 리셋되었는지 확인
+                    assert mock_cert.overview is None
+                    assert mock_cert.difficulty is None
+                    assert mock_cert.study_period_days is None
+                    assert mock_cert.vector_id is None
+                    assert mock_cert.passing_rate is None
+                    assert mock_cert.view_count == 0
+                    mock_session.commit.assert_called_once()
+                    mock_session.close.assert_called_once()
+                    assert result is True
+
+    def test_reset_certificates_data_in_db_batch(self):
+        """배치 자격증 데이터 리셋 테스트."""
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
+            mock_settings.return_value.CHROMA_HOST = "test-host"
+            mock_settings.return_value.CHROMA_PORT = 8000
+            mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
+
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
+                mock_client = MagicMock()
+                mock_chromadb.HttpClient.return_value = mock_client
+                mock_collection = MagicMock()
+                mock_client.get_or_create_collection.return_value = mock_collection
+
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
+                    from app.services.vector_store import VectorStoreService
+
+                    service = VectorStoreService()
+
+                    # Mock SQLAlchemy session
+                    mock_session = MagicMock()
+                    mock_get_session.return_value = mock_session
+
+                    # Mock certificate queries
+                    mock_cert1 = MagicMock()
+                    mock_cert1.overview = "개요1"
+                    mock_cert1.vector_id = "vec-1"
+                    mock_cert2 = MagicMock()
+                    mock_cert2.overview = "개요2"
+                    mock_cert2.vector_id = "vec-2"
+
+                    mock_session.query.return_value.filter.return_value.first.side_effect = [
+                        mock_cert1, mock_cert2, None  # cert-3 not found
+                    ]
+
+                    # Execute
+                    cert_ids = ["cert-1", "cert-2", "cert-3"]
+                    result = service.reset_certificates_data_in_db_batch(cert_ids)
+
+                    # Verify
+                    assert mock_cert1.overview is None
+                    assert mock_cert1.vector_id is None
+                    assert mock_cert2.overview is None
+                    assert mock_cert2.vector_id is None
+                    assert result["success"] == 2
+                    assert "cert-3" in result["not_found_ids"]
+                    mock_session.commit.assert_called_once()
+
+    def test_delete_certificate_with_reset(self):
+        """ChromaDB 삭제 + DB 데이터 리셋 통합 테스트."""
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
+            mock_settings.return_value.CHROMA_HOST = "test-host"
+            mock_settings.return_value.CHROMA_PORT = 8000
+            mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
+
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
+                mock_client = MagicMock()
+                mock_chromadb.HttpClient.return_value = mock_client
+                mock_collection = MagicMock()
+                mock_client.get_or_create_collection.return_value = mock_collection
+
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
+                    from app.services.vector_store import VectorStoreService
+
+                    service = VectorStoreService()
+
+                    # Mock SQLAlchemy session
+                    mock_session = MagicMock()
+                    mock_get_session.return_value = mock_session
+
+                    # Mock certificate
+                    mock_cert = MagicMock()
+                    mock_cert.overview = "기존 개요"
+                    mock_cert.vector_id = "cert-123"
+                    mock_session.query.return_value.filter.return_value.first.return_value = mock_cert
+
+                    # Execute
+                    service.delete_certificate_with_reset("cert-123")
+
+                    # Verify ChromaDB delete
+                    mock_collection.delete.assert_called_once_with(ids=["cert-123"])
+
+                    # Verify DB reset (not just vector_id, but all enriched data)
+                    assert mock_cert.overview is None
+                    assert mock_cert.vector_id is None
+                    mock_session.commit.assert_called_once()
+
+    def test_delete_certificates_batch_with_reset(self):
+        """배치 ChromaDB 삭제 + DB 데이터 리셋 통합 테스트."""
+        with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
+            mock_settings.return_value.CHROMA_HOST = "test-host"
+            mock_settings.return_value.CHROMA_PORT = 8000
+            mock_settings.return_value.CHROMA_COLLECTION_NAME = "test-collection"
+
+            with patch("app.services.embedding.vector_store.chromadb") as mock_chromadb:
+                mock_client = MagicMock()
+                mock_chromadb.HttpClient.return_value = mock_client
+                mock_collection = MagicMock()
+                mock_client.get_or_create_collection.return_value = mock_collection
+
+                with patch("app.services.embedding.vector_store._get_db_session") as mock_get_session:
+                    from app.services.vector_store import VectorStoreService
+
+                    service = VectorStoreService()
+
+                    # Mock SQLAlchemy session
+                    mock_session = MagicMock()
+                    mock_get_session.return_value = mock_session
+
+                    # Mock certificates
+                    mock_cert1 = MagicMock()
+                    mock_cert1.overview = "개요1"
+                    mock_cert2 = MagicMock()
+                    mock_cert2.overview = "개요2"
+
+                    mock_session.query.return_value.filter.return_value.first.side_effect = [
+                        mock_cert1, mock_cert2
+                    ]
+
+                    # Execute
+                    cert_ids = ["cert-1", "cert-2"]
+                    result = service.delete_certificates_batch_with_reset(cert_ids)
+
+                    # Verify ChromaDB batch delete
+                    mock_collection.delete.assert_called_once_with(ids=cert_ids)
+
+                    # Verify DB reset
+                    assert mock_cert1.overview is None
+                    assert mock_cert2.overview is None
+                    assert result["success"] == 2

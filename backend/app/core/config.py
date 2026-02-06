@@ -22,9 +22,6 @@ class Settings(BaseSettings):
         CHROMA_HOST: ChromaDB server host.
         CHROMA_PORT: ChromaDB server port.
         CHROMA_COLLECTION_NAME: ChromaDB collection name.
-        BGE_M3_MODEL_NAME: BGE-M3 model name for embeddings.
-        BGE_M3_USE_FP16: Whether to use FP16 for BGE-M3.
-        BGE_M3_BATCH_SIZE: Batch size for BGE-M3 embedding generation.
         ENVIRONMENT: Application environment (development, staging, production).
         DEBUG: Debug mode flag.
         LOG_LEVEL: Logging level.
@@ -70,15 +67,9 @@ class Settings(BaseSettings):
     CHROMA_PORT: int # 필수 .env에서 설정
     CHROMA_COLLECTION_NAME: str # 필수 .env에서 설정
 
-    # BGE-M3 Configuration (Deprecated - kept for backward compatibility)
-    # Now using OpenAI Embedding API instead
-    BGE_M3_MODEL_NAME: str = "BAAI/bge-m3"
-    BGE_M3_USE_FP16: bool = True
-    BGE_M3_BATCH_SIZE: int = 32
-
     # Recommendation Service Configuration (B7: 하드코딩 제거)
-    # 0.5로 상향: 관련 없는 자격증 추천 방지 (기존 0.35)
-    RECOMMENDATION_MIN_SIMILARITY_SCORE: float = 0.5
+    # OpenAI text-embedding-3-small 기준 0.3으로 조정 (코사인 유사도 범위 0.2-0.5)
+    RECOMMENDATION_MIN_SIMILARITY_SCORE: float = 0.3
     RECOMMENDATION_TOP_K: int = 10
 
     # Search Configuration (SearXNG)
@@ -94,15 +85,22 @@ class Settings(BaseSettings):
     CRAWL_TIMEOUT: float = 10.0  # 크롤링 타임아웃 (초)
     CRAWL_MAX_CONCURRENT: int = 5  # 동시 크롤링 최대 수
 
-    # Embedding Provider Configuration
-    # "openai": OpenAI API 사용 (서버용, 기본값)
-    # "local": BGE-M3 로컬 모델 사용 (파이프라인용, FlagEmbedding 필요)
-    EMBEDDING_PROVIDER: str # 필수 .env에서 설정
-
     # SearXNG Configuration (오픈소스 검색 엔진)
     # Docker: docker run -d -p 8888:8080 searxng/searxng
     SEARXNG_BASE_URL: str  # 필수: .env에서 설정
     SEARXNG_TIMEOUT: float = 30.0
+
+    # Playwright Crawler Configuration
+    # JS 렌더링 사이트(jobkorea, saramin 등) 크롤링용
+    PLAYWRIGHT_ENABLED: bool = True  # Playwright 크롤러 활성화 여부
+    PLAYWRIGHT_HEADLESS: bool = True  # 헤드리스 모드 (화면 없이 실행)
+    PLAYWRIGHT_MAX_BROWSERS: int = 2  # 최대 브라우저 인스턴스 수
+    PLAYWRIGHT_MAX_PAGES: int = 5  # 브라우저당 최대 페이지 수
+    PLAYWRIGHT_TIMEOUT: float = 30.0  # 페이지 로드 타임아웃 (초)
+
+    # Search Quality Configuration
+    # 공식 출처(Q-Net 등) 확보 설정
+    SEARCH_OFFICIAL_SOURCE_REQUIRED: bool = True  # 공식 출처 필수 여부
 
     # Application Settings
     ENVIRONMENT: str = "development"

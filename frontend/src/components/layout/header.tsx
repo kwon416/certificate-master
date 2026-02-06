@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   GraduationCap,
   Search,
+  Sparkles,
   Menu
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,8 @@ import {
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/search', label: '자격증 검색', icon: Search },
+  { href: '/', label: '자격증 검색', icon: Search },
+  { href: '/recommend', label: 'AI 추천', icon: Sparkles },
 ]
 
 export function Header() {

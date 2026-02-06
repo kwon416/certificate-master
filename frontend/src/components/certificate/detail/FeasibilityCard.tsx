@@ -111,7 +111,7 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
               </div>
               <span className="text-xl font-bold text-violet-400">
                 {feasibilityInfo.minimum_study_period >= 30
-                  ? `약 ${Math.round(feasibilityInfo.minimum_study_period / 30)}개월`
+                  ? `약 ${Math.max(1, Math.round(feasibilityInfo.minimum_study_period / 30))}개월`
                   : `${feasibilityInfo.minimum_study_period}일`}
               </span>
             </div>

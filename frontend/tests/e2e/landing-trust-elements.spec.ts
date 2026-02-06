@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Landing Page - Trust Elements Section', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/about')
   })
 
   test('should display trust section heading', async ({ page }) => {

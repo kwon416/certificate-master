@@ -2,12 +2,12 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Search Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/search');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
   });
 
   test('should display search page header', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: /자격증 검색/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('should have search input', async ({ page }) => {
@@ -103,7 +103,7 @@ test.describe('Search Page', () => {
       await page.waitForLoadState('networkidle');
       
       // Should be back on search page
-      await expect(page).toHaveURL('/search');
+      await expect(page).toHaveURL('/');
     }
   });
 
@@ -148,7 +148,7 @@ test.describe('Search Page', () => {
     await page.waitForLoadState('networkidle');
 
     // Check that page still works
-    await expect(page.getByRole('heading', { name: /자격증 검색/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('should clear search query when X button is clicked', async ({ page }) => {

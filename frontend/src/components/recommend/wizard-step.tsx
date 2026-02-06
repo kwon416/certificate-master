@@ -9,9 +9,10 @@ import { useState, KeyboardEvent } from 'react'
 import { OptionCard } from './option-card'
 import { TimeSlider } from './time-slider'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { X } from 'lucide-react'
-import type { WizardAnswers } from '@/stores/recommend-store'
+import { X, MessageSquare } from 'lucide-react'
+import { useRecommendStore, type WizardAnswers } from '@/stores/recommend-store'
 
 interface FieldOption {
   value: string
@@ -34,7 +35,7 @@ interface WizardStepProps {
   tertiaryAnswer?: WizardAnswers[keyof WizardAnswers]
   onTertiaryAnswer?: (value: WizardAnswers[keyof WizardAnswers]) => void
   tertiaryOptions?: (string | FieldOption)[]
-  type?: 'options' | 'slider' | 'input' | 'combo' | 'enhanced-input'
+  type?: 'options' | 'slider' | 'input' | 'combo' | 'enhanced-input' | 'input-with-natural'
   min?: number
   max?: number
   sliderStep?: number
@@ -128,6 +129,17 @@ export function WizardStep({
         </div>
       </div>
     )
+  }
+
+  // Step 4 자연어 통합 타입
+  if (type === 'input-with-natural') {
+    return <InputWithNaturalStep
+      title={title}
+      description={description}
+      currentAnswer={currentAnswer}
+      onAnswer={onAnswer}
+      placeholder={placeholder}
+    />
   }
 
   if (type === 'combo') {
@@ -342,6 +354,90 @@ export function WizardStep({
             )
           }
         })}
+      </div>
+    </div>
+  )
+}
+
+// Step 4 자연어 통합 컴포넌트 (선택적 자연어 입력)
+const MAX_NATURAL_LENGTH = 1000
+
+const EXAMPLE_PROMPTS = [
+  '비전공자인데 IT 분야 취업을 위해 자격증을 준비하고 있습니다.',
+  '직장인인데 이직을 위해 데이터 분석 관련 자격증을 취득하고 싶어요.',
+  '경력 단절 후 재취업을 준비 중입니다. 3개월 안에 취득 가능한 것을 찾고 있어요.',
+]
+
+interface InputWithNaturalStepProps {
+  title: string
+  description: string
+  currentAnswer: WizardAnswers[keyof WizardAnswers]
+  onAnswer: (value: WizardAnswers[keyof WizardAnswers]) => void
+  placeholder?: string
+}
+
+function InputWithNaturalStep({
+  title,
+  description,
+}: InputWithNaturalStepProps) {
+  const {
+    naturalInputInWizard,
+    setNaturalInputInWizard,
+  } = useRecommendStore()
+
+  const handleNaturalInputChange = (value: string) => {
+    if (value.length <= MAX_NATURAL_LENGTH) {
+      setNaturalInputInWizard(value)
+    }
+  }
+
+  const handleExampleClick = (example: string) => {
+    handleNaturalInputChange(example)
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 헤더 */}
+      <div className="text-center mb-4 md:mb-6">
+        <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
+        <p className="text-sm md:text-base text-slate-400">{description}</p>
+      </div>
+
+      {/* 자연어 입력 */}
+      <div className="space-y-4 max-w-xl mx-auto">
+        <div className="relative">
+          <Textarea
+            value={naturalInputInWizard}
+            onChange={(e) => handleNaturalInputChange(e.target.value)}
+            placeholder="상황을 자유롭게 설명해주세요. AI가 분석하여 맞춤 자격증을 추천합니다."
+            className="min-h-[140px] bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 resize-none pr-4 pb-8"
+          />
+          {/* 글자 수 카운터 */}
+          <div className="absolute bottom-3 right-3 text-xs text-slate-500">
+            <span className="text-slate-400">{naturalInputInWizard.length}</span>
+            <span className="text-slate-600"> / {MAX_NATURAL_LENGTH}</span>
+          </div>
+        </div>
+
+        {/* 힌트 */}
+        <p className="text-xs text-slate-400">
+          선택사항이에요. 건너뛰어도 됩니다.
+        </p>
+
+        {/* 예시 문장 */}
+        <div className="space-y-2">
+          <p className="text-xs text-slate-500">예시 문장:</p>
+          {EXAMPLE_PROMPTS.map((example, index) => (
+            <button
+              key={index}
+              onClick={() => handleExampleClick(example)}
+              className="w-full text-left px-3 py-2 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 rounded-lg text-xs text-slate-400 hover:text-slate-300 transition-all"
+            >
+              <MessageSquare className="w-3 h-3 inline mr-2 text-slate-500" />
+              {example}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

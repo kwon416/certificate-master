@@ -31,8 +31,13 @@ async def delete_single_vector(
     vector_id: str,
     service: VectorStoreService = Depends(get_vector_store_service),
 ):
-    """단일 벡터를 삭제합니다."""
-    service.delete_certificate(vector_id)
+    """단일 벡터를 삭제하고 DB 보강 데이터를 리셋합니다.
+
+    ChromaDB에서 벡터 삭제 + MariaDB에서 보강 데이터 초기화.
+    유지 필드: id, series, title, raw_id, categories
+    리셋 필드: overview, difficulty, study_period_days 등
+    """
+    service.delete_certificate_with_reset(vector_id)
     return {"success": True, "deleted_id": vector_id}
 
 
@@ -41,9 +46,18 @@ async def delete_batch_vectors(
     request: DeleteBatchRequest,
     service: VectorStoreService = Depends(get_vector_store_service),
 ):
-    """여러 벡터를 배치로 삭제합니다."""
-    service.delete_certificates_batch(request.ids)
-    return {"success": True, "deleted_count": len(request.ids)}
+    """여러 벡터를 배치로 삭제하고 DB 보강 데이터를 리셋합니다.
+
+    ChromaDB에서 벡터 삭제 + MariaDB에서 보강 데이터 초기화.
+    유지 필드: id, series, title, raw_id, categories
+    리셋 필드: overview, difficulty, study_period_days 등
+    """
+    reset_result = service.delete_certificates_batch_with_reset(request.ids)
+    return {
+        "success": True,
+        "deleted_count": len(request.ids),
+        "reset_result": reset_result,
+    }
 
 
 def _render_metadata(metadata: dict) -> str:
@@ -171,26 +185,27 @@ async def chroma_dashboard(
     stats = service.get_collection_stats()
     total_vectors = stats.get("total_vectors", 0)
 
-    # 검색 필터 구성
-    where_filter = None
-    if q and q.strip():
-        # ChromaDB where filter: title contains search query
-        where_filter = {"title": {"$contains": q.strip()}}
+    # 검색어 유무에 따라 다른 처리
+    search_query = q.strip() if q else ""
 
-    # 벡터 목록 조회
-    vectors = service.list_vectors(limit=limit, offset=offset, include_embeddings=False, where=where_filter)
-
-    # 검색 시 총 개수 재계산 (필터 적용된 결과)
-    if where_filter:
-        # 필터 적용 시 전체 개수를 알 수 없으므로, 현재 결과 기반 추정
-        # (ChromaDB는 count with filter를 직접 지원하지 않음)
-        filtered_count = len(vectors)
-        if filtered_count == limit:
-            # 더 있을 수 있음
-            display_total = offset + limit + 1  # "more" 표시용
-        else:
-            display_total = offset + filtered_count
+    if search_query:
+        # ChromaDB where 필터는 $contains 미지원
+        # 전체 벡터를 가져온 후 Python에서 타이틀 필터링
+        all_vectors = service.list_vectors(limit=10000, offset=0, include_embeddings=False, where=None)
+        # 타이틀에 검색어가 포함된 벡터만 필터링
+        vectors = [
+            v for v in all_vectors
+            if search_query.lower() in (v.get("metadata", {}).get("title", "") or "").lower()
+        ]
+        # 페이지네이션 적용
+        vectors = vectors[offset:offset + limit]
+        display_total = len([
+            v for v in all_vectors
+            if search_query.lower() in (v.get("metadata", {}).get("title", "") or "").lower()
+        ])
     else:
+        # 일반 목록 조회
+        vectors = service.list_vectors(limit=limit, offset=offset, include_embeddings=False, where=None)
         display_total = total_vectors
 
     detail = None

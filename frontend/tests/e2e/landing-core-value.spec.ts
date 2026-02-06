@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Landing Page - Core Value Section', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/about')
     await page.waitForLoadState('networkidle')
   })
 
@@ -17,7 +17,7 @@ test.describe('Landing Page - Core Value Section', () => {
   })
 
   test('should show proof metrics', async ({ page }) => {
-    await expect(page.getByText(/3,500\+ 자격증/i)).toBeVisible()
+    await expect(page.getByText(/600\+ 자격증/i)).toBeVisible()
     await expect(page.getByText(/10,000\+ 사용자/i)).toBeVisible()
   })
 

@@ -23,7 +23,7 @@ export default function LoginPage() {
             이번 배포에서는 자격증 검색 기능만 이용할 수 있어요. 필요한 자격증 정보를 바로 찾아보세요.
           </p>
           <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
-            <Link href="/search">
+            <Link href="/">
               <Search className="mr-2 h-4 w-4" />
               자격증 검색으로 이동
             </Link>

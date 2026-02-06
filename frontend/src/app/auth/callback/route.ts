@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/search'
+  const next = requestUrl.searchParams.get('next') || '/'
 
   if (code) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -43,5 +43,5 @@ export async function GET(request: NextRequest) {
   }
 
   // 오류 발생 시 로그인 페이지로 리다이렉션
-  return NextResponse.redirect(new URL('/search?auth=failed', request.url))
+  return NextResponse.redirect(new URL('/?auth=failed', request.url))
 }

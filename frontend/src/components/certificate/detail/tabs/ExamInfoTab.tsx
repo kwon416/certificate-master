@@ -12,9 +12,11 @@ import { Button } from '@/components/ui/button'
 import { ExamScheduleCard } from '../ExamScheduleCard'
 import {
   type Certificate,
+  type ExamSubject,
   hasExamInfo,
   hasExamScheduleDetail,
   hasOfficialSources,
+  isExamSubject,
 } from '@/lib/api/types'
 
 interface ExamInfoTabProps {
@@ -93,14 +95,38 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <ul className="space-y-4">
               {cert.exam_info.subjects.map((subject, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2 bg-slate-800/30 p-3 rounded-lg"
-                >
-                  <span className="text-emerald-400 mt-1">•</span>
-                  <span className="text-slate-300">{subject}</span>
+                <li key={index}>
+                  {isExamSubject(subject) ? (
+                    /* 새 형식: {name, details, topics} 객체 */
+                    <div className="bg-slate-800/30 p-4 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-white">{subject.name}</span>
+                        {subject.details && (
+                          <span className="text-sm text-slate-400">{subject.details}</span>
+                        )}
+                      </div>
+                      {subject.topics && subject.topics.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {subject.topics.map((topic, topicIndex) => (
+                            <span
+                              key={topicIndex}
+                              className="text-sm bg-emerald-900/30 text-emerald-400 px-2 py-1 rounded"
+                            >
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* 기존 형식: 문자열 */
+                    <div className="flex items-start gap-2 bg-slate-800/30 p-3 rounded-lg">
+                      <span className="text-emerald-400 mt-1">•</span>
+                      <span className="text-slate-300">{subject}</span>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

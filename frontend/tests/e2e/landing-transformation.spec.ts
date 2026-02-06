@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Landing Page - Transformation Section', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/about')
   })
 
   test('should display transformation section heading', async ({ page }) => {

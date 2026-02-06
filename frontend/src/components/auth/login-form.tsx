@@ -70,7 +70,7 @@ export function LoginForm() {
           fullName: authData.user.user_metadata?.full_name,
           avatarUrl: authData.user.user_metadata?.avatar_url,
         })
-        router.push('/search')
+        router.push('/')
         router.refresh()
       }
     } catch {

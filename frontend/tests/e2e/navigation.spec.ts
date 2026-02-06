@@ -2,18 +2,16 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Global Navigation', () => {
   test('should navigate through all main pages', async ({ page }) => {
-    // Start at home
+    // Start at home (now search page)
     await page.goto('/');
     await expect(page).toHaveTitle(/Certificate Master/i);
 
-    // Go to search
-    await page.getByRole('link', { name: /자격증 검색/i }).first().click();
-    await expect(page).toHaveURL('/search');
+    // Home is now search page
     await expect(page.getByRole('heading', { name: /자격증 검색/i })).toBeVisible();
 
-    // Go to dashboard
-    await page.getByRole('link', { name: /학습 대시보드/i }).click();
-    await expect(page).toHaveURL('/dashboard');
+    // Go to AI recommend
+    await page.getByRole('link', { name: /AI 추천/i }).first().click();
+    await expect(page).toHaveURL('/recommend');
 
     // Go back to home via logo
     await page.getByRole('link', { name: /Certificate Master/i }).first().click();
@@ -21,8 +19,8 @@ test.describe('Global Navigation', () => {
   });
 
   test('should maintain header across all pages', async ({ page }) => {
-    // /signup removed - now redirects to /login
-    const pages = ['/', '/search', '/login', '/dashboard', '/certificates/1'];
+    // /signup removed - now redirects to /login, /search redirects to /
+    const pages = ['/', '/about', '/recommend', '/login', '/dashboard', '/certificates/1'];
 
     for (const url of pages) {
       await page.goto(url);
@@ -33,8 +31,8 @@ test.describe('Global Navigation', () => {
   });
 
   test('should maintain footer across all pages', async ({ page }) => {
-    // /signup removed - now redirects to /login
-    const pages = ['/', '/search', '/login', '/dashboard', '/certificates/1'];
+    // /signup removed - now redirects to /login, /search redirects to /
+    const pages = ['/', '/about', '/recommend', '/login', '/dashboard', '/certificates/1'];
 
     for (const url of pages) {
       await page.goto(url);
@@ -58,43 +56,43 @@ test.describe('Responsive Design', () => {
   ];
 
   for (const viewport of viewports) {
-    test(`should render landing page correctly on ${viewport.name}`, async ({ page }) => {
+    test(`should render search page correctly on ${viewport.name}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('/');
-      
-      // Main content should be visible
-      await expect(page.getByRole('heading', { name: /자격증 준비/i })).toBeVisible();
-      
+
+      // Search input should be visible (home is now search page)
+      await expect(page.getByPlaceholder(/자격증명/i)).toBeVisible();
+
       // No horizontal overflow
       const body = page.locator('body');
       const bodyBox = await body.boundingBox();
       expect(bodyBox?.width).toBeLessThanOrEqual(viewport.width + 20); // Small margin for scrollbar
     });
 
-    test(`should render search page correctly on ${viewport.name}`, async ({ page }) => {
+    test(`should render about page correctly on ${viewport.name}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await page.goto('/search');
-      
-      // Search input should be visible
-      await expect(page.getByPlaceholder(/자격증명/i)).toBeVisible();
+      await page.goto('/about');
+
+      // Main content should be visible
+      await expect(page.getByRole('heading', { name: /자격증 준비/i })).toBeVisible();
     });
   }
 });
 
 test.describe('Accessibility', () => {
   test('should have proper heading hierarchy on landing page', async ({ page }) => {
-    await page.goto('/');
-    
+    await page.goto('/about');
+
     // Should have h1
     const h1 = page.locator('h1');
     await expect(h1).toBeVisible();
-    
+
     // H1 count should be 1
     await expect(h1).toHaveCount(1);
   });
 
   test('should have alt text for images', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/about');
     
     // All img elements should have alt attribute
     const images = page.locator('img');
@@ -110,7 +108,7 @@ test.describe('Accessibility', () => {
   });
 
   test('should have proper focus management', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/about');
     
     // Tab through interactive elements
     await page.keyboard.press('Tab');

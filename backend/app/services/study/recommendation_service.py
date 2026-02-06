@@ -1,7 +1,7 @@
 """자격증 추천 서비스.
 
 RAG (Retrieval-Augmented Generation) 기반 의미 검색 추천.
-ChromaDB와 BGE-M3를 활용한 벡터 유사도 검색.
+ChromaDB와 OpenAI 임베딩을 활용한 벡터 유사도 검색.
 
 MariaDB(SQLAlchemy)로 마이그레이션됨 (2026-01-22).
 """
@@ -50,29 +50,63 @@ DIFFICULTY_LIMITS: dict[str, int | None] = {
 }
 
 # 도메인-산업 매핑: 사용자 관심 분야 → 자격증 산업 키워드 매칭용
+# VALID_INTEREST_DOMAINS와 일치하도록 키를 정의함 (recommendation.py 참조)
+# 2026-02-06: 키워드 확장 - IT개발 분야 선택 시 무관 자격증 추천 방지
 DOMAIN_INDUSTRY_MAPPING: dict[str, list[str]] = {
-    "IT개발": ["IT", "소프트웨어", "정보기술", "개발", "ICT", "정보통신", "컴퓨터"],
-    "데이터": ["데이터", "AI", "빅데이터", "분석", "인공지능", "머신러닝"],
+    # VALID_INTEREST_DOMAINS 기준
+    "기획/전략": ["기획", "전략", "경영", "컨설팅", "PM", "사업개발"],
+    "마케팅/홍보/조사": ["마케팅", "홍보", "광고", "브랜드", "리서치", "조사"],
     "회계/세무/재무": ["회계", "세무", "금융", "재무", "경리", "회계법인"],
-    "금융/보험": ["금융", "은행", "보험", "증권", "투자", "자산관리"],
+    "인사/노무/HRD": ["인사", "노무", "HRD", "채용", "교육훈련", "인력개발"],
+    "총무/법무/사무": ["총무", "법무", "사무", "행정", "비서", "문서관리"],
+    "IT개발": [
+        # 기존 키워드
+        "IT", "소프트웨어", "정보기술", "개발", "ICT", "정보통신", "컴퓨터",
+        # 확장 키워드 (2026-02-06)
+        "프로그래밍", "시스템", "전자계산", "네트워크", "보안", "웹", "앱",
+        "데이터베이스", "서버", "클라우드", "리눅스", "정보처리", "전산",
+    ],
+    "데이터": ["데이터", "AI", "빅데이터", "분석", "인공지능", "머신러닝"],
+    "디자인": [
+        # 기존 키워드
+        "디자인", "UX", "UI", "그래픽", "웹디자인", "시각디자인",
+        # 확장 키워드 (2026-02-06)
+        "편집디자인", "광고디자인", "제품디자인", "색채", "컬러리스트",
+        "일러스트", "영상편집", "3D", "CAD",
+    ],
+    "영업/판매/무역": ["영업", "판매", "무역", "수출", "수입", "영업관리"],
+    "고객상담/TM": ["고객상담", "TM", "CS", "콜센터", "상담", "고객서비스"],
+    "구매/자재/물류": ["구매", "자재", "물류", "유통", "SCM", "창고"],
+    "상품기획/MD": ["상품기획", "MD", "머천다이징", "바이어", "소싱"],
+    "운전/운송/배송": ["운전", "운송", "배송", "택배", "물류", "드라이버"],
+    "서비스": ["서비스", "관광", "호텔", "여행", "외식", "레저", "요식업"],
+    "생산": ["생산", "제조", "공장", "품질관리", "생산관리", "제조업"],
     "건설/건축": ["건설", "건축", "토목", "시공", "설계", "인테리어"],
-    "전기/전자": ["전기", "전자", "반도체", "통신", "전력", "자동화"],
-    "기계/자동차": ["기계", "자동차", "제조", "생산", "설비", "플랜트"],
-    "화학/환경": ["화학", "환경", "에너지", "바이오", "제약", "화장품"],
-    "의료/보건": ["의료", "병원", "의약", "간호", "보건", "헬스케어"],
-    "교육": ["교육", "학원", "강사", "교사", "학습", "연수원"],
-    "법률/행정": ["법률", "행정", "법무", "공공", "정부", "지자체"],
-    "물류/유통": ["물류", "유통", "무역", "수출입", "창고", "운송"],
-    "서비스/관광": ["서비스", "관광", "호텔", "여행", "외식", "레저"],
-    "디자인/미디어": ["디자인", "미디어", "영상", "광고", "콘텐츠", "방송"],
-    "부동산": ["부동산", "공인중개", "감정평가", "주택", "임대"],
-    "농업/식품": ["농업", "식품", "축산", "수산", "농산물", "가공"],
-    "안전/품질": ["안전", "품질", "검사", "인증", "관리", "표준"],
-    "외국어": ["외국어", "영어", "중국어", "일본어", "통역", "번역"],
-    "경영/사무": ["경영", "사무", "인사", "총무", "기획", "마케팅"],
-    "공무원/공기업": ["공무원", "공기업", "공공기관", "행정", "국가직"],
-    "자격증일반": ["자격증", "국가기술", "전문자격", "민간자격"],
-    "스포츠/예체능": ["스포츠", "체육", "예술", "음악", "미술", "무용"],
+    "의료": ["의료", "병원", "의약", "간호", "보건", "헬스케어", "의약품"],
+    "연구/R&D": ["연구", "R&D", "개발", "연구소", "실험", "기술개발"],
+    "교육": ["교육", "학원", "강사", "교사", "학습", "연수원", "훈련"],
+    "미디어/문화/스포츠": ["미디어", "문화", "스포츠", "방송", "영상", "콘텐츠", "체육"],
+    "금융/보험": ["금융", "은행", "보험", "증권", "투자", "자산관리"],
+    "공공/복지": ["공공", "복지", "사회복지", "정부", "지자체", "NGO"],
+}
+
+# 분야별 제외 키워드 (해당 키워드가 포함되면 필터에서 제외)
+# 2026-02-06: 제외 키워드 확장 - IT개발 분야 선택 시 무관 자격증 추천 방지
+DOMAIN_EXCLUSION_KEYWORDS: dict[str, list[str]] = {
+    "의료": ["미용", "피부관리", "헤어", "네일", "메이크업"],  # 의료 ≠ 미용
+    "IT개발": [
+        # 기존 키워드
+        "가공", "용접", "기계",
+        # 확장 키워드 (2026-02-06)
+        "금속", "목공", "제과", "조리", "미용",
+        "관광", "수산", "기상", "호텔",
+    ],
+    # 신규 분야 (2026-02-06)
+    "데이터": ["가공", "용접", "기계가공", "금속", "제조", "수산", "기상"],
+    "디자인": [
+        "기계", "전기", "화학", "건설", "용접",
+        "의료", "수산", "기상", "양식",
+    ],
 }
 
 # 타임라인 표시 텍스트 매핑
@@ -153,8 +187,8 @@ class RecommendationService:
         query_text = self._build_query_text(request)
         logger.info(f"[RAG] Query text: {query_text}")
 
-        # Step 2: Search vector store using BGE-M3 Embedding
-        # ChromaDB에서 BGE-M3 임베딩으로 쿼리 텍스트를 자동으로 임베딩합니다
+        # Step 2: Search vector store using OpenAI Embedding
+        # ChromaDB에서 OpenAI 임베딩으로 쿼리 텍스트를 자동으로 임베딩합니다
         similar_results = self.vector_store.search_records(
             namespace=VectorStoreService.NAMESPACE,
             query=query_text,
@@ -178,15 +212,26 @@ class RecommendationService:
         cert_ids = [result["id"] for result in similarity_results]
         certificates = self._fetch_certificates_by_ids(cert_ids)
         logger.info(f"[RAG] Fetched {len(certificates)} full certificate records")
+
         # Step 4.5: Apply structured constraints (timeline/difficulty)
         constrained_certificates = self._apply_constraints(certificates, constraints)
-        allowed_ids = {cert["id"] for cert in constrained_certificates}
+
+        # Step 4.6: Apply domain-based hard filter (2026-02-06)
+        # IT개발 분야 선택 시 미용사, 항공사진기능사 등 무관한 자격증 제외
+        domain_filtered_certificates = self._apply_domain_filter(
+            constrained_certificates, request
+        )
+        logger.info(
+            f"[RAG] After applying domain filter: {len(domain_filtered_certificates)} certificates remain"
+        )
+
+        allowed_ids = {cert["id"] for cert in domain_filtered_certificates}
         filtered_results = [
             result for result in similarity_results if result["id"] in allowed_ids
         ]
 
         logger.info(
-            f"[RAG] After applying constraints: {len(filtered_results)} certificates remain"
+            f"[RAG] After applying all constraints: {len(filtered_results)} certificates remain"
         )
 
         # B3 수정: 제약조건에 맞는 결과가 없으면 빈 결과 반환 (폴백 제거)
@@ -201,7 +246,7 @@ class RecommendationService:
 
         # Step 5: Generate recommendations with vector similarity scores
         recommendations = self._generate_recommendations_from_vector_results(
-            filtered_results, constrained_certificates, request, constraints
+            filtered_results, domain_filtered_certificates, request, constraints
         )
 
         # Step 6: Generate query summary
@@ -224,8 +269,9 @@ class RecommendationService:
             return []
 
         # 절대 최소 임계값: 이보다 낮으면 폴백도 하지 않음
-        # 0.45로 설정하여 관련 없는 자격증 추천 방지
-        ABSOLUTE_MIN_SCORE = 0.45
+        # OpenAI text-embedding-3-small 기준 0.2으로 조정
+        # (코사인 유사도 범위가 BGE-M3보다 낮음)
+        ABSOLUTE_MIN_SCORE = 0.2
 
         filtered_results = [
             result for result in results
@@ -286,6 +332,94 @@ class RecommendationService:
             if within_timeline and within_difficulty:
                 filtered.append(cert)
 
+        return filtered
+
+    def _apply_domain_filter(
+        self,
+        certificates: list[dict[str, Any]],
+        request: RecommendationRequest,
+    ) -> list[dict[str, Any]]:
+        """관심 분야에 맞는 자격증만 필터링합니다.
+
+        사용자가 선택한 interest_domains와 DOMAIN_INDUSTRY_MAPPING을 사용하여
+        자격증의 title, overview, career_info.industry, job_market_info.preferred_industries,
+        career_info.related_jobs와 매칭합니다.
+
+        2026-02-06 수정:
+        - 폴백 로직 제거: 매칭 결과 0개면 빈 리스트 반환 (무관 자격증 추천 방지)
+        - 매칭 범위 확장: title, overview 추가
+
+        Args:
+            certificates: 자격증 딕셔너리 목록.
+            request: 사용자 추천 요청.
+
+        Returns:
+            필터링된 자격증 목록. 매칭 결과 없으면 빈 리스트 반환.
+        """
+        if not request.interest_domains:
+            return certificates
+
+        # DOMAIN_INDUSTRY_MAPPING에서 관련 키워드 수집
+        user_keywords = set()
+        exclusion_keywords = set()
+        for domain in request.interest_domains:
+            keywords = DOMAIN_INDUSTRY_MAPPING.get(domain, [])
+            user_keywords.update(kw.lower() for kw in keywords)
+            # 제외 키워드도 수집
+            exclusions = DOMAIN_EXCLUSION_KEYWORDS.get(domain, [])
+            exclusion_keywords.update(kw.lower() for kw in exclusions)
+
+        if not user_keywords:
+            return certificates
+
+        filtered = []
+        for cert in certificates:
+            career_info = cert.get("career_info") or {}
+            job_market = cert.get("job_market_info") or {}
+
+            # 자격증의 텍스트 정보 수집 (확장된 범위)
+            cert_text_parts: list[str] = []
+
+            # 1. title 추가 (NEW: 2026-02-06)
+            title = cert.get("title", "")
+            if title:
+                cert_text_parts.append(title)
+
+            # 2. overview 추가 (NEW: 2026-02-06)
+            overview = cert.get("overview", "")
+            if overview:
+                cert_text_parts.append(overview)
+
+            # 3. industry (기존)
+            industry = career_info.get("industry", [])
+            if isinstance(industry, list):
+                cert_text_parts.extend(industry)
+            elif industry:
+                cert_text_parts.append(str(industry))
+
+            # 4. preferred_industries (기존)
+            preferred = job_market.get("preferred_industries", [])
+            if preferred:
+                cert_text_parts.extend(preferred)
+
+            # 5. related_jobs (NEW: 2026-02-06)
+            related_jobs = career_info.get("related_jobs", [])
+            if related_jobs:
+                cert_text_parts.extend(related_jobs)
+
+            cert_text = " ".join(cert_text_parts).lower()
+
+            # 제외 키워드가 포함되면 스킵
+            if any(kw in cert_text for kw in exclusion_keywords):
+                continue
+
+            # 사용자 키워드 중 하나라도 매칭되면 포함
+            if any(kw in cert_text for kw in user_keywords):
+                filtered.append(cert)
+
+        # 2026-02-06 수정: 폴백 제거
+        # 매칭 결과 0개면 빈 리스트 반환 (무관 자격증 추천 방지)
+        # 기존: if len(filtered) == 0: return certificates
         return filtered
 
     def _match_domains_to_certificate(
@@ -666,9 +800,9 @@ class RecommendationService:
         study_tips = user_reviews.get("study_tips", [])
         if study_tips and len(study_tips) > 0:
             tip = study_tips[0]
-            # 팁이 너무 길면 줄임
-            if len(tip) > 40:
-                tip = tip[:40] + "..."
+            # 팁이 너무 길면 줄임 (100자 제한)
+            if len(tip) > 100:
+                tip = tip[:100] + "..."
             points.append(f"학습 팁: {tip}")
 
         # 3. 준비 기간
@@ -853,6 +987,16 @@ class RecommendationService:
         domain_text = ", ".join(request.interest_domains)
         parts.append(f"분야: {domain_text}")
 
+        # 6.5. 산업 키워드 강화 (2026-02-06)
+        # interest_domains에 매핑된 산업 키워드를 추가하여 벡터 검색 품질 향상
+        industry_keywords: list[str] = []
+        for domain in request.interest_domains:
+            keywords = DOMAIN_INDUSTRY_MAPPING.get(domain, [])
+            industry_keywords.extend(keywords[:3])  # 분야당 최대 3개
+
+        if industry_keywords:
+            parts.append(f"산업키워드: {', '.join(industry_keywords)}")
+
         # 7. 기본 조건
         timeline = request.study_timeline
         difficulty = request.difficulty_preference
@@ -866,18 +1010,25 @@ class RecommendationService:
 
         # user_summary가 있으면 3중 강조 (기존 로직 유지)
         if user_summary:
+            industry_hint = ""
+            if industry_keywords:
+                industry_hint = f"\n산업키워드: {', '.join(industry_keywords)}"
             return (
                 f"[최우선 요청] {user_summary}\n\n"
                 f"배경: {request.purpose}, {domain_text} 분야, "
-                f"기간 {timeline}, 난이도 {difficulty}\n\n"
+                f"기간 {timeline}, 난이도 {difficulty}{industry_hint}\n\n"
                 f"[핵심 키워드] {user_summary}\n\n"
                 f"[사용자 요청] {user_summary}"
             )
 
-        # 새 필드도 user_summary도 없으면 기존 로직
+        # 새 필드도 user_summary도 없으면 기존 로직 + 산업 키워드 강화
+        industry_hint = ""
+        if industry_keywords:
+            industry_hint = f"\n산업분야 키워드: {', '.join(industry_keywords)}"
+
         intent_sentence = (
             f"{request.purpose} 목적의 사용자가 {domain_text} 분야와 연관된 자격증을 찾고 있습니다. "
-            "career_info의 industry/use_cases/related_jobs가 유사한 자격증을 우선 고려해주세요."
+            f"career_info의 industry/use_cases/related_jobs가 유사한 자격증을 우선 고려해주세요.{industry_hint}"
         )
         constraint_sentence = (
             f"예상 공부 기간은 {timeline}이며, 선호 난이도는 {difficulty}입니다."
@@ -1377,6 +1528,18 @@ class RecommendationService:
             ],
         }
 
+        # 사용자가 선택한 관심 분야가 있으면 특화된 멘트
+        interest_domains = getattr(request, "interest_domains", None) or []
+        domain = interest_domains[0] if interest_domains else None
+
+        if domain and purpose in ["취업", "이직"]:
+            domain_templates = [
+                f"{domain} 분야 {purpose}에 유리한 자격증입니다.",
+                f"{domain} 분야 {purpose} 준비에 도움이 되는 자격증입니다.",
+                f"{domain} 직무 {purpose}에서 경쟁력을 높여줍니다.",
+            ]
+            return self._select_template(domain_templates, cert_id, f"purpose_domain_{purpose}")
+
         # 직업 정보가 있으면 특화된 멘트 (모든 템플릿에 purpose 키워드 포함)
         if job_text and purpose in ["취업", "이직"]:
             job_templates = [
@@ -1506,8 +1669,8 @@ class RecommendationService:
                 f"주 10시간 정도 투자하면 {months}개월 내 취득 가능합니다.",
                 "적당한 학습량으로 균형 있게 준비할 수 있습니다.",
                 "무리하지 않으면서 효율적으로 준비 가능합니다.",
-                "꾸준히 학습하면 계획대로 취득할 수 있습니다.",
-                "적정 난이도로 도전하기 좋습니다.",
+                f"기출문제 중심 학습으로 {months}개월 내 합격 가능합니다.",
+                "실기와 필기를 병행하며 준비하기 좋습니다.",
             ],
             "intensive": [
                 f"집중 학습 시 {max(1, months - 1)}~{months}개월 내 빠른 취득이 가능합니다.",
@@ -1517,11 +1680,11 @@ class RecommendationService:
                 "집중력을 발휘하면 목표 기간 내 충분히 가능합니다.",
             ],
             "unsure": [
-                "자신의 페이스에 맞춰 유연하게 준비할 수 있습니다.",
+                f"평균 {months}개월 준비로 취득하는 자격증입니다.",
                 "학습량을 조절하며 진행할 수 있는 자격증입니다.",
                 "상황에 맞게 일정을 조정하며 준비 가능합니다.",
-                "먼저 시작해보고 페이스를 조절해도 좋습니다.",
-                "부담 없이 시작하기 좋은 자격증입니다.",
+                f"초보자도 {months}개월 내 도전 가능합니다.",
+                "온라인 강의와 기출문제로 독학 가능합니다.",
             ],
         }
 

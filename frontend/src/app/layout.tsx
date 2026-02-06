@@ -20,17 +20,33 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: '자격증 마스터 - 3,500+ 자격증 검색 및 비교',
+    default: '자격증 마스터 - 600+ 자격증 검색 및 비교',
     template: '%s | 자격증 마스터',
   },
-  description: '3,500개 이상의 자격증 정보를 한눈에! 난이도, 합격률, 시험일정, 응시료까지 비교하고 나에게 맞는 자격증을 찾아보세요. 정보처리기사, 전기기사, 공인중개사 등 인기 자격증 정보 제공.',
+  description: '600개 이상의 자격증 정보를 한눈에! 난이도, 합격률, 시험일정, 응시료까지 비교하고 나에게 맞는 자격증을 찾아보세요. 정보처리기사, 전기기사, 공인중개사 등 인기 자격증 정보 제공.',
   icons: {
     icon: [
-      { url: '/web-app-manifest-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/web-app-manifest-512x512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/android-icon-192x192.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple: '/web-app-manifest-192x192.png',
+    apple: [
+      { url: '/apple-icon-57x57.png', sizes: '57x57' },
+      { url: '/apple-icon-60x60.png', sizes: '60x60' },
+      { url: '/apple-icon-72x72.png', sizes: '72x72' },
+      { url: '/apple-icon-76x76.png', sizes: '76x76' },
+      { url: '/apple-icon-114x114.png', sizes: '114x114' },
+      { url: '/apple-icon-120x120.png', sizes: '120x120' },
+      { url: '/apple-icon-144x144.png', sizes: '144x144' },
+      { url: '/apple-icon-152x152.png', sizes: '152x152' },
+      { url: '/apple-icon-180x180.png', sizes: '180x180' },
+    ],
+    other: [
+      { rel: 'mask-icon', url: '/apple-icon.png' },
+    ],
   },
+  manifest: '/manifest.json',
   keywords: [
     '자격증',
     '자격증 검색',
@@ -54,8 +70,8 @@ export const metadata: Metadata = {
   creator: '자격증 마스터',
   publisher: '자격증 마스터',
   openGraph: {
-    title: '자격증 마스터 - 3,500+ 자격증 검색 및 비교',
-    description: '3,500개 이상의 자격증 정보를 한눈에! 난이도, 합격률, 시험일정까지 비교하고 나에게 맞는 자격증을 찾아보세요.',
+    title: '자격증 마스터 - 600+ 자격증 검색 및 비교',
+    description: '600개 이상의 자격증 정보를 한눈에! 난이도, 합격률, 시험일정까지 비교하고 나에게 맞는 자격증을 찾아보세요.',
     type: 'website',
     locale: 'ko_KR',
     siteName: '자격증 마스터',
@@ -71,8 +87,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '자격증 마스터 - 3,500+ 자격증 검색 및 비교',
-    description: '3,500개 이상의 자격증 정보를 한눈에! 나에게 맞는 자격증을 찾아보세요.',
+    title: '자격증 마스터 - 600+ 자격증 검색 및 비교',
+    description: '600개 이상의 자격증 정보를 한눈에! 나에게 맞는 자격증을 찾아보세요.',
     images: ['/og-image.png'],
   },
   robots: {

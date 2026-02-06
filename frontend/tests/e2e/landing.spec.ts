@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Landing Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/about');
     await page.waitForLoadState('networkidle');
   });
 
@@ -31,7 +31,7 @@ test.describe('Landing Page', () => {
   test('should navigate to search page when clicking hero CTA button', async ({ page }) => {
     await page.getByRole('link', { name: /자격증 한눈에 보기/i }).first().click();
     await page.waitForLoadState('networkidle');
-    await expect(page).toHaveURL('/search');
+    await expect(page).toHaveURL('/');
   });
 
   test('should navigate to dashboard page when clicking secondary CTA button', async ({ page }) => {

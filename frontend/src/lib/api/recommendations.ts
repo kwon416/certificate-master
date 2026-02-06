@@ -2,9 +2,15 @@
  * Recommendations API Client
  *
  * 자격증 추천 API 클라이언트
+ * - 기존 위자드 기반 추천
+ * - 자연어 기반 추천 (NEW)
  */
 import { api } from './client'
-import type { Certificate } from './types'
+import type {
+  Certificate,
+  NaturalLanguageRequest,
+  NaturalLanguageResponse,
+} from './types'
 
 // Request types
 export interface RecommendationRequest {
@@ -64,7 +70,7 @@ export interface RecommendationResponse {
  */
 export const recommendationsAPI = {
   /**
-   * 자격증 추천 받기
+   * 자격증 추천 받기 (위자드 기반)
    */
   async getRecommendations(
     request: RecommendationRequest
@@ -83,6 +89,52 @@ export const recommendationsAPI = {
       )
 
       console.log('📥 [API 호출] 응답 데이터:', response)
+
+      // Ensure minimum loading time for better UX
+      const elapsed = Date.now() - startTime
+      if (elapsed < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
+      }
+
+      return response
+    } catch (error) {
+      // Even on error, show loading UI for minimum time
+      const elapsed = Date.now() - startTime
+      if (elapsed < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 자연어 기반 자격증 추천 받기 (NEW)
+   *
+   * 5단계 파이프라인:
+   * 1. LLM 상황 구조화 (자연어 → JSON)
+   * 2. 하드 필터링 (비전공자/재직자 조건)
+   * 3. 임베딩 검색 (LLM 쿼리 생성 + ChromaDB)
+   * 4. 후처리 점수화
+   * 5. LLM 추천 이유 생성
+   */
+  async getNaturalRecommendations(
+    request: NaturalLanguageRequest
+  ): Promise<NaturalLanguageResponse> {
+    console.log('🌐 [API 호출] POST /api/v1/recommendations/natural')
+    console.log('📤 [API 호출] 요청 데이터:', request.user_input.substring(0, 50) + '...')
+
+    // Add minimum loading time for LLM processing UX
+    const minLoadingTime = 2000 // 2 seconds (LLM 처리 시간 고려)
+    const startTime = Date.now()
+
+    try {
+      const response = await api.post<NaturalLanguageResponse>(
+        '/api/v1/recommendations/natural',
+        request
+      )
+
+      console.log('📥 [API 호출] 응답 데이터:', response)
+      console.log('📊 [API 호출] 구조화된 컨텍스트:', response.structured_context)
 
       // Ensure minimum loading time for better UX
       const elapsed = Date.now() - startTime

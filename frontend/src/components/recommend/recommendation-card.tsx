@@ -140,7 +140,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
               <Sparkles className="w-4 h-4 text-emerald-400" />
               핵심 포인트
             </span>
-            <ul className="grid gap-2 sm:grid-cols-2">
+            <ul className="space-y-2">
               {filteredKeyPoints.map((point, index) => {
                 // "라벨: 내용" 패턴 분리
                 const colonIdx = point.indexOf(':')
@@ -154,9 +154,9 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
                     className="flex flex-col gap-1 text-sm md:text-base bg-slate-800/40 rounded-lg px-3 py-2.5"
                   >
                     {label && (
-                      <span className="text-xs font-medium text-emerald-400">{label}</span>
+                      <span className="text-xs font-medium text-emerald-400 break-words">{label}</span>
                     )}
-                    <span className="text-slate-200">{content}</span>
+                    <span className="text-slate-200 break-words whitespace-normal">{content}</span>
                   </li>
                 )
               })}

@@ -77,14 +77,14 @@ def test_chroma_page_renders_vectors_and_details(client: TestClient):
 
 
 def test_chroma_delete_single_vector(client: TestClient):
-    """DELETE /chroma/{id} should delete a single vector."""
+    """DELETE /chroma/{id} should delete vector and reset DB data."""
     fake_service = FakeVectorStoreService()
-    fake_service.deleted_ids = []
+    fake_service.deleted_with_reset_ids = []
 
-    def delete_certificate(cert_id: str):
-        fake_service.deleted_ids.append(cert_id)
+    def delete_certificate_with_reset(cert_id: str):
+        fake_service.deleted_with_reset_ids.append(cert_id)
 
-    fake_service.delete_certificate = delete_certificate
+    fake_service.delete_certificate_with_reset = delete_certificate_with_reset
 
     app.dependency_overrides[get_vector_store_service] = lambda: fake_service
 
@@ -97,18 +97,21 @@ def test_chroma_delete_single_vector(client: TestClient):
     data = response.json()
     assert data["success"] is True
     assert data["deleted_id"] == "vec-1"
-    assert "vec-1" in fake_service.deleted_ids
+    # 변경: delete_certificate_with_reset이 호출되어야 함
+    assert "vec-1" in fake_service.deleted_with_reset_ids
 
 
 def test_chroma_delete_batch_vectors(client: TestClient):
-    """POST /chroma/delete should delete multiple vectors."""
+    """POST /chroma/delete should delete vectors and reset DB data."""
     fake_service = FakeVectorStoreService()
-    fake_service.deleted_ids = []
+    fake_service.deleted_with_reset_ids = []
+    fake_service.batch_reset_result = {"success": 2, "not_found_ids": [], "errors": []}
 
-    def delete_certificates_batch(cert_ids: list[str]):
-        fake_service.deleted_ids.extend(cert_ids)
+    def delete_certificates_batch_with_reset(cert_ids: list[str]) -> dict:
+        fake_service.deleted_with_reset_ids.extend(cert_ids)
+        return fake_service.batch_reset_result
 
-    fake_service.delete_certificates_batch = delete_certificates_batch
+    fake_service.delete_certificates_batch_with_reset = delete_certificates_batch_with_reset
 
     app.dependency_overrides[get_vector_store_service] = lambda: fake_service
 
@@ -124,8 +127,11 @@ def test_chroma_delete_batch_vectors(client: TestClient):
     data = response.json()
     assert data["success"] is True
     assert data["deleted_count"] == 2
-    assert "vec-1" in fake_service.deleted_ids
-    assert "vec-2" in fake_service.deleted_ids
+    # 변경: delete_certificates_batch_with_reset이 호출되어야 함
+    assert "vec-1" in fake_service.deleted_with_reset_ids
+    assert "vec-2" in fake_service.deleted_with_reset_ids
+    # 새 응답 필드: reset_result
+    assert "reset_result" in data
 
 
 def test_chroma_page_has_delete_button(client: TestClient):

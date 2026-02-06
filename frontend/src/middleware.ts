@@ -69,7 +69,7 @@ export async function middleware(request: NextRequest) {
   )
 
   if (user && isAuthPath) {
-    return NextResponse.redirect(new URL('/search', request.url))
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return response

@@ -84,7 +84,7 @@ export default function CertificateDetailPage() {
             description="자격증 정보를 가져오는 중 문제가 발생했습니다."
             action={{
               label: '검색으로 돌아가기',
-              onClick: () => router.push('/search'),
+              onClick: () => router.push('/'),
             }}
           />
         </div>

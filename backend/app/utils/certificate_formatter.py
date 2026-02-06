@@ -61,7 +61,13 @@ def format_certificate_text(cert: dict) -> str:
     if exam.get("exam_structure"):
         exam_parts.append(f"시험구성: {exam['exam_structure']}")
     if exam.get("subjects"):
-        exam_parts.append(f"시험과목: {', '.join(exam['subjects'])}")
+        subjects = exam["subjects"]
+        # 딕셔너리 리스트인 경우 name 필드 추출
+        if subjects and isinstance(subjects[0], dict):
+            subject_names = [s.get("name", "") for s in subjects if s.get("name")]
+            exam_parts.append(f"시험과목: {', '.join(subject_names)}")
+        else:
+            exam_parts.append(f"시험과목: {', '.join(subjects)}")
     if exam.get("passing_criteria"):
         exam_parts.append(f"합격기준: {exam['passing_criteria']}")
     if exam.get("pass_rate_trend"):

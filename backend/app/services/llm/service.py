@@ -17,6 +17,21 @@ from app.core.config import get_settings
 # JSON 복구 설정
 MAX_RETRIES = 2  # 최대 재시도 횟수
 
+# LLM이 정보 없을 때 생성하는 placeholder 교재 제목들
+PLACEHOLDER_BOOK_TITLES: set[str] = {
+    "교재명",
+    "책 제목",
+    "도서명",
+    "추천 교재",
+    "교재",
+    "기본서",
+    "책",
+    "수험서",
+    "문제집",
+    "기출문제집",
+    "요약집",
+}
+
 
 # Phase 1: Extraction Models
 class ExtractedExamInfo(BaseModel):
@@ -28,6 +43,14 @@ class ExtractedExamInfo(BaseModel):
     total_fee: Optional[str] = None  # Changed to str to handle "20,000원", "무료" etc.
     acquisition_method: Optional[str] = None  # 취득 방법 (응시자격, 취득 절차)
     exam_criteria_url: Optional[str] = None  # 출제 기준 링크
+
+    @field_validator("exam_type", "passing_criteria", mode="before")
+    @classmethod
+    def coerce_none_to_empty_string(cls, v):
+        """None 값을 빈 문자열로 변환합니다."""
+        if v is None:
+            return ""
+        return v
 
     @field_validator("total_fee", mode="before")
     @classmethod
@@ -42,13 +65,26 @@ class ExtractedExamInfo(BaseModel):
 
 
 class ExtractedCareerInfo(BaseModel):
-    """추출된 진로 정보."""
+    """추출된 진로 정보 (자격증 속성).
+
+    이 모델은 자격증 자체의 속성으로서 진로 정보를 담습니다.
+
+    Attributes:
+        industry: 이 자격증이 활용되는 산업 분야.
+            예: ["IT", "금융", "제조"] (일반적 산업 분류)
+            ※ job_market_info.preferred_industries와 다름:
+            - industry: 자격증이 '관련된' 산업 (자격증 속성)
+            - preferred_industries: 자격증을 '선호하는' 기업군 (채용 관점)
+    """
 
     use_cases: list[str] = Field(default_factory=list)
     related_jobs: list[str] = Field(default_factory=list)
     average_salary: Optional[str] = None
     job_prospects: Optional[str] = None
-    industry: list[str] = Field(default_factory=list)
+    industry: list[str] = Field(
+        default_factory=list,
+        description="자격증이 활용되는 산업 분야 (예: IT, 금융, 제조)",
+    )
 
 
 class ExtractedUserReviews(BaseModel):
@@ -97,18 +133,90 @@ class ExtractedStudyGuide(BaseModel):
     recommended_books: list[dict] = Field(default_factory=list)
     success_tips: list[str] = Field(default_factory=list)
 
+    @field_validator("recommended_books", mode="before")
+    @classmethod
+    def sanitize_books(cls, v: list[dict] | None) -> list[dict]:
+        """추천 교재를 자동으로 정제합니다.
+
+        - None → 빈 리스트
+        - placeholder 제목 필터링
+        - 빈 title/publisher 필터링
+        - 중복 제거
+        """
+        if v is None or not isinstance(v, list):
+            return []
+
+        sanitized = []
+        seen_keys = set()
+
+        for book in v:
+            if not isinstance(book, dict):
+                continue
+
+            title = str(book.get("title") or "").strip()
+            publisher = str(book.get("publisher") or "").strip()
+
+            # 필수 필드 검증
+            if not title or not publisher:
+                continue
+
+            # placeholder 제목 제외 (모듈 레벨 상수 참조)
+            if title in PLACEHOLDER_BOOK_TITLES:
+                continue
+
+            # 중복 제거 (대소문자 무시)
+            key = (title.casefold(), publisher.casefold())
+            if key in seen_keys:
+                continue
+
+            seen_keys.add(key)
+
+            # 정제된 교재 추가
+            description = str(book.get("description") or "").strip()
+            book_type = str(book.get("type") or "").strip()
+
+            sanitized.append({
+                "title": title,
+                "publisher": publisher,
+                "type": book_type or None,
+                "description": description or None,
+            })
+
+        return sanitized
+
 
 # ============================================================
 # 취업준비생 관점 추출 모델 (NEW: 2026-01-28)
 # ============================================================
 
 class ExtractedJobMarketInfo(BaseModel):
-    """추출된 채용 시장 정보."""
+    """추출된 채용 시장 정보 (시장 관점).
+
+    이 모델은 채용 시장 관점에서 자격증의 가치를 담습니다.
+
+    Attributes:
+        preferred_industries: 이 자격증을 선호/우대하는 기업군.
+            예: ["세무법인", "회계법인", "대기업 재무팀"] (구체적 기업 유형)
+            ※ career_info.industry와 다름:
+            - industry: 자격증이 '관련된' 산업 (자격증 속성)
+            - preferred_industries: 자격증을 '선호하는' 기업군 (채용 관점)
+    """
 
     job_posting_frequency: Optional[str] = None
-    preferred_industries: list[str] = Field(default_factory=list)
+    preferred_industries: list[str] = Field(
+        default_factory=list,
+        description="이 자격증을 선호하는 기업군 (예: 세무법인, 대기업 재무팀)",
+    )
     requirement_type: Optional[str] = None
     public_sector_points: Optional[str] = None
+
+    @field_validator("preferred_industries", mode="before")
+    @classmethod
+    def coerce_none_to_empty_list(cls, v):
+        """None 값을 빈 리스트로 변환합니다."""
+        if v is None:
+            return []
+        return v
 
 
 class ExtractedCostBreakdown(BaseModel):
@@ -564,9 +672,9 @@ class LLMService:
    - 확인되지 않으면 반드시 null로 저장 (추측하지 마세요)
    - annual_exam_count: 연간 시험 횟수 (공식 확인된 경우만)
    - exam_type: 시험 유형 ("CBT", "정기", "CBT+정기")
-   - next_exam_date: **null로 설정** (시험 일정은 변동이 많아 추측 금지)
-   - registration_period: **null로 설정** (접수 기간은 변동이 많아 추측 금지)
-   - result_announcement: 일반적 발표 기준만 (예: "시험 후 2주 내")
+   - next_exam_date: 가장 가까운 시험일 (예: "2026-03-15", 공식 출처에서 확인된 경우만)
+   - registration_period: 접수 기간 (예: "2026-02-01 ~ 2026-02-07", 공식 출처에서 확인된 경우만)
+   - result_announcement: 합격 발표일 또는 기준 (예: "2026-04-05" 또는 "시험 후 2주 내")
 
 5. **유사 자격증 비교 (similar_certificates)**:
    - "13. 비교 정보" 카테고리 참고
@@ -1049,18 +1157,20 @@ class LLMService:
 
 **핵심 규칙**:
 1. **JSON 문자열 내 줄바꿈은 반드시 \\n 이스케이프 시퀀스 사용** (실제 줄바꿈 문자 금지)
-2. exam_info는 구체적으로 (문항수, 시간, 출제 경향)
-3. study_guide는 key_exam_topics 포함 (핵심 출제 토픽 5개 이상)
-4. user_reviews.exam_day_tips 필수 (시험 전날, 당일, 멘탈 관리)
-5. official_sources.reference_urls에 시험 일정 페이지 필수 포함
-6. job_prospects는 4-5문장, \\n으로 구분:
+2. **difficulty 필수** ⭐절대생략금지: 1-5 범위 정수 (정보 없으면 3 사용)
+3. **study_period_days 필수** ⭐절대생략금지: 준비기간 일수 (정보 없으면 90 사용)
+4. exam_info는 구체적으로 (문항수, 시간, 출제 경향)
+5. study_guide는 key_exam_topics 포함 (핵심 출제 토픽 5개 이상)
+6. user_reviews.exam_day_tips 필수 (시험 전날, 당일, 멘탈 관리)
+7. official_sources.reference_urls에 시험 일정 페이지 필수 포함
+8. job_prospects는 4-5문장, \\n으로 구분:
    - 첫 문장: 해당 자격증의 현재 취업 시장 수요
    - 둘째 문장: 필수/우대로 요구하는 대표 직무 (예: "SI 개발자, 솔루션 엔지니어 채용 시 필수")
    - 셋째 문장: 대표 기업 사례 (예: "삼성SDS, LG CNS, 네이버 등 IT 대기업에서 우대")
    - 넷째 문장: 향후 전망 및 성장 가능성
    - 다섯째 문장: 커리어 상승 효과 (있으면)
-7. user_reviews.summary는 문단 2개, \\n\\n으로 구분
-8. 모든 필드 값이 완전한 JSON 문자열로 닫혀 있는지 확인
+9. user_reviews.summary는 문단 2개, \\n\\n으로 구분
+10. 모든 필드 값이 완전한 JSON 문자열로 닫혀 있는지 확인
 """
 
         user_prompt = f"""추출된 데이터:

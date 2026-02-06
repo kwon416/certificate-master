@@ -30,6 +30,7 @@ async def search_certificates(
     categories: Optional[list[str]] = Query(None, description="자격구분명 필터 (여러 개 가능)"),
     category_codes: Optional[list[str]] = Query(None, description="자격구분코드 필터 (여러 개 가능)"),
     series: Optional[str] = Query(None, description="계열명 필터"),
+    sort_by: str = Query("view_count", description="정렬 기준 (view_count, title)"),
     page: int = Query(1, ge=1, description="페이지 번호"),
     page_size: int = Query(20, ge=1, le=100, description="페이지 크기"),
 ):
@@ -99,9 +100,16 @@ async def search_certificates(
     # Get total count
     total = query.count()
 
+    # 정렬
+    sort_columns = {
+        "view_count": CertificateModel.view_count.desc(),
+        "title": CertificateModel.title.asc(),
+    }
+    order = sort_columns.get(sort_by, CertificateModel.view_count.desc())
+    query = query.order_by(order)
+
     # Pagination
     offset = (page - 1) * page_size
-    query = query.order_by(CertificateModel.title)
     query = query.offset(offset).limit(page_size)
 
     # Execute query

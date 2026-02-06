@@ -3,6 +3,7 @@
  *
  * 5단계 인터랙션 위자드 메인 컨테이너
  * 모바일 친화적 UX: 스텝 변경 시 스크롤, 하단 고정 버튼
+ * 자연어 입력 모드 전환 지원 (NEW)
  */
 'use client'
 
@@ -21,7 +22,7 @@ import {
 import { useRecommendations } from '@/hooks/use-recommendations'
 
 export function InteractionWizard() {
-  const { currentStep, answers, setAnswer, nextStep, prevStep } = useRecommendStore()
+  const { currentStep, answers, setAnswer, nextStep, prevStep, naturalInputInWizard } = useRecommendStore()
   const { getRecommendations, isLoading } = useRecommendations()
   const wizardRef = useRef<HTMLDivElement>(null)
 
@@ -65,17 +66,17 @@ export function InteractionWizard() {
       const selectedDomain = answers.interest_domains
         ? [answers.interest_domains]
         : []
-      const summary = answers.user_summary?.trim() ?? ''
 
       // 통합 필드 → API 필드 매핑
       const apiFields = mapAnswersToApiRequest(answers)
 
+      // 자연어 입력이 있으면 user_summary로 전달
       getRecommendations({
         purpose: apiFields.purpose,
         interest_domains: selectedDomain,
         study_timeline: apiFields.study_timeline,
         difficulty_preference: apiFields.difficulty_preference,
-        user_summary: summary || undefined,
+        user_summary: naturalInputInWizard.trim() || undefined,
         current_status: apiFields.current_status,
         study_commitment: apiFields.study_commitment,
         // 향상된 검색 필드 (선택)

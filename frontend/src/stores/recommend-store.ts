@@ -2,10 +2,19 @@
  * Recommendation Store (Zustand)
  *
  * 자격증 추천 위자드의 상태를 관리합니다.
- * 4단계 통합 버전 (2026-01-29)
+ * - 4단계 통합 버전 (2026-01-29)
+ * - 자연어 기반 추천 추가 (2026-02-05)
  */
 import { create } from 'zustand'
-import type { Certificate } from '@/lib/api/types'
+import type {
+  Certificate,
+  StructuredUserContext,
+  NaturalLanguageResponse,
+  NaturalRecommendedCertificate,
+} from '@/lib/api/types'
+
+// 입력 모드 타입
+export type InputMode = 'wizard' | 'natural'
 
 // Wizard 답변 타입
 export interface WizardAnswers {
@@ -33,7 +42,7 @@ export interface WizardOption {
   matchingTypes?: string[]
 }
 
-export type WizardStepType = 'options' | 'slider' | 'input' | 'combo' | 'enhanced-input'
+export type WizardStepType = 'options' | 'slider' | 'input' | 'combo' | 'enhanced-input' | 'input-with-natural'
 
 export interface WizardStepConfig {
   step: number
@@ -73,6 +82,10 @@ export interface RecommendationResponse {
 }
 
 interface RecommendState {
+  // 입력 모드
+  inputMode: InputMode
+
+  // 위자드 상태
   currentStep: number
   answers: WizardAnswers
   recommendations: RecommendedCertificate[] | null
@@ -81,6 +94,19 @@ interface RecommendState {
   isLoading: boolean
   error: string | null
 
+  // 자연어 추천 상태 (NEW)
+  naturalInput: string
+  structuredContext: StructuredUserContext | null
+  naturalRecommendations: NaturalRecommendedCertificate[] | null
+  queryUsed: string | null
+  followUpQuestion: string | null
+
+  // Step 4 자연어 통합 상태 (NEW)
+  naturalInputInWizard: string    // Step 4 자연어 입력
+  useNaturalMode: boolean         // 자연어 모드 토글
+
+  // 액션
+  setInputMode: (mode: InputMode) => void
   setAnswer: (key: keyof WizardAnswers, value: WizardAnswers[keyof WizardAnswers]) => void
   nextStep: () => void
   prevStep: () => void
@@ -90,6 +116,15 @@ interface RecommendState {
   setLoading: (isLoading: boolean) => void
   setError: (error: string | null) => void
   clearRecommendations: () => void
+
+  // 자연어 액션 (NEW)
+  setNaturalInput: (input: string) => void
+  setNaturalRecommendations: (response: NaturalLanguageResponse) => void
+  clearNaturalRecommendations: () => void
+
+  // Step 4 자연어 통합 액션 (NEW)
+  setNaturalInputInWizard: (input: string) => void
+  setUseNaturalMode: (use: boolean) => void
 }
 
 const defaultAnswers: WizardAnswers = {
@@ -110,6 +145,10 @@ const defaultAnswers: WizardAnswers = {
 }
 
 export const useRecommendStore = create<RecommendState>((set, get) => ({
+  // 입력 모드
+  inputMode: 'wizard',
+
+  // 위자드 상태
   currentStep: 1,
   answers: { ...defaultAnswers },
   recommendations: null,
@@ -117,6 +156,22 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
   totalMatched: 0,
   isLoading: false,
   error: null,
+
+  // 자연어 추천 상태 (NEW)
+  naturalInput: '',
+  structuredContext: null,
+  naturalRecommendations: null,
+  queryUsed: null,
+  followUpQuestion: null,
+
+  // Step 4 자연어 통합 상태 (NEW)
+  naturalInputInWizard: '',
+  useNaturalMode: false,
+
+  // 입력 모드 전환
+  setInputMode: (mode) => {
+    set({ inputMode: mode })
+  },
 
   setAnswer: (key, value) => {
     set((state) => ({
@@ -149,12 +204,22 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
 
   resetWizard: () => {
     set({
+      inputMode: 'wizard',
       currentStep: 1,
       answers: { ...defaultAnswers },
       recommendations: null,
       querySummary: null,
       totalMatched: 0,
       error: null,
+      // 자연어 상태도 초기화
+      naturalInput: '',
+      structuredContext: null,
+      naturalRecommendations: null,
+      queryUsed: null,
+      followUpQuestion: null,
+      // Step 4 자연어 통합 상태 초기화
+      naturalInputInWizard: '',
+      useNaturalMode: false,
     })
   },
 
@@ -181,7 +246,49 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
       recommendations: null,
       querySummary: null,
       totalMatched: 0,
+      // 자연어 결과도 초기화
+      naturalRecommendations: null,
+      structuredContext: null,
+      queryUsed: null,
+      followUpQuestion: null,
     })
+  },
+
+  // 자연어 입력 설정
+  setNaturalInput: (input) => {
+    set({ naturalInput: input })
+  },
+
+  // 자연어 추천 결과 설정
+  setNaturalRecommendations: (response) => {
+    set({
+      structuredContext: response.structured_context,
+      naturalRecommendations: response.recommendations,
+      queryUsed: response.query_used,
+      followUpQuestion: response.follow_up_question,
+      totalMatched: response.total_matched,
+      isLoading: false,
+      error: null,
+    })
+  },
+
+  // 자연어 추천 결과 초기화
+  clearNaturalRecommendations: () => {
+    set({
+      naturalRecommendations: null,
+      structuredContext: null,
+      queryUsed: null,
+      followUpQuestion: null,
+    })
+  },
+
+  // Step 4 자연어 통합 액션 (NEW)
+  setNaturalInputInWizard: (input) => {
+    set({ naturalInputInWizard: input })
+  },
+
+  setUseNaturalMode: (use) => {
+    set({ useNaturalMode: use })
   },
 }))
 
@@ -415,9 +522,9 @@ export const WIZARD_STEPS: WizardStepConfig[] = [
     step: 4,
     key: 'user_summary' as keyof WizardAnswers,
     title: '추가로 알려주실 게 있나요?',
-    description: '선택사항이에요. 건너뛰어도 됩니다.',
+    description: '간단히 입력하거나, 자세한 상황을 설명해주세요.',
     optional: true,
-    type: 'input',
+    type: 'input-with-natural',
     placeholder: '예) 데이터 분석 직무로 이직하고 싶어요',
   },
 ]

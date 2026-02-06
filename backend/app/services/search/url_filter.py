@@ -33,6 +33,25 @@ _JS_RENDERED_DOMAINS: set[str] = {
 }
 
 
+# ============================================================
+# Playwright 필요 도메인 목록
+# ============================================================
+
+# Playwright가 필요한 도메인 목록
+# 이 도메인들은 Trafilatura로 콘텐츠 추출이 불가능하며
+# Playwright를 사용해야 합니다.
+PLAYWRIGHT_DOMAINS: set[str] = {
+    # 채용 사이트 (SPA/React 기반)
+    "jobkorea.co.kr",
+    "saramin.co.kr",
+    "wanted.co.kr",
+    "incruit.com",
+    # 소셜/커뮤니티 (SPA)
+    "story.kakao.com",
+    "brunch.co.kr",
+}
+
+
 def is_js_rendered_domain(url: str) -> bool:
     """URL이 JS 렌더링 사이트인지 확인합니다.
 
@@ -239,3 +258,48 @@ def reset_domain_failure_cache() -> None:
     global _global_failure_cache
     if _global_failure_cache is not None:
         _global_failure_cache.clear()
+
+
+# ============================================================
+# Playwright 필요 여부 판단
+# ============================================================
+
+
+def is_playwright_required(url: str) -> bool:
+    """URL이 Playwright가 필요한지 확인합니다.
+
+    Playwright가 필요한 경우:
+    - 채용 사이트 (jobkorea, saramin, wanted, incruit)
+    - SPA 기반 소셜/커뮤니티 사이트 (kakao story, brunch)
+
+    Args:
+        url: 확인할 URL.
+
+    Returns:
+        bool: Playwright가 필요하면 True.
+    """
+    try:
+        parsed = urlparse(url)
+        domain = parsed.netloc.lower()
+
+        # www. 접두사 제거
+        if domain.startswith("www."):
+            domain = domain[4:]
+
+        # 모바일 서브도메인 제거 (m.jobkorea.co.kr -> jobkorea.co.kr)
+        if domain.startswith("m."):
+            domain = domain[2:]
+
+        # 정확한 도메인 일치 확인
+        if domain in PLAYWRIGHT_DOMAINS:
+            return True
+
+        # 서브도메인 포함 확인 (예: job.incruit.com -> incruit.com)
+        for pw_domain in PLAYWRIGHT_DOMAINS:
+            if domain.endswith("." + pw_domain):
+                return True
+
+        return False
+
+    except Exception:
+        return False

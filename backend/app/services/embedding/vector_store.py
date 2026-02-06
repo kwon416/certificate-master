@@ -285,7 +285,7 @@ class VectorStoreService:
         top_k: int = 10,
         filter_dict: Optional[dict] = None
     ) -> list[dict]:
-        """텍스트 기반 검색 (BGE-M3 임베딩 사용).
+        """텍스트 기반 검색 (임베딩 사용).
 
         Args:
             namespace: 네임스페이스 (현재 미사용, 호환성 유지).
@@ -305,6 +305,37 @@ class VectorStoreService:
             top_k=top_k,
             filter_dict=filter_dict
         )
+
+    def search_by_title(self, query: str, limit: int = 20) -> list[dict]:
+        """타이틀 검색 - 의미 기반 검색 사용.
+
+        ChromaDB의 where 필터는 $contains를 지원하지 않으므로,
+        의미 기반 검색(semantic search)을 사용하여 타이틀을 검색합니다.
+
+        Args:
+            query: 검색 쿼리 텍스트.
+            limit: 반환할 결과 수 (기본값: 20).
+
+        Returns:
+            id, score, metadata를 포함한 검색 결과 목록.
+        """
+        # 의미 기반 검색 수행
+        results = self.search_records(
+            namespace=self.NAMESPACE,
+            query=query,
+            top_k=limit
+        )
+
+        # 결과를 list_vectors와 동일한 형식으로 변환
+        vectors = []
+        for result in results:
+            vectors.append({
+                "id": result["id"],
+                "score": result.get("score", 0),
+                "metadata": result.get("metadata", {})
+            })
+
+        return vectors
 
     def format_record_for_upsert(self, cert: dict) -> dict:
         """자격증 데이터를 upsert용 레코드로 포맷합니다.
@@ -351,7 +382,7 @@ class VectorStoreService:
         certs: list[dict],
         skip_existing: bool = False
     ) -> dict:
-        """배치로 자격증을 upsert합니다 (BGE-M3 임베딩 포함).
+        """배치로 자격증을 upsert합니다 (임베딩 포함).
 
         업로드 후 ChromaDB에서 실제로 저장되었는지 검증합니다.
 
@@ -699,3 +730,139 @@ class VectorStoreService:
 
         # DB에서 vector_id 초기화
         self.clear_vector_id_in_db(cert_id)
+
+    # ==========================================
+    # DB 자격증 데이터 리셋 메서드 (보강 데이터 초기화)
+    # ==========================================
+
+    # 리셋 대상 필드 (유지: id, series, title, raw_id, categories)
+    RESET_FIELDS = [
+        "overview",
+        "difficulty",
+        "study_period_days",
+        "recommended_lectures",
+        "exam_info",
+        "career_info",
+        "user_reviews",
+        "official_sources",
+        "study_guide",
+        "vector_id",
+        "passing_rate",
+        "job_market_info",
+        "cost_breakdown",
+        "feasibility_info",
+        "exam_schedule_detail",
+        "similar_certificates",
+    ]
+
+    # 기본값이 0인 필드
+    RESET_TO_ZERO_FIELDS = ["view_count"]
+
+    def _reset_certificate_fields(self, cert: Certificate):
+        """자격증 객체의 보강 데이터 필드를 리셋합니다.
+
+        Args:
+            cert: Certificate 모델 인스턴스.
+        """
+        for field in self.RESET_FIELDS:
+            setattr(cert, field, None)
+
+        for field in self.RESET_TO_ZERO_FIELDS:
+            setattr(cert, field, 0)
+
+    def reset_certificate_data_in_db(self, cert_id: str) -> bool:
+        """DB에서 자격증의 보강 데이터를 리셋합니다.
+
+        유지 필드: id, series, title, raw_id, categories
+        리셋 필드: overview, difficulty, study_period_days, 등
+
+        Args:
+            cert_id: 자격증 고유 ID.
+
+        Returns:
+            성공 여부.
+        """
+        session, should_close = self._get_session()
+        try:
+            cert = session.query(Certificate).filter(Certificate.id == cert_id).first()
+            if cert:
+                self._reset_certificate_fields(cert)
+                session.commit()
+                return True
+            return False
+        except Exception:
+            session.rollback()
+            return False
+        finally:
+            if should_close:
+                session.close()
+
+    def reset_certificates_data_in_db_batch(self, cert_ids: list[str]) -> dict:
+        """배치로 여러 자격증의 보강 데이터를 리셋합니다.
+
+        Args:
+            cert_ids: 자격증 ID 목록.
+
+        Returns:
+            상세 결과 딕셔너리:
+            - success: 성공적으로 리셋된 개수
+            - not_found_ids: DB에서 찾을 수 없는 ID 목록
+            - errors: 에러 메시지 목록
+        """
+        session, should_close = self._get_session()
+        success_count = 0
+        not_found_ids = []
+        errors = []
+
+        try:
+            for cert_id in cert_ids:
+                cert = session.query(Certificate).filter(Certificate.id == cert_id).first()
+                if cert:
+                    self._reset_certificate_fields(cert)
+                    success_count += 1
+                else:
+                    not_found_ids.append(cert_id)
+
+            session.commit()
+
+        except Exception as e:
+            error_msg = str(e)
+            session.rollback()
+            errors.append(error_msg)
+            success_count = 0
+        finally:
+            if should_close:
+                session.close()
+
+        return {
+            "success": success_count,
+            "not_found_ids": not_found_ids,
+            "errors": errors,
+        }
+
+    def delete_certificate_with_reset(self, cert_id: str):
+        """ChromaDB에서 삭제하고 DB에서 보강 데이터를 리셋합니다.
+
+        Args:
+            cert_id: 삭제할 자격증 ID.
+        """
+        # ChromaDB에서 삭제
+        self.delete_certificate(cert_id)
+
+        # DB에서 보강 데이터 리셋
+        self.reset_certificate_data_in_db(cert_id)
+
+    def delete_certificates_batch_with_reset(self, cert_ids: list[str]) -> dict:
+        """배치로 ChromaDB에서 삭제하고 DB에서 보강 데이터를 리셋합니다.
+
+        Args:
+            cert_ids: 삭제할 자격증 ID 목록.
+
+        Returns:
+            상세 결과 딕셔너리.
+        """
+        # ChromaDB에서 배치 삭제
+        self.delete_certificates_batch(cert_ids)
+
+        # DB에서 보강 데이터 배치 리셋
+        return self.reset_certificates_data_in_db_batch(cert_ids)

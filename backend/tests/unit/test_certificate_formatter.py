@@ -74,6 +74,36 @@ class TestCertificateFormatter:
         assert "시험과목: 소프트웨어설계, 데이터베이스" in result
         assert "합격기준: 60점 이상" in result
 
+    def test_format_with_exam_info_subjects_as_dict_list(self):
+        """시험 과목이 딕셔너리 리스트일 때 포맷 테스트.
+
+        일부 자격증(예: 그래픽표준기술사)의 subjects 필드가
+        문자열 리스트가 아닌 딕셔너리 리스트로 저장되어 있음.
+        예: [{'name': '그래픽표준 인쇄기술', 'questions': None, 'time': None}]
+        """
+        from app.utils.certificate_formatter import format_certificate_text
+
+        cert = {
+            "title": "그래픽표준기술사",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "exam_info": {
+                "exam_type": "면접시험",
+                "subjects": [
+                    {"name": "그래픽표준 인쇄기술", "questions": None, "time": None},
+                    {"name": "인쇄공정관리", "questions": 20, "time": 60},
+                ],
+                "passing_criteria": "60점 이상",
+            }
+        }
+
+        result = format_certificate_text(cert)
+
+        # 오류 없이 텍스트가 생성되어야 함
+        assert "그래픽표준기술사" in result
+        # subjects 이름이 포함되어야 함
+        assert "그래픽표준 인쇄기술" in result
+        assert "인쇄공정관리" in result
+
     def test_format_with_empty_optional_fields(self):
         """선택 필드가 비어있을 때 처리 테스트."""
         from app.utils.certificate_formatter import format_certificate_text

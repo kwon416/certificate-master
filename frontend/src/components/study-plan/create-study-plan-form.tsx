@@ -68,7 +68,7 @@ export function CreateStudyPlanForm({
       await createMutation.mutateAsync(studyPlanData)
 
       // Success - redirect to search (dashboard is disabled for now)
-      router.push('/search')
+      router.push('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : '학습 계획 생성에 실패했습니다.')
     }

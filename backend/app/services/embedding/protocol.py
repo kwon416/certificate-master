@@ -1,7 +1,6 @@
 """임베딩 서비스 프로토콜 정의.
 
 이 모듈은 임베딩 서비스의 공통 인터페이스를 정의합니다.
-모든 임베딩 서비스 구현체(OpenAI, BGE-M3 등)는 이 프로토콜을 따라야 합니다.
 """
 from typing import Protocol, runtime_checkable
 

@@ -60,7 +60,7 @@ export default function CommunityPage() {
 
       <div className="mt-12 flex flex-col items-center justify-center gap-4 text-center sm:flex-row">
         <Button asChild className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-900 font-semibold hover:from-emerald-400 hover:to-cyan-400">
-          <Link href="/search">
+          <Link href="/">
             <Sparkles className="mr-2 h-4 w-4" />
             자격증 찾아보기
           </Link>

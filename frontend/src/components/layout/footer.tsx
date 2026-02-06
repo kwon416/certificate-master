@@ -3,7 +3,8 @@ import { GraduationCap, Github, Mail } from 'lucide-react'
 
 const footerLinks = {
   product: [
-    { label: '자격증 검색', href: '/search' },
+    { label: '자격증 검색', href: '/' },
+    { label: 'AI 추천', href: '/recommend' },
   ],
   community: [
     { label: '커뮤니티', href: '/community' },

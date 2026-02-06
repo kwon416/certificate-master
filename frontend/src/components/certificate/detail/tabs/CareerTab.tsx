@@ -28,6 +28,14 @@ function NoDataMessage({ message = '정보가 없습니다' }: { message?: strin
   )
 }
 
+/** 쉼표로 구분된 문자열을 개별 항목으로 분리 */
+function splitItems(items: string[]): string[] {
+  return items
+    .flatMap((item) => item.split(/,\s*/))
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 function SentenceSections({ text }: { text: string }) {
   const sentences = text
     .split(/\n+/)
@@ -80,11 +88,11 @@ export function CareerTab({ certificate }: CareerTabProps) {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {cert.career_info?.use_cases.map((useCase, idx) => (
+              {splitItems(cert.career_info?.use_cases ?? []).map((useCase, idx) => (
                 <Badge
                   key={idx}
                   variant="outline"
-                  className="border-emerald-500/30 text-emerald-400"
+                  className="border-emerald-500/30 text-emerald-400 text-sm px-3 py-1.5"
                 >
                   {useCase}
                 </Badge>
@@ -105,7 +113,7 @@ export function CareerTab({ certificate }: CareerTabProps) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {cert.career_info?.related_jobs.map((job, idx) => (
+              {splitItems(cert.career_info?.related_jobs ?? []).map((job, idx) => (
                 <div key={idx} className="bg-slate-800/30 p-3 rounded-lg text-center">
                   <span className="text-slate-300">{job}</span>
                 </div>
@@ -126,11 +134,11 @@ export function CareerTab({ certificate }: CareerTabProps) {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {cert.career_info?.industry.map((ind, idx) => (
+              {splitItems(cert.career_info?.industry ?? []).map((ind, idx) => (
                 <Badge
                   key={idx}
                   variant="secondary"
-                  className="bg-violet-900/30 text-violet-400"
+                  className="bg-violet-900/30 text-violet-400 text-sm px-3 py-1.5"
                 >
                   {ind}
                 </Badge>

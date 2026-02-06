@@ -6,6 +6,8 @@ This module defines request/response schemas for certificate recommendation endp
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.constants import RecommendationConstants
+
 from .certificate import Certificate
 
 
@@ -368,3 +370,281 @@ class RecommendationResponse(BaseModel):
         ge=0,
         description="조건에 맞는 전체 자격증 수",
     )
+
+
+# ===== 자연어 기반 추천 스키마 (NEW) =====
+
+# 자연어 추천에서 사용하는 유효 값들 (constants에서 중앙 관리)
+VALID_NATURAL_GOALS = RecommendationConstants.NATURAL_GOALS
+VALID_EMPLOYMENT_STATUS = RecommendationConstants.EMPLOYMENT_STATUS
+VALID_MAJOR_BACKGROUND = RecommendationConstants.MAJOR_BACKGROUND
+VALID_NATURAL_DIFFICULTY = RecommendationConstants.NATURAL_DIFFICULTY
+
+
+class StructuredUserContext(BaseModel):
+    """LLM이 구조화한 사용자 상황 (사용자 선호).
+
+    자연어 입력을 LLM이 분석하여 생성하는 구조화된 컨텍스트입니다.
+
+    Attributes:
+        preferred_industries: 사용자가 취업하고 싶은 산업 분야.
+            예: ["IT", "스타트업", "게임"] (사용자의 희망 산업)
+            ※ 다른 industry 필드들과 다름:
+            - career_info.industry: 자격증이 '관련된' 산업 (자격증 속성)
+            - job_market_info.preferred_industries: 자격증을 '선호하는' 기업군 (채용 관점)
+            - 이 필드: 사용자가 '가고 싶은' 산업 (개인 선호)
+    """
+
+    goal: str = Field(
+        ...,
+        description="자격증 취득 목표 (취업, 이직, 전문성 강화, 개인 관심, 창업)",
+    )
+    employment_status: str = Field(
+        ...,
+        description="현재 고용 상태 (재직 중, 구직 중, 학생, 무직)",
+    )
+    major_background: str = Field(
+        ...,
+        description="전공/경력 배경 (전공자, 비전공자, 관련 경험 있음)",
+    )
+    weekly_study_hours: int = Field(
+        ...,
+        ge=1,
+        le=40,
+        description="주당 학습 가능 시간 (1-40시간)",
+    )
+    max_study_period_days: int = Field(
+        ...,
+        ge=30,
+        le=730,
+        description="최대 준비 기간 (30-730일, 약 1개월~2년)",
+    )
+    difficulty_preference: str = Field(
+        ...,
+        description="난이도 선호 (상, 중상, 중, 중하, 하)",
+    )
+    preferred_industries: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description="사용자가 취업하고 싶은 산업 (예: IT, 금융, 게임) - 최대 5개",
+    )
+
+    @field_validator("goal")
+    @classmethod
+    def validate_goal(cls, v: str) -> str:
+        if v not in VALID_NATURAL_GOALS:
+            raise ValueError(
+                f"Invalid goal. Must be one of: {VALID_NATURAL_GOALS}"
+            )
+        return v
+
+    @field_validator("employment_status")
+    @classmethod
+    def validate_employment_status(cls, v: str) -> str:
+        if v not in VALID_EMPLOYMENT_STATUS:
+            raise ValueError(
+                f"Invalid employment_status. Must be one of: {VALID_EMPLOYMENT_STATUS}"
+            )
+        return v
+
+    @field_validator("major_background")
+    @classmethod
+    def validate_major_background(cls, v: str) -> str:
+        if v not in VALID_MAJOR_BACKGROUND:
+            raise ValueError(
+                f"Invalid major_background. Must be one of: {VALID_MAJOR_BACKGROUND}"
+            )
+        return v
+
+    @field_validator("difficulty_preference")
+    @classmethod
+    def validate_difficulty_preference(cls, v: str) -> str:
+        if v not in VALID_NATURAL_DIFFICULTY:
+            raise ValueError(
+                f"Invalid difficulty_preference. Must be one of: {VALID_NATURAL_DIFFICULTY}"
+            )
+        return v
+
+    @field_validator("preferred_industries")
+    @classmethod
+    def validate_preferred_industries(cls, v: list[str]) -> list[str]:
+        if len(v) > 5:
+            raise ValueError("preferred_industries must contain at most 5 items")
+        return v
+
+
+class NaturalLanguageRequest(BaseModel):
+    """자연어 기반 추천 요청.
+
+    사용자의 자유로운 자연어 입력을 받습니다.
+    """
+
+    user_input: str = Field(
+        ...,
+        min_length=10,
+        max_length=1000,
+        description="사용자 자연어 입력 (10-1000자)",
+    )
+
+
+class NaturalLanguageResponse(BaseModel):
+    """자연어 추천 응답.
+
+    LLM이 구조화한 컨텍스트와 추천 결과를 포함합니다.
+    """
+
+    structured_context: StructuredUserContext = Field(
+        ...,
+        description="LLM이 구조화한 사용자 상황",
+    )
+    recommendations: list[RecommendedCertificate] = Field(
+        default_factory=list,
+        description="추천 자격증 목록",
+    )
+    query_used: str = Field(
+        ...,
+        description="벡터 검색에 사용된 쿼리",
+    )
+    follow_up_question: str | None = Field(
+        default=None,
+        description="추가 질문 (정보 부족 시)",
+    )
+    total_matched: int = Field(
+        ...,
+        ge=0,
+        description="조건에 맞는 전체 자격증 수",
+    )
+
+
+# ===== 변환 함수 =====
+
+
+def structured_to_recommendation_request(
+    context: StructuredUserContext,
+) -> RecommendationRequest:
+    """자연어 추천의 StructuredUserContext를 기존 RecommendationRequest로 변환합니다.
+
+    이 함수는 자연어 추천 시스템과 기존 추천 시스템 간의 호환성을 제공합니다.
+
+    Args:
+        context: 자연어 입력에서 추출된 구조화된 사용자 컨텍스트
+
+    Returns:
+        RecommendationRequest: 기존 추천 API에서 사용 가능한 요청 객체
+    """
+    # goal → purpose 매핑
+    goal_to_purpose = {
+        "취업": "취업",
+        "이직": "이직",
+        "전문성 강화": "커리어 전문성 강화",
+        "개인 관심": "개인 관심 / 교양",
+        "창업": "창업 / 실무 활용",
+    }
+    purpose = goal_to_purpose.get(context.goal, "취업")
+
+    # max_study_period_days → study_timeline 매핑
+    days = context.max_study_period_days
+    if days <= 90:
+        study_timeline = "3개월 이하"
+    elif days <= 180:
+        study_timeline = "6개월 이하"
+    elif days <= 365:
+        study_timeline = "1년 이하"
+    else:
+        study_timeline = "1년 이상"
+
+    # difficulty_preference 매핑 (5단계 → 3단계)
+    difficulty_map = {
+        "하": "쉬운 편",
+        "중하": "쉬운 편",
+        "중": "중간",
+        "중상": "어려워도 상관없음",
+        "상": "어려워도 상관없음",
+    }
+    difficulty = difficulty_map.get(context.difficulty_preference, "중간")
+
+    # employment_status → current_status 매핑
+    status_map = {
+        "학생": "student",
+        "구직 중": "entry_jobseeker",
+        "재직 중": "junior_worker",  # 기본값, 연차 정보 없음
+        "무직": "career_break",
+    }
+    current_status = status_map.get(context.employment_status)
+
+    # weekly_study_hours → study_commitment 매핑
+    hours = context.weekly_study_hours
+    if hours <= 10:
+        study_commitment = "relaxed"
+    elif hours <= 20:
+        study_commitment = "moderate"
+    else:
+        study_commitment = "intensive"
+
+    # preferred_industries 처리
+    # 자연어 추천의 preferred_industries는 자유 형식이라
+    # interest_domains (고정 목록)로 변환하기 어려움
+    # → target_industries로 전달
+    target_industries = context.preferred_industries if context.preferred_industries else None
+
+    # interest_domains는 기본값 사용 (자연어에서 정확히 매핑 불가)
+    # 사용자의 preferred_industries 기반으로 가장 관련있는 도메인 추론
+    interest_domains = _infer_interest_domains(context.preferred_industries)
+
+    return RecommendationRequest(
+        purpose=purpose,
+        interest_domains=interest_domains,
+        study_timeline=study_timeline,
+        difficulty_preference=difficulty,
+        current_status=current_status,
+        study_commitment=study_commitment,
+        target_industries=target_industries,
+    )
+
+
+def _infer_interest_domains(preferred_industries: list[str]) -> list[str]:
+    """preferred_industries에서 interest_domains를 추론합니다.
+
+    자연어로 입력된 산업 키워드를 VALID_INTEREST_DOMAINS에 매핑합니다.
+    """
+    if not preferred_industries:
+        return ["IT개발"]  # 기본값
+
+    # 키워드 → 도메인 매핑
+    keyword_to_domain = {
+        "IT": "IT개발",
+        "개발": "IT개발",
+        "소프트웨어": "IT개발",
+        "데이터": "데이터",
+        "AI": "데이터",
+        "금융": "금융/보험",
+        "은행": "금융/보험",
+        "증권": "금융/보험",
+        "보험": "금융/보험",
+        "회계": "회계/세무/재무",
+        "세무": "회계/세무/재무",
+        "재무": "회계/세무/재무",
+        "마케팅": "마케팅/홍보/조사",
+        "홍보": "마케팅/홍보/조사",
+        "디자인": "디자인",
+        "건설": "건설/건축",
+        "건축": "건설/건축",
+        "의료": "의료",
+        "교육": "교육",
+        "공공": "공공/복지",
+        "공기업": "공공/복지",
+        "게임": "IT개발",
+        "스타트업": "IT개발",
+    }
+
+    domains = set()
+    for industry in preferred_industries:
+        for keyword, domain in keyword_to_domain.items():
+            if keyword in industry:
+                domains.add(domain)
+                break
+        else:
+            # 매핑 안되면 기본값
+            domains.add("IT개발")
+
+    return list(domains)[:3]  # 최대 3개

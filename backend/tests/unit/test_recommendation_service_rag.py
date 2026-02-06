@@ -462,6 +462,9 @@ class TestRAGRecommendationService:
             "difficulty": 2,
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
+            # 2026-02-06: 도메인 필터 통과를 위해 IT 관련 키워드 추가
+            "career_info": {"industry": ["IT", "소프트웨어"], "related_jobs": ["개발자"]},
+            "job_market_info": {"preferred_industries": []},
         }
         cert_long = Mock()
         cert_long.to_dict.return_value = {
@@ -475,6 +478,9 @@ class TestRAGRecommendationService:
             "difficulty": 5,
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
+            # 2026-02-06: 도메인 필터 통과를 위해 IT 관련 키워드 추가
+            "career_info": {"industry": ["IT", "소프트웨어"], "related_jobs": ["개발자"]},
+            "job_market_info": {"preferred_industries": []},
         }
 
         query_mock = Mock()

@@ -4,7 +4,7 @@
 1. 자격증 데이터를 임베딩용 텍스트로 포맷합니다.
 2. OpenAI API를 사용하여 임베딩을 생성합니다.
 
-OpenAI text-embedding-3-small: 1024차원 (BGE-M3와 호환), 빠르고 저렴
+OpenAI text-embedding-3-small: 1024차원, 빠르고 저렴
 
 이 서비스는 EmbeddingServiceProtocol을 구현합니다.
 """

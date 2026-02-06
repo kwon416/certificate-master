@@ -24,7 +24,7 @@ export default function SignupPage() {
             검색 결과와 상세 정보는 바로 확인할 수 있어요.
           </p>
           <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
-            <Link href="/search">
+            <Link href="/">
               <Search className="mr-2 h-4 w-4" />
               자격증 검색으로 이동
             </Link>

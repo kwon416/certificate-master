@@ -135,13 +135,30 @@ export interface OfficialSources {
 }
 
 /**
+ * 시험 과목 구조 (새 형식)
+ * 크롤러 변경 후 subjects가 객체 배열로 변경됨
+ */
+export interface ExamSubject {
+  name: string                 // 과목명 (예: "필기", "실기")
+  details: string              // 상세 정보 (예: "60문항, 60분")
+  topics: string[]             // 세부 토픽 목록
+}
+
+/**
  * 시험 정보 상세 구조
  */
 export interface ExamInfo {
-  subjects: string[]           // 시험 과목
+  subjects: (string | ExamSubject)[]  // 시험 과목 (기존 string[] 또는 새 ExamSubject[])
   exam_type: string            // 시험 형식 (필기/실기/면접)
   passing_criteria: string     // 합격 기준
   total_fee?: string | null    // 총 응시료 (원)
+}
+
+/**
+ * ExamSubject 타입 가드
+ */
+export function isExamSubject(subject: string | ExamSubject): subject is ExamSubject {
+  return typeof subject === 'object' && subject !== null && 'name' in subject
 }
 
 /**
@@ -532,4 +549,82 @@ export interface LearningPattern {
   mood_trend: 'improving' | 'stable' | 'declining'  // 기분 추이
   recent_moods: string[]                // 최근 7일 기분 기록
   consistency_score: number             // 학습 일관성 점수 (0-100)
+}
+
+// ==================== Natural Language Recommendation Types ⭐ NEW ====================
+
+/**
+ * 구조화된 사용자 컨텍스트 (Structured User Context)
+ *
+ * LLM이 자연어를 분석하여 생성한 구조화된 사용자 상황 정보
+ */
+export interface StructuredUserContext {
+  goal: string                           // 목표: "취업", "이직", "전문성 강화", "개인 관심", "창업"
+  employment_status: string              // 취업 상태: "재직 중", "구직 중", "학생", "무직"
+  major_background: string               // 전공 배경: "전공자", "비전공자", "관련 경험 있음"
+  weekly_study_hours: number             // 주당 학습 시간 (1-40)
+  max_study_period_days: number          // 최대 준비 기간 (30-730일)
+  difficulty_preference: string          // 난이도 선호: "상", "중상", "중", "중하", "하"
+  preferred_industries: string[]         // 선호 산업 분야
+}
+
+/**
+ * 자연어 추천 요청 (Natural Language Request)
+ */
+export interface NaturalLanguageRequest {
+  user_input: string                     // 사용자 자연어 입력 (10-1000자)
+}
+
+/**
+ * 자연어 추천 응답 (Natural Language Response)
+ */
+export interface NaturalLanguageResponse {
+  structured_context: StructuredUserContext  // LLM이 구조화한 사용자 상황
+  recommendations: NaturalRecommendedCertificate[]  // 추천 자격증 목록
+  query_used: string                     // 사용된 검색 쿼리
+  follow_up_question: string | null      // 후속 질문 (선택)
+  total_matched: number                  // 총 매칭 수
+}
+
+/**
+ * 자연어 추천 자격증 (Natural Recommended Certificate)
+ *
+ * 기존 RecommendedCertificate와 유사하지만 자연어 추천에 특화된 필드 포함
+ */
+export interface NaturalRecommendedCertificate {
+  certificate: Certificate
+  qualification_category: string         // 주 카테고리
+  match_score: number                    // 매치 점수 (0-100)
+  recommendation_reason: string          // 추천 이유 (LLM 생성)
+  key_points: string[]                   // 핵심 포인트
+  feasibility: NaturalFeasibility        // 실현 가능성
+  quick_stats?: QuickStats               // 빠른 통계
+  study_insights?: StudyInsights         // 학습 인사이트
+}
+
+/**
+ * 실현 가능성 정보
+ */
+export interface NaturalFeasibility {
+  can_prepare: boolean                   // 준비 가능 여부
+  estimated_days: number                 // 예상 준비 기간 (일)
+}
+
+/**
+ * 빠른 통계 정보
+ */
+export interface QuickStats {
+  passing_rate: number | null            // 합격률
+  average_salary: string | null          // 평균 연봉
+  exam_fee: string | null                // 응시료
+  exam_type: string | null               // 시험 유형
+}
+
+/**
+ * 학습 인사이트
+ */
+export interface StudyInsights {
+  study_tips: string[]                   // 학습 팁
+  success_tips: string[]                 // 합격 팁
+  difficulty_feedback: string | null     // 난이도 피드백
 }

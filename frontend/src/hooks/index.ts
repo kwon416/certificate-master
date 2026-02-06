@@ -10,4 +10,5 @@ export * from './use-checkins'
 export * from './use-analytics'
 export * from './use-debounce'
 export * from './use-auth'
+export * from './use-recommendations'
 

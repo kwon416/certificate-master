@@ -18,13 +18,13 @@ export function JsonLd({ type, data }: JsonLdProps) {
         name: '자격증 마스터',
         alternateName: ['자격증마스터', 'Certificate Master'],
         url: SITE_URL,
-        description: '3,500개 이상의 자격증 정보를 한눈에! 난이도, 합격률, 시험일정까지 비교하고 나에게 맞는 자격증을 찾아보세요.',
+        description: '600개 이상의 자격증 정보를 한눈에! 난이도, 합격률, 시험일정까지 비교하고 나에게 맞는 자격증을 찾아보세요.',
         inLanguage: 'ko-KR',
         potentialAction: {
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+            urlTemplate: `${SITE_URL}/?q={search_term_string}`,
           },
           'query-input': 'required name=search_term_string',
         },

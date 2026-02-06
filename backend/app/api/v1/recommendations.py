@@ -10,10 +10,13 @@ from fastapi import APIRouter
 
 from app.api.deps import DBSession
 from app.schemas.recommendation import (
+    NaturalLanguageRequest,
+    NaturalLanguageResponse,
     RecommendationRequest,
     RecommendationResponse,
 )
 from app.services.recommendation_service import RecommendationService
+from app.services.study.natural_recommendation_service import NaturalRecommendationService
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +53,48 @@ async def get_recommendations(
         return response
     except Exception as e:
         logger.error(f"Recommendation error: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
+
+@router.post("/natural", response_model=NaturalLanguageResponse)
+async def get_natural_recommendations(
+    request: NaturalLanguageRequest,
+    db: DBSession,
+) -> NaturalLanguageResponse:
+    """자연어 기반 자격증 추천 (NEW).
+
+    사용자의 자연어 입력을 분석하여 맞춤형 자격증을 추천합니다.
+
+    5단계 파이프라인:
+    1. LLM 상황 구조화 (자연어 → JSON)
+    2. 하드 필터링 (비전공자/재직자 조건)
+    3. 임베딩 검색 (LLM 쿼리 생성 + ChromaDB)
+    4. 후처리 점수화
+    5. LLM 추천 이유 생성
+
+    Args:
+        request: 자연어 추천 요청 (user_input: 10-1000자)
+        db: SQLAlchemy 데이터베이스 세션
+
+    Returns:
+        NaturalLanguageResponse: 구조화된 컨텍스트와 추천 결과
+
+    Example:
+        >>> POST /api/v1/recommendations/natural
+        >>> {"user_input": "비전공자인데 IT 분야 취업 준비 중입니다..."}
+    """
+    logger.info(f"Natural recommendation request: {request.user_input[:50]}...")
+
+    try:
+        service = NaturalRecommendationService(db)
+        response = await service.get_recommendations(request)
+
+        logger.info(f"Returning {len(response.recommendations)} natural recommendations")
+        return response
+    except Exception as e:
+        logger.error(f"Natural recommendation error: {type(e).__name__}: {e}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Landing Page - Problem Empathy Section', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/about')
     await page.waitForLoadState('networkidle')
   })
 

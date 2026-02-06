@@ -4,7 +4,7 @@ Supabase에서 MariaDB로 마이그레이션됨 (2026-01-21).
 
 동작 순서:
 1. [Enrich] MariaDB에서 미보강 자격증 조회 → 웹 검색 → LLM 정제 → DB 업데이트
-2. [Embedding] 보강된 자격증 조회 → 임베딩 생성 → ChromaDB 업로드
+2. [Embedding] 보강된 자격증 조회 → OpenAI 임베딩 생성 → ChromaDB 업로드
 
 ============================================================
 Provider 설정 (.env.local 또는 CLI 인자)
@@ -14,36 +14,11 @@ Provider 설정 (.env.local 또는 CLI 인자)
   - searxng : SearXNG 메타 검색 (기본값, 무료)
               └─ 설치: docker run -d -p 8888:8080 searxng/searxng
 
-임베딩 (EMBEDDING_PROVIDER 또는 --embedding-provider):
-  - openai : OpenAI text-embedding-3-small (프로덕션, 유료)
-  - local  : BGE-M3 로컬 모델 (로컬 개발용, 무료, GPU 권장)
-             └─ 설치: uv sync --extra local
+임베딩:
+  - OpenAI text-embedding-3-small (기본값, 유료)
 
 LLM:
   - GPT-4o-mini (OpenAI API) 사용
-
-============================================================
-로컬 개발 환경 설정 (.env.local)
-============================================================
-
-로컬 테스트 시 임베딩을 무료로 사용하려면
-.env.local에 아래 설정 추가:
-
-# 검색: SearXNG (기본값)
-SEARXNG_BASE_URL=http://localhost:8888
-
-# 임베딩: BGE-M3 (무료, 로컬)
-EMBEDDING_PROVIDER=local
-
-============================================================
-로컬 개발 환경 사전 준비
-============================================================
-
-# 1. SearXNG 검색 엔진 (Docker)
-docker run -d -p 8888:8080 --name searxng searxng/searxng
-
-# 2. BGE-M3 임베딩 모델 (선택사항, GPU 권장)
-uv sync --extra local
 
 ============================================================
 기본 사용법
@@ -69,25 +44,6 @@ uv run python -m scripts.data_pipeline --all --skip-existing
 
 # 실패한 자격증 재시도
 uv run python -m scripts.data_pipeline --retry
-
-============================================================
-CLI 인자로 Provider 오버라이드
-============================================================
-
-# 프로덕션 (SearXNG + OpenAI)
-uv run python -m scripts.data_pipeline --limit 10 --embedding-provider openai
-
-# 로컬 임베딩 (SearXNG + BGE-M3)
-uv run python -m scripts.data_pipeline --limit 10 --embedding-provider local
-
-============================================================
-비용 비교
-============================================================
-
-| 환경       | 검색    | 임베딩   | LLM          | 월 비용    |
-|------------|---------|----------|--------------|------------|
-| 프로덕션   | SearXNG | OpenAI   | GPT-4o-mini  | ~$10-50    |
-| 로컬 개발  | SearXNG | BGE-M3   | GPT-4o-mini  | ~$1-5      |
 
 ============================================================
 SearXNG 최적화 설정
@@ -287,20 +243,17 @@ class DataPipeline:
 
     def __init__(
         self,
-        embedding_provider: Optional[str] = None,
         test_mode: bool = False,
     ):
         """파이프라인 초기화.
 
         Args:
-            embedding_provider: 임베딩 서비스 provider ("openai" 또는 "local").
-                               None이면 환경변수 EMBEDDING_PROVIDER 또는 기본값 "openai" 사용.
             test_mode: 테스트 모드 여부. True이면 별도 컬렉션 사용하여 프로덕션 데이터와 격리.
 
         Note:
             검색 서비스는 SearXNG를 기본값으로 사용합니다.
+            임베딩은 OpenAI text-embedding-3-small을 사용합니다.
         """
-        self.embedding_provider = embedding_provider
         self.test_mode = test_mode
         self._collection_name = self.TEST_COLLECTION_NAME if test_mode else None
 
@@ -667,15 +620,15 @@ class DataPipeline:
         Returns:
             처리 결과.
         """
-        from app.services.embedding_factory import get_embedding_service
-        from app.services.vector_store import VectorStoreService
+        from app.services.embedding.service import EmbeddingService
+        from app.services.embedding.vector_store import VectorStoreService
 
         logger.info("=" * 70)
         logger.info("[STEP 2/2] 임베딩 생성 (Embedding)")
         logger.info("=" * 70)
 
-        # 임베딩 서비스 생성 (DI)
-        embedding_service = get_embedding_service(self.embedding_provider)
+        # OpenAI 임베딩 서비스 생성
+        embedding_service = EmbeddingService()
         logger.info(f"  임베딩 서비스: {type(embedding_service).__name__}")
 
         session = get_mariadb_session()
@@ -806,8 +759,8 @@ class DataPipeline:
         Returns:
             처리 결과 딕셔너리.
         """
-        from app.services.embedding_factory import get_embedding_service
-        from app.services.vector_store import VectorStoreService
+        from app.services.embedding.service import EmbeddingService
+        from app.services.embedding.vector_store import VectorStoreService
 
         logger.info("=" * 70)
         logger.info(f"[RECREATE] 자격증 재생성: {cert_id}")
@@ -834,7 +787,7 @@ class DataPipeline:
             if cert.vector_id:
                 logger.info(f"  기존 벡터 삭제: {cert.vector_id}")
                 try:
-                    embedding_service = get_embedding_service(self.embedding_provider)
+                    embedding_service = EmbeddingService()
                     vector_store = VectorStoreService(
                         session=session,
                         embedding_service=embedding_service,
@@ -953,6 +906,7 @@ class DataPipeline:
         skip_embedding: bool = False,
         skip_existing: bool = False,
         retry_mode: bool = False,
+        cert_ids: Optional[list[str]] = None,
     ) -> PipelineResult:
         """파이프라인 전체 실행.
 
@@ -963,6 +917,7 @@ class DataPipeline:
             skip_embedding: True면 임베딩 단계 건너뛰기.
             skip_existing: True면 이미 임베딩된 자격증 건너뛰기.
             retry_mode: True면 실패한 자격증 재시도.
+            cert_ids: 특정 자격증 ID 목록 (--id 옵션).
 
         Returns:
             각 단계별 처리 결과.
@@ -1031,21 +986,23 @@ class DataPipeline:
         }
 
         # Step 1: Enrich
-        if skip_enrich and not retry_enrich_ids:
+        if skip_enrich and not retry_enrich_ids and not cert_ids:
             logger.info("[SKIP] 보강 단계 건너뛰기")
         else:
-            enrich_ids = retry_enrich_ids if retry_mode else None
-            enrich_limit = None if retry_mode else limit
+            # cert_ids가 주어지면 해당 ID만 처리
+            enrich_ids = cert_ids if cert_ids else (retry_enrich_ids if retry_mode else None)
+            enrich_limit = None if (retry_mode or cert_ids) else limit
             result["enrich"] = await self.enrich_step(
                 limit=enrich_limit, cert_ids=enrich_ids
             )
 
         # Step 2: Embedding
-        if skip_embedding and not retry_embedding_ids:
+        if skip_embedding and not retry_embedding_ids and not cert_ids:
             logger.info("[SKIP] 임베딩 단계 건너뛰기")
         else:
-            embedding_ids = retry_embedding_ids if retry_mode else None
-            embedding_limit = None if retry_mode else limit
+            # cert_ids가 주어지면 해당 ID만 처리
+            embedding_ids = cert_ids if cert_ids else (retry_embedding_ids if retry_mode else None)
+            embedding_limit = None if (retry_mode or cert_ids) else limit
             result["embedding"] = await self.embedding_step(
                 limit=embedding_limit,
                 skip_existing=skip_existing,
@@ -1090,9 +1047,6 @@ async def main():
 
   # 특정 개수만 처리
   uv run python -m scripts.data_pipeline --limit 10
-
-  # 로컬 임베딩 사용 (SearXNG + BGE-M3)
-  uv run python -m scripts.data_pipeline --limit 10 --embedding-provider local
         """,
     )
 
@@ -1104,6 +1058,10 @@ async def main():
     parser.add_argument("--all", action="store_true", help="모든 미보강 자격증 처리")
     parser.add_argument(
         "--retry", action="store_true", help="실패한 자격증 재시도"
+    )
+    parser.add_argument(
+        "--id", type=str, nargs="+", metavar="CERT_ID",
+        help="특정 자격증 ID(들)에 대해 보강+임베딩 실행 (공백으로 구분)"
     )
     parser.add_argument(
         "--recreate", type=str, metavar="CERT_ID",
@@ -1125,14 +1083,6 @@ async def main():
         "--skip-existing", action="store_true", help="이미 임베딩된 자격증 건너뛰기"
     )
 
-    # Provider 옵션
-    parser.add_argument(
-        "--embedding-provider",
-        choices=["openai", "local"],
-        default=None,
-        help="임베딩 서비스 선택 (openai: 유료 API, local: BGE-M3 무료)",
-    )
-
     # 기타 옵션
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="상세 로그 출력"
@@ -1144,19 +1094,12 @@ async def main():
     setup_logging(verbose=args.verbose)
 
     # 인자 검증
-    if not (args.test or args.limit or args.all or args.retry or args.recreate or args.recreate_by_name):
+    if not (args.test or args.limit or args.all or args.retry or args.recreate or args.recreate_by_name or args.id):
         parser.print_help()
-        logger.error("\n--test, --limit N, --all, --retry, --recreate 또는 --recreate-by-name 옵션을 지정하세요.")
+        logger.error("\n--test, --limit N, --all, --retry, --id, --recreate 또는 --recreate-by-name 옵션을 지정하세요.")
         return
 
-    # Provider 로깅
-    embedding_provider = args.embedding_provider
-
-    if embedding_provider:
-        logger.info(f"임베딩 서비스 오버라이드: {embedding_provider}")
-
     pipeline = DataPipeline(
-        embedding_provider=embedding_provider,
         test_mode=args.test,
     )
 
@@ -1184,6 +1127,7 @@ async def main():
             skip_embedding=args.skip_embedding,
             skip_existing=args.skip_existing,
             retry_mode=args.retry,
+            cert_ids=args.id,  # --id 옵션
         )
     except KeyboardInterrupt:
         logger.warning("사용자가 작업을 중단했습니다.")

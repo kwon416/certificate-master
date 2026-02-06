@@ -8,7 +8,6 @@ async function completeWizard(page: Page, summary?: string) {
     summary ??
     '데이터 분석 직무로 이직하고싶어'
 
-  await page.getByRole('tab', { name: /추천받기/i }).click()
   await expect(page.getByText(/자격증이 필요한 이유/i)).toBeVisible()
 
   await page.getByRole('button', { name: '취업 준비' }).click()
@@ -28,33 +27,12 @@ async function completeWizard(page: Page, summary?: string) {
 
 test.describe('Recommendation Wizard', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/search')
+    await page.goto('/recommend')
     await page.waitForLoadState('networkidle')
-  })
-
-  test.describe('Search Tabs', () => {
-    test('should display recommendation and search tabs', async ({ page }) => {
-      await expect(page.getByRole('tab', { name: /추천받기/i })).toBeVisible()
-      await expect(page.getByRole('tab', { name: /직접 검색/i })).toBeVisible()
-    })
-
-    test('should switch between tabs', async ({ page }) => {
-      await page.getByRole('tab', { name: /추천받기/i }).click()
-      await expect(page.getByText(/자격증이 필요한 이유/i)).toBeVisible()
-
-      await page.getByRole('tab', { name: /직접 검색/i }).click()
-      await expect(page.getByPlaceholder(/자격증명, 분야/i)).toBeVisible()
-    })
-
-    test('should default to recommendation tab', async ({ page }) => {
-      const recommendTab = page.getByRole('tab', { name: /추천받기/i })
-      await expect(recommendTab).toHaveAttribute('aria-selected', 'true')
-    })
   })
 
   test.describe('Wizard Steps', () => {
     test('step 1: purpose options appear and advance', async ({ page }) => {
-      await page.getByRole('tab', { name: /추천받기/i }).click()
       await expect(page.getByText(/자격증이 필요한 이유/i)).toBeVisible()
 
       const purposes = ['취업 준비', '이직 · 연봉 상승', '전문성 증명', '관심 · 교양', '실무에 바로 활용']
@@ -67,7 +45,6 @@ test.describe('Recommendation Wizard', () => {
     })
 
     test('step 2: selecting one domain advances to the next step', async ({ page }) => {
-      await page.getByRole('tab', { name: /추천받기/i }).click()
       await page.getByRole('button', { name: '취업 준비' }).click()
 
       const nextButton = page.getByRole('button', { name: /다음/i })
@@ -78,7 +55,6 @@ test.describe('Recommendation Wizard', () => {
     })
 
     test('step 3: study timeline options appear', async ({ page }) => {
-      await page.getByRole('tab', { name: /추천받기/i }).click()
       await page.getByRole('button', { name: '취업 준비' }).click()
       await page.getByRole('button', { name: /IT개발/i }).click()
       await expect(page.getByText(/예상 공부 기간은/i)).toBeVisible({ timeout: 3000 })
@@ -90,7 +66,6 @@ test.describe('Recommendation Wizard', () => {
     })
 
     test('step 4: difficulty preference options appear', async ({ page }) => {
-      await page.getByRole('tab', { name: /추천받기/i }).click()
       await page.getByRole('button', { name: '취업 준비' }).click()
       await page.getByRole('button', { name: /IT개발/i }).click()
       await expect(page.getByText(/예상 공부 기간은/i)).toBeVisible({ timeout: 3000 })
@@ -104,7 +79,6 @@ test.describe('Recommendation Wizard', () => {
     })
 
     test('step 5: summary input optional but editable', async ({ page }) => {
-      await page.getByRole('tab', { name: /추천받기/i }).click()
       await page.getByRole('button', { name: '취업 준비' }).click()
       await page.getByRole('button', { name: /IT개발/i }).click()
       await expect(page.getByText(/예상 공부 기간은/i)).toBeVisible({ timeout: 3000 })

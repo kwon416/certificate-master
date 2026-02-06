@@ -24,12 +24,29 @@ test.describe('Sitemap', () => {
       expect(body).toMatch(/<priority>1(\.0)?<\/priority>/)
     })
 
-    test('검색 페이지 URL이 포함되어야 함', async ({ request }) => {
+    test('소개 페이지 URL이 포함되어야 함', async ({ request }) => {
       const response = await request.get('/sitemap.xml')
       const body = await response.text()
 
-      expect(body).toContain('/search')
-      expect(body).toContain('<priority>0.9</priority>')
+      expect(body).toContain('/about')
+      expect(body).toContain('<priority>0.5</priority>')
+    })
+
+    test('AI 추천 페이지 URL이 포함되어야 함', async ({ request }) => {
+      const response = await request.get('/sitemap.xml')
+      const body = await response.text()
+
+      expect(body).toContain('/recommend')
+      expect(body).toContain('<priority>0.8</priority>')
+    })
+
+    test('검색 페이지(/search)가 sitemap에 포함되지 않아야 함', async ({ request }) => {
+      const response = await request.get('/sitemap.xml')
+      const body = await response.text()
+
+      // /search는 /로 리다이렉트되므로 sitemap에 포함되면 안 됨
+      // /certificates/ 경로와 구분하기 위해 정확히 /search를 찾음
+      expect(body).not.toMatch(/\/search<\/loc>/)
     })
 
     test('정적 페이지들이 포함되어야 함', async ({ request }) => {
