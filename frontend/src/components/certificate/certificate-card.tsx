@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Star, Clock, Heart, TrendingUp, ChevronRight } from 'lucide-react'
+import { Star, Clock, TrendingUp, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -15,8 +15,6 @@ interface CertificateCardProps {
   passRate: number | null
   studyPeriod: number | null
   overview: string | null
-  isFavorite?: boolean
-  onFavoriteToggle?: (id: string) => void
   variant?: 'grid' | 'list'
 }
 
@@ -75,8 +73,6 @@ export function CertificateCard({
   passRate,
   studyPeriod,
   overview,
-  isFavorite = false,
-  onFavoriteToggle,
   variant = 'grid',
 }: CertificateCardProps) {
   // 첫 번째 카테고리를 기본으로 사용 (아이콘 등)
@@ -85,30 +81,6 @@ export function CertificateCard({
 
   return (
     <Card className="group relative bg-slate-900/50 border-slate-800/50 hover:border-emerald-500/30 transition-all duration-300 card-hover overflow-hidden">
-      {/* Favorite Button */}
-      {onFavoriteToggle && (
-        <button
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onFavoriteToggle(id)
-          }}
-          className={cn(
-            'absolute z-10 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 transition-colors',
-            isListView ? 'top-3 right-3' : 'top-4 right-4'
-          )}
-        >
-          <Heart
-            className={cn(
-              'h-4 w-4 transition-colors',
-              isFavorite
-                ? 'fill-rose-500 text-rose-500'
-                : 'text-slate-400 hover:text-rose-400'
-            )}
-          />
-        </button>
-      )}
-
       <Link href={`/certificates/${id}`}>
         <CardContent className={cn(isListView ? 'p-4' : 'p-6')}>
           {isListView ? (

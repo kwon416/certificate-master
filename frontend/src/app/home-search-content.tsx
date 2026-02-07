@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, Grid3X3, List, Loader2, AlertCircle, Sparkles, Award, BookOpen, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
@@ -11,6 +11,7 @@ import {
   SearchInput
 } from '@/components/certificate'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ScrollToTop } from '@/components/ui/scroll-to-top'
 import { useSearchStore } from '@/stores/search-store'
 import { useInfiniteCertificates } from '@/hooks'
 import { useDebounce } from '@/hooks/use-debounce'
@@ -22,7 +23,19 @@ export function HomeSearchContent() {
   const initialQuery = searchParams.get('q') || ''
   const { query, setQuery } = useSearchStore()
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const [userToggledView, setUserToggledView] = useState(false)
+
+  // Set default view mode based on screen size (mobile = list, desktop = grid)
+  useEffect(() => {
+    if (userToggledView) return
+    const mq = window.matchMedia('(min-width: 640px)')
+    setViewMode(mq.matches ? 'grid' : 'list')
+  }, [userToggledView])
+
+  const handleViewModeChange = useCallback((mode: 'grid' | 'list') => {
+    setUserToggledView(true)
+    setViewMode(mode)
+  }, [])
 
   // Infinite scroll observer
   const observerTarget = useRef<HTMLDivElement>(null)
@@ -79,18 +92,6 @@ export function HomeSearchContent() {
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery)
-  }
-
-  const handleFavoriteToggle = (id: string) => {
-    setFavorites((prev) => {
-      const newFavorites = new Set(prev)
-      if (newFavorites.has(id)) {
-        newFavorites.delete(id)
-      } else {
-        newFavorites.add(id)
-      }
-      return newFavorites
-    })
   }
 
   return (
@@ -192,7 +193,7 @@ export function HomeSearchContent() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setViewMode('grid')}
+                        onClick={() => handleViewModeChange('grid')}
                         className={cn(
                           'h-8 w-8',
                           viewMode === 'grid'
@@ -205,7 +206,7 @@ export function HomeSearchContent() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setViewMode('list')}
+                        onClick={() => handleViewModeChange('list')}
                         className={cn(
                           'h-8 w-8',
                           viewMode === 'list'
@@ -274,8 +275,6 @@ export function HomeSearchContent() {
                         passRate={cert.passing_rate ? cert.passing_rate / 100 : null}
                         studyPeriod={cert.study_period_days ?? null}
                         overview={cert.overview ?? null}
-                        isFavorite={favorites.has(cert.id)}
-                        onFavoriteToggle={handleFavoriteToggle}
                         variant={viewMode}
                       />
                     </div>
@@ -302,6 +301,9 @@ export function HomeSearchContent() {
         </div>
       </div>
       </div>
+
+      {/* Mobile scroll-to-top button */}
+      <ScrollToTop />
     </div>
   )
 }
