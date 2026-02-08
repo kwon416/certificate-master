@@ -87,7 +87,7 @@ export function TodayTasks({
                 key={task.id}
                 onClick={() => handleToggle(task.id)}
                 className={cn(
-                  'w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200',
+                  'w-full flex items-center gap-4 p-4 rounded-xl transition-colors duration-200',
                   task.completed
                     ? 'bg-emerald-500/10 border border-emerald-500/20'
                     : 'bg-slate-800/50 border border-slate-700/50 hover:border-slate-600'

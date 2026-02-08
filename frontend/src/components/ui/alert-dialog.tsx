@@ -75,7 +75,11 @@ export function AlertDialogTrigger({
   }
 
   return (
-    <button type="button" onClick={() => onOpenChange(true)}>
+    <button
+      type="button"
+      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md"
+      onClick={() => onOpenChange(true)}
+    >
       {children}
     </button>
   )

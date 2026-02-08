@@ -108,7 +108,7 @@ export function GoogleLoginForm() {
                 fill="#EA4335"
               />
             </svg>
-            {isLoading ? 'Google로 로그인 중...' : 'Google로 로그인'}
+            {isLoading ? 'Google로 로그인 중\u2026' : 'Google로 로그인'}
           </Button>
 
           {/* Divider or Additional Info */}

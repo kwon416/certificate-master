@@ -1,6 +1,26 @@
+import { Metadata } from 'next'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+
+export const metadata: Metadata = {
+  title: '개인정보처리방침',
+  description: '자격증 마스터의 개인정보처리방침입니다. 수집하는 개인정보 항목, 이용 목적, 보관 및 파기 정책을 안내합니다.',
+  openGraph: {
+    title: '개인정보처리방침 | 자격증 마스터',
+    description: '자격증 마스터의 개인정보처리방침입니다.',
+    type: 'website',
+    locale: 'ko_KR',
+    siteName: '자격증 마스터',
+    url: `${SITE_URL}/privacy`,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '자격증 마스터 개인정보처리방침' }],
+  },
+  alternates: {
+    canonical: `${SITE_URL}/privacy`,
+  },
+}
 
 const sections = [
   '수집하는 개인정보 항목',

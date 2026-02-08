@@ -14,7 +14,7 @@ export default function ValueCard({ icon: Icon, result, how, proof, gradient }: 
   return (
     <Card
       data-testid="value-card"
-      className="group bg-slate-900/50 border-slate-800/50 hover:border-emerald-500/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10"
+      className="group bg-slate-900/50 border-slate-800/50 hover:border-emerald-500/30 transition-[box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10"
     >
       <CardContent className="p-8">
         <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} mb-6`}>

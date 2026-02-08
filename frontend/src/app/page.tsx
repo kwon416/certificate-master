@@ -3,22 +3,43 @@ import { Metadata } from 'next'
 import { Loader2 } from 'lucide-react'
 import { HomeSearchContent } from './home-search-content'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+
 export const metadata: Metadata = {
-  title: '자격증 검색',
   description: '600개 이상의 자격증을 검색하고 비교하세요. 정보처리기사, 전기기사, 공인중개사 등 국가자격증부터 민간자격증까지. 난이도, 합격률, 시험일정을 한눈에 확인할 수 있습니다.',
   keywords: [
     '자격증 검색',
     '자격증 찾기',
+    '자격증 시험',
+    '자격증 준비',
+    '자격증 공부',
+    '자격증 시험일정',
+    '자격증 합격률',
     '국가자격증 검색',
     '자격증 종류',
     '자격증 목록',
+    '자격증 정보 사이트',
     '정보처리기사',
     '전기기사',
     '공인중개사',
   ],
   openGraph: {
-    title: '자격증 검색 | 자격증 마스터',
+    title: '자격증 마스터 - 600+ 자격증 검색 및 비교',
     description: '600개 이상의 자격증을 검색하고 비교하세요. 난이도, 합격률, 시험일정을 한눈에!',
+    type: 'website',
+    locale: 'ko_KR',
+    siteName: '자격증 마스터',
+    url: SITE_URL,
+    images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: '자격증 마스터 - 자격증 검색 및 비교 플랫폼' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '자격증 마스터 - 600+ 자격증 검색 및 비교',
+    description: '600개 이상의 자격증을 검색하고 비교하세요. 난이도, 합격률, 시험일정을 한눈에!',
+    images: [`${SITE_URL}/og-image.png`],
+  },
+  alternates: {
+    canonical: SITE_URL,
   },
 }
 

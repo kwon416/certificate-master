@@ -26,7 +26,7 @@ export function WizardProgress({ currentStep, totalSteps }: WizardProgressProps)
       {/* Progress bar */}
       <div className="h-1.5 md:h-2 bg-slate-800 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300 ease-out"
+          className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-[width] duration-300 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>

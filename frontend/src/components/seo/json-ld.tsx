@@ -1,5 +1,3 @@
-import Script from 'next/script'
-
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
 
 interface JsonLdProps {
@@ -38,7 +36,7 @@ export function JsonLd({ type, data }: JsonLdProps) {
         '@type': 'Organization',
         name: '자격증 마스터',
         url: SITE_URL,
-        logo: `${SITE_URL}/web-app-manifest-512x512.png`,
+        logo: `${SITE_URL}/android-icon-192x192.png`,
         sameAs: [],
         contactPoint: {
           '@type': 'ContactPoint',
@@ -81,11 +79,9 @@ export function JsonLd({ type, data }: JsonLdProps) {
   }
 
   return (
-    <Script
-      id={`json-ld-${type}`}
+    <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      strategy="afterInteractive"
     />
   )
 }
@@ -126,11 +122,9 @@ export function CertificateJsonLd({ certificate }: CertificateJsonLdProps) {
   }
 
   return (
-    <Script
-      id="json-ld-certificate"
+    <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      strategy="afterInteractive"
     />
   )
 }

@@ -31,7 +31,7 @@ export function ScrollToTop() {
         'flex h-12 w-12 items-center justify-center rounded-full',
         'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25',
         'hover:bg-emerald-400 active:bg-emerald-600',
-        'transition-all duration-300',
+        'transition-[transform,opacity] duration-300',
         isVisible
           ? 'translate-y-0 opacity-100'
           : 'translate-y-4 opacity-0 pointer-events-none'

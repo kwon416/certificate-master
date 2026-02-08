@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import { Outfit } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
-import { Header, Footer } from '@/components/layout'
+import { Header } from '@/components/layout/header'
+import { Footer } from '@/components/layout/footer'
 import { Providers } from '@/lib/providers'
-import { JsonLd } from '@/components/seo'
+import { JsonLd } from '@/components/seo/json-ld'
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
@@ -78,7 +79,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
     images: [
       {
-        url: '/og-image.png',
+        url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
         alt: '자격증 마스터 - 자격증 검색 및 비교 플랫폼',
@@ -89,7 +90,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '자격증 마스터 - 600+ 자격증 검색 및 비교',
     description: '600개 이상의 자격증 정보를 한눈에! 나에게 맞는 자격증을 찾아보세요.',
-    images: ['/og-image.png'],
+    images: [`${SITE_URL}/og-image.png`],
   },
   robots: {
     index: true,
@@ -110,6 +111,9 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
+  },
+  other: {
+    'theme-color': '#030712',
   },
 }
 
@@ -149,6 +153,18 @@ export default function RootLayout({
           </Script>
         </>
       )}
+      <head>
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          as="style"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        />
+      </head>
       <body className={`${outfit.variable} font-sans`}>
         {/* Google Tag Manager - Body (noscript) */}
         {GTM_ID && (

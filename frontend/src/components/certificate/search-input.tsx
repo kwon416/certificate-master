@@ -26,7 +26,7 @@ interface SearchInputProps {
 
 export function SearchInput({
   initialQuery = '',
-  placeholder = '자격증을 검색하세요...',
+  placeholder = '자격증을 검색하세요\u2026',
   className,
   onSearch,
   autoFocus = false,
@@ -63,7 +63,7 @@ export function SearchInput({
 
   // Fetch autocomplete suggestions from API
   useEffect(() => {
-    if (query.length < 1) {
+    if (query.length < 2) {
       setSuggestions([])
       return
     }
@@ -85,7 +85,7 @@ export function SearchInput({
   }, [query])
 
   const handleSearch = (searchQuery: string) => {
-    if (!searchQuery.trim()) return
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) return
     
     setIsOpen(false)
     if (onSearch) {
@@ -127,12 +127,13 @@ export function SearchInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          className="h-14 pl-12 pr-12 text-lg bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20"
+          className="h-14 pl-12 pr-12 text-lg bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20"
         />
         {query && (
           <Button
             variant="ghost"
             size="icon"
+            aria-label="검색어 지우기"
             onClick={handleClear}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
           >
@@ -142,7 +143,7 @@ export function SearchInput({
       </div>
 
       {/* Autocomplete Dropdown */}
-      {isOpen && query.length > 0 && (
+      {isOpen && query.length >= 2 && (
         <div className="absolute z-50 mt-2 w-full rounded-xl bg-slate-900 border border-slate-800 shadow-xl overflow-hidden">
           <Command className="bg-transparent">
             <CommandList>
@@ -150,7 +151,7 @@ export function SearchInput({
               {isLoading && (
                 <div className="flex items-center justify-center py-6 text-slate-400">
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  <span>검색 중...</span>
+                  <span>검색 중\u2026</span>
                 </div>
               )}
 

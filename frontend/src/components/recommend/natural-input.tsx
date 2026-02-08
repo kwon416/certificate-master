@@ -104,7 +104,7 @@ export function NaturalInput() {
             <button
               key={index}
               onClick={() => handleExampleClick(example)}
-              className="w-full text-left px-4 py-3 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 rounded-lg text-sm text-slate-400 hover:text-slate-300 transition-all"
+              className="w-full text-left px-4 py-3 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 rounded-lg text-sm text-slate-400 hover:text-slate-300 transition-colors"
               disabled={isLoading}
             >
               <MessageSquare className="w-4 h-4 inline mr-2 text-slate-500" />
@@ -134,7 +134,7 @@ export function NaturalInput() {
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              AI가 분석 중...
+              AI가 분석 중{'\u2026'}
             </>
           ) : (
             <>
@@ -151,15 +151,15 @@ export function NaturalInput() {
           <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-8 text-center max-w-md mx-4">
             <Loader2 className="w-12 h-12 animate-spin text-emerald-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">
-              AI가 분석 중입니다...
+              AI가 분석 중입니다{'\u2026'}
             </h3>
             <p className="text-slate-400 text-sm mb-4">
               당신의 상황을 이해하고 맞춤 자격증을 찾고 있어요.
             </p>
             <div className="space-y-2 text-xs text-slate-500">
-              <p>1. 상황 분석 중...</p>
-              <p>2. 조건에 맞는 자격증 검색 중...</p>
-              <p>3. 추천 이유 생성 중...</p>
+              <p>1. 상황 분석 중{'\u2026'}</p>
+              <p>2. 조건에 맞는 자격증 검색 중{'\u2026'}</p>
+              <p>3. 추천 이유 생성 중{'\u2026'}</p>
             </div>
           </div>
         </div>

@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     # Recommendation Service Configuration (B7: 하드코딩 제거)
     # OpenAI text-embedding-3-small 기준 0.3으로 조정 (코사인 유사도 범위 0.2-0.5)
     RECOMMENDATION_MIN_SIMILARITY_SCORE: float = 0.3
-    RECOMMENDATION_TOP_K: int = 10
+    RECOMMENDATION_TOP_K: int = 20  # 10 → 20 (도메인 필터링 후 후보 부족 방지)
 
     # Search Configuration (SearXNG)
     SEARCH_PROVIDER: str = "searxng"  # 검색 프로바이더 (searxng)

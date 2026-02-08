@@ -3,6 +3,8 @@ import { Metadata } from 'next'
 import { Loader2 } from 'lucide-react'
 import { RecommendContent } from './recommend-content'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+
 export const metadata: Metadata = {
   title: 'AI 자격증 추천',
   description: 'AI가 당신의 상황을 분석하여 맞춤 자격증을 추천합니다. 분야, 목표, 경험 수준에 맞는 자격증을 찾아보세요.',
@@ -16,6 +18,20 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'AI 자격증 추천 | 자격증 마스터',
     description: 'AI가 당신의 상황을 분석하여 맞춤 자격증을 추천합니다.',
+    type: 'website',
+    locale: 'ko_KR',
+    siteName: '자격증 마스터',
+    url: `${SITE_URL}/recommend`,
+    images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: 'AI 자격증 추천 - 자격증 마스터' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AI 자격증 추천 | 자격증 마스터',
+    description: 'AI가 당신의 상황을 분석하여 맞춤 자격증을 추천합니다.',
+    images: [`${SITE_URL}/og-image.png`],
+  },
+  alternates: {
+    canonical: `${SITE_URL}/recommend`,
   },
 }
 

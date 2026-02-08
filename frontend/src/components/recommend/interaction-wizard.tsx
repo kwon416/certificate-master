@@ -116,7 +116,7 @@ export function InteractionWizard() {
       <WizardProgress currentStep={currentStep} totalSteps={WIZARD_STEPS.length} />
 
       {/* Step Content - 모바일에서 패딩 축소 */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-2xl p-4 md:p-8 mb-6 transition-all duration-300">
+      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-2xl p-4 md:p-8 mb-6 transition-[transform,opacity] duration-300">
         <WizardStep
           step={currentStepConfig.step}
           title={currentStepConfig.title}
@@ -176,7 +176,7 @@ export function InteractionWizard() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-1 md:mr-2 animate-spin" />
-                추천 중...
+                추천 중{'\u2026'}
               </>
             ) : isLastStep ? (
               <>
@@ -199,7 +199,7 @@ export function InteractionWizard() {
           <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-8 text-center max-w-md">
             <Loader2 className="w-12 h-12 animate-spin text-emerald-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">
-              추천 검색 중...
+              추천 검색 중{'\u2026'}
             </h3>
             <p className="text-slate-400 text-sm">
               AI가 당신에게 맞는 자격증을 찾고 있습니다.

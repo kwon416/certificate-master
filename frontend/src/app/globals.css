@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,6 +10,7 @@
 
 @layer base {
   :root {
+    color-scheme: dark;
     --background: 222 47% 4%;
     --foreground: 210 40% 98%;
     --card: 222 47% 6%;
@@ -87,7 +86,7 @@
 
   /* Card hover effect */
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1;
+    @apply transition-[box-shadow,transform] duration-300 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1;
   }
 
   /* Glow effect */
@@ -122,66 +121,48 @@
   }
 }
 
-/* Animation keyframes */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
+/* Animation keyframes + animate-* 클래스는 tailwind.config.ts에서 생성됨 */
 
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.5s ease-out forwards;
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.5s ease-out forwards;
-}
-
-/* Stagger animation delays */
+/* Stagger animation delays (Tailwind에서 미생성) */
 .stagger-1 { animation-delay: 0.1s; }
 .stagger-2 { animation-delay: 0.2s; }
 .stagger-3 { animation-delay: 0.3s; }
 .stagger-4 { animation-delay: 0.4s; }
 .stagger-5 { animation-delay: 0.5s; }
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-slide-up,
+  .animate-slide-in-right {
+    animation: none !important;
+  }
+
+  .stagger-1,
+  .stagger-2,
+  .stagger-3,
+  .stagger-4,
+  .stagger-5 {
+    animation-delay: 0s !important;
+  }
+
+  .card-hover {
+    transition: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* content-visibility for long lists (Vercel Best Practice: rendering-content-visibility)
+   화면 밖 카드의 렌더링/레이아웃/페인트를 건너뛰어 무한 스크롤 성능 개선 */
+.card-lazy-render {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 200px;
+}

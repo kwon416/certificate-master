@@ -80,7 +80,7 @@ export function StatCard({
   return (
     <div
       className={cn(
-        'rounded-xl p-4 border transition-all',
+        'rounded-xl p-4 border transition-colors',
         colors.bg,
         colors.border,
         className

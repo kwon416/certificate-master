@@ -1,5 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Barrel file import 최적화 (Vercel Best Practice: bundle-barrel-imports)
+  // lucide-react 등의 barrel import를 빌드 타임에 직접 import로 변환하여
+  // 번들 사이즈 절감 및 개발 서버 부팅 속도 향상
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-label',
+      '@radix-ui/react-progress',
+      '@radix-ui/react-select',
+      '@radix-ui/react-separator',
+      '@radix-ui/react-slider',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-tabs',
+    ],
+  },
+
   // 이미지 최적화 설정
   images: {
     remotePatterns: [

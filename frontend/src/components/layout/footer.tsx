@@ -44,12 +44,14 @@ export function Footer() {
                 href="https://github.com"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="GitHub"
                 className="text-slate-500 hover:text-emerald-400 transition-colors"
               >
                 <Github className="h-5 w-5" />
               </a>
               <a
                 href="mailto:contact@certmaster.kr"
+                aria-label="이메일 문의"
                 className="text-slate-500 hover:text-emerald-400 transition-colors"
               >
                 <Mail className="h-5 w-5" />

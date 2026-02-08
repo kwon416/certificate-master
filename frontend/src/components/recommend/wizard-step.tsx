@@ -259,7 +259,7 @@ export function WizardStep({
             <div className="flex gap-2">
               <Input
                 value={keywordInput}
-                placeholder="예: 전기, 용접, 회계..."
+                placeholder="예: 전기, 용접, 회계\u2026"
                 onChange={(e) => setKeywordInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="flex-1 bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
@@ -285,6 +285,7 @@ export function WizardStep({
                     {keyword}
                     <button
                       type="button"
+                      aria-label={`${keyword} 삭제`}
                       onClick={() => handleRemoveKeyword(keyword)}
                       className="ml-2 hover:text-red-400"
                     >
@@ -431,7 +432,7 @@ function InputWithNaturalStep({
             <button
               key={index}
               onClick={() => handleExampleClick(example)}
-              className="w-full text-left px-3 py-2 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 rounded-lg text-xs text-slate-400 hover:text-slate-300 transition-all"
+              className="w-full text-left px-3 py-2 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 rounded-lg text-xs text-slate-400 hover:text-slate-300 transition-colors"
             >
               <MessageSquare className="w-3 h-3 inline mr-2 text-slate-500" />
               {example}

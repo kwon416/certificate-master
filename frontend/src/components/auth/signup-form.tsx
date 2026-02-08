@@ -179,7 +179,7 @@ export function SignupForm() {
                           {...field}
                           type="text"
                           placeholder="홍길동"
-                          className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500"
+                          className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
                         />
                       </div>
                     </FormControl>
@@ -202,7 +202,7 @@ export function SignupForm() {
                           {...field}
                           type="email"
                           placeholder="your@email.com"
-                          className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500"
+                          className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
                         />
                       </div>
                     </FormControl>
@@ -225,10 +225,11 @@ export function SignupForm() {
                           {...field}
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
-                          className="pl-10 pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500"
+                          className="pl-10 pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
                         />
                         <button
                           type="button"
+                          aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
                         >
@@ -276,10 +277,11 @@ export function SignupForm() {
                           {...field}
                           type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="••••••••"
-                          className="pl-10 pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500"
+                          className="pl-10 pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
                         />
                         <button
                           type="button"
+                          aria-label={showConfirmPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
                         >
@@ -335,7 +337,7 @@ export function SignupForm() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    가입 중...
+                    가입 중\u2026
                   </>
                 ) : (
                   '회원가입'

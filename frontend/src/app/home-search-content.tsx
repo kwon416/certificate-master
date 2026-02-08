@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Search, Grid3X3, List, Loader2, AlertCircle, Sparkles, Award, BookOpen, TrendingUp } from 'lucide-react'
+import { Search, Grid3X3, List, Loader2, AlertCircle, Sparkles, Award, BookOpen, TrendingUp, Database, Brain, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -101,47 +101,56 @@ export function HomeSearchContent() {
         data-testid="home-hero"
         className="relative overflow-hidden border-b border-slate-800/50"
       >
-        {/* Background gradient */}
+        {/* Background effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-slate-950 to-slate-950" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
+        {/* Glow orbs */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-[128px] animate-pulse-glow" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-[128px] animate-pulse-glow" style={{ animationDelay: '1s' }} />
+        {/* Dot pattern */}
+        <div className="absolute inset-0 pattern-dots opacity-[0.03]" />
+        {/* Floating decorative elements */}
+        <div className="absolute top-20 left-[10%] w-2 h-2 rounded-full bg-emerald-400/30 animate-float" />
+        <div className="absolute top-32 right-[15%] w-1.5 h-1.5 rounded-full bg-cyan-400/30 animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-48 left-[20%] w-1 h-1 rounded-full bg-emerald-400/20 animate-float" style={{ animationDelay: '4s' }} />
 
         <div className="relative container mx-auto px-4 pt-12 pb-10 sm:pt-16 sm:pb-12">
-          {/* Headline */}
+          {/* Headline - with stagger animation */}
           <div className="text-center max-w-3xl mx-auto mb-8">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 opacity-0 animate-slide-up">
               <span className="text-white">나에게 맞는 </span>
               <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
                 자격증
               </span>
               <span className="text-white">을 찾아보세요</span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-400 leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-400 leading-relaxed opacity-0 animate-slide-up stagger-1">
               600개 이상의 자격증 정보를 한눈에 비교하고,<br className="hidden sm:block" />
               AI 추천으로 내 상황에 딱 맞는 자격증을 발견하세요
             </p>
           </div>
 
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto mb-8">
+          {/* Search Bar - with stagger */}
+          <div className="max-w-2xl mx-auto mb-8 opacity-0 animate-slide-up stagger-2">
             <SearchInput
               initialQuery={query}
               onSearch={handleSearch}
-              placeholder="자격증명, 분야 등을 입력하세요..."
+              placeholder="자격증 이름을 입력하세요"
             />
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+          {/* Quick Actions - with stagger */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-8 opacity-0 animate-slide-up stagger-3">
             <Link
               href="/recommend"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-[box-shadow,transform] hover:-translate-y-0.5"
             >
               <Sparkles className="h-4 w-4" />
               AI 추천 받기
             </Link>
             <Link
               href="/about"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-5 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-6 py-3 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
             >
               서비스 소개
             </Link>
@@ -193,6 +202,7 @@ export function HomeSearchContent() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="그리드 보기"
                         onClick={() => handleViewModeChange('grid')}
                         className={cn(
                           'h-8 w-8',
@@ -206,6 +216,7 @@ export function HomeSearchContent() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="리스트 보기"
                         onClick={() => handleViewModeChange('list')}
                         className={cn(
                           'h-8 w-8',
@@ -263,8 +274,8 @@ export function HomeSearchContent() {
                 >
                   {results.map((cert, index) => (
                     <div
-                      key={`${cert.id}-${index}`}
-                      className="animate-slide-up"
+                      key={cert.id}
+                      className="opacity-0 animate-slide-up card-lazy-render"
                       style={{ animationDelay: `${(index % 20) * 0.05}s` }}
                     >
                       <CertificateCard
@@ -286,7 +297,7 @@ export function HomeSearchContent() {
                   {isFetchingNextPage && (
                     <div className="flex items-center gap-2 text-slate-400">
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>더 많은 결과를 불러오는 중...</span>
+                      <span>더 많은 결과를 불러오는 중\u2026</span>
                     </div>
                   )}
                   {!hasNextPage && results.length > 0 && (

@@ -171,7 +171,7 @@ export function CheckinModal({
                       key={mood.value}
                       type="button"
                       onClick={() => form.setValue('mood', mood.value)}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+                      className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-[border-color,background-color] ${
                         selectedMood === mood.value
                           ? 'bg-primary/20 border-2 border-primary scale-105'
                           : 'bg-muted/50 border-2 border-transparent hover:bg-muted'
@@ -207,7 +207,7 @@ export function CheckinModal({
                   type="submit"
                   disabled={isSaving}
                 >
-                  {isSaving ? '저장 중...' : '체크인 완료'}
+                  {isSaving ? '저장 중\u2026' : '체크인 완료'}
                 </Button>
               </DialogFooter>
             </form>

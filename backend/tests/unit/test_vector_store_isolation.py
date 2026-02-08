@@ -61,15 +61,6 @@ class TestVectorStoreCollectionIsolation:
                        call_args[1].get("name") == "default-collection"
 
 
-class TestDataPipelineTestMode:
-    """데이터 파이프라인 테스트 모드 격리 테스트."""
-
-    def test_test_mode_uses_separate_collection(self):
-        """--test 모드에서 별도 컬렉션을 사용해야 합니다."""
-        # 이 테스트는 data_pipeline.py의 동작을 검증
-        # 실제 구현에서 test=True일 때 다른 컬렉션 사용 확인
-        pass  # 실제 파이프라인 실행 없이 로직 검증
-
 
 class TestVectorStoreClearAll:
     """벡터 스토어 전체 삭제 테스트."""

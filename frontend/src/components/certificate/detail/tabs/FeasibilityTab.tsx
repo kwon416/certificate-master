@@ -110,7 +110,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
                     </div>
                     <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-cyan-400 rounded-full transition-all"
+                        className="h-full bg-cyan-400 rounded-full transition-[width]"
                         style={{ width: percentage }}
                       />
                     </div>

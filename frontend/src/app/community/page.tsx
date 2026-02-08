@@ -1,8 +1,34 @@
+import { Metadata } from 'next'
 import Link from 'next/link'
 import { MessageSquare, Users, Sparkles, Megaphone } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+
+export const metadata: Metadata = {
+  title: '커뮤니티',
+  description: '자격증 마스터 커뮤니티에서 합격 후기를 공유하고, 스터디를 모집하고, 최신 자격증 정보를 확인하세요.',
+  openGraph: {
+    title: '커뮤니티 | 자격증 마스터',
+    description: '자격증 마스터 커뮤니티에서 합격 후기를 공유하고, 스터디를 모집하세요.',
+    type: 'website',
+    locale: 'ko_KR',
+    siteName: '자격증 마스터',
+    url: `${SITE_URL}/community`,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '자격증 마스터 커뮤니티' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '커뮤니티 | 자격증 마스터',
+    description: '자격증 마스터 커뮤니티에서 합격 후기를 공유하고, 스터디를 모집하세요.',
+    images: ['/og-image.png'],
+  },
+  alternates: {
+    canonical: `${SITE_URL}/community`,
+  },
+}
 
 const upcomingFeatures = [
   {

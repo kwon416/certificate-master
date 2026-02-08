@@ -1,290 +1,118 @@
-'use client'
+import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { fetchCertificateById } from '@/lib/api/server'
+import { CertificateJsonLd, JsonLd, createBreadcrumbData } from '@/components/seo'
+import CertificateDetailContent from './certificate-detail-content'
 
-import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
-import {
-  ArrowLeft,
-  Star,
-  Clock,
-  Building2,
-  AlertCircle,
-  Loader2,
-  ExternalLink,
-  Eye,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent } from '@/components/ui/card'
-import { EmptyState } from '@/components/ui/empty-state'
-import { useCertificate } from '@/hooks'
-import { hasOfficialSources } from '@/lib/api/types'
-import {
-  OverviewTab,
-  ExamInfoTab,
-  FeasibilityTab,
-  CareerTab,
-  StudyGuideTab,
-} from '@/components/certificate/detail/tabs'
-import { cn } from '@/lib/utils'
-
-function DifficultyStars({ level }: { level: number | null | undefined }) {
-  if (!level) return <span className="text-sm text-slate-500">정보 없음</span>
-
-  return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={cn(
-            'h-4 w-4',
-            star <= level
-              ? 'fill-amber-400 text-amber-400'
-              : 'text-slate-600'
-          )}
-        />
-      ))}
-    </div>
-  )
+interface PageProps {
+  params: Promise<{ id: string }>
 }
 
-function getDifficultyLabel(level: number | null | undefined): string {
-  if (!level) return '정보 없음'
-  if (level <= 1) return '매우 쉬움'
-  if (level <= 2) return '쉬움'
-  if (level <= 3) return '보통'
-  if (level <= 4) return '어려움'
-  return '매우 어려움'
+/**
+ * 동적 메타데이터 생성
+ * 크롤러가 자격증별 고유 title/description/OG 태그를 읽을 수 있도록 함
+ */
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params
+  const cert = await fetchCertificateById(id)
+
+  if (!cert) {
+    return {
+      title: '자격증을 찾을 수 없습니다 | 자격증 마스터',
+      description: '요청하신 자격증 정보를 찾을 수 없습니다.',
+    }
+  }
+
+  const difficultyText = cert.difficulty
+    ? `난이도 ${'★'.repeat(cert.difficulty)}${'☆'.repeat(5 - cert.difficulty)}`
+    : ''
+  const studyPeriodText = cert.study_period_days
+    ? `준비기간 약 ${Math.round(cert.study_period_days / 30)}개월`
+    : ''
+  const statsText = [difficultyText, studyPeriodText].filter(Boolean).join(', ')
+
+  const description = cert.overview
+    ? `${cert.title} 자격증 정보 - ${statsText ? statsText + '. ' : ''}${cert.overview.substring(0, 100)}`
+    : `${cert.title} 자격증 정보 - ${statsText ? statsText + '. ' : ''}시험 과목, 합격률, 응시료, 학습 가이드를 한눈에 확인하세요.`
+
+  const title = `${cert.title} - 시험정보, 난이도, 합격률 | 자격증 마스터`
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+
+  // 동적 키워드 생성: 자격증명 기반 검색어 조합
+  const categoryName = cert.categories?.[0]?.name
+  const keywords = [
+    cert.title,
+    `${cert.title} 시험`,
+    `${cert.title} 합격률`,
+    `${cert.title} 난이도`,
+    `${cert.title} 준비`,
+    `${cert.title} 공부방법`,
+    `${cert.title} 시험일정`,
+    ...(categoryName ? [categoryName, `${categoryName} 자격증`] : []),
+    ...(cert.series ? [`${cert.series} 자격증`] : []),
+    '자격증 시험',
+    '자격증 정보',
+  ].filter(Boolean)
+
+  return {
+    title,
+    description,
+    keywords,
+    openGraph: {
+      title: `${cert.title} - 시험정보, 난이도, 합격률`,
+      description,
+      type: 'article',
+      locale: 'ko_KR',
+      siteName: '자격증 마스터',
+      url: `${SITE_URL}/certificates/${id}`,
+      images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: `${cert.title} - 자격증 마스터` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${cert.title} - 시험정보, 난이도, 합격률 | 자격증 마스터`,
+      description,
+      images: [`${SITE_URL}/og-image.png`],
+    },
+    alternates: {
+      canonical: `${SITE_URL}/certificates/${id}`,
+    },
+  }
 }
 
-export default function CertificateDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const certificateId = params.id as string
+/**
+ * 자격증 상세 페이지 (서버 컴포넌트)
+ *
+ * SSR로 데이터를 fetch하여 크롤러가 콘텐츠를 읽을 수 있게 함.
+ * 인터랙티브 UI는 CertificateDetailContent 클라이언트 컴포넌트에 위임.
+ */
+export default async function CertificateDetailPage({ params }: PageProps) {
+  const { id } = await params
+  const cert = await fetchCertificateById(id)
 
-  const { data: cert, isLoading, error } = useCertificate(certificateId)
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-      </div>
-    )
+  if (!cert) {
+    notFound()
   }
 
-  // Error state
-  if (error || !cert) {
-    return (
-      <div className="min-h-screen py-8">
-        <div className="container mx-auto px-4">
-          <EmptyState
-            icon={AlertCircle}
-            title="자격증을 불러올 수 없습니다"
-            description="자격증 정보를 가져오는 중 문제가 발생했습니다."
-            action={{
-              label: '검색으로 돌아가기',
-              onClick: () => router.push('/'),
-            }}
-          />
-        </div>
-      </div>
-    )
-  }
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+  const breadcrumbData = createBreadcrumbData([
+    { name: '홈', url: SITE_URL },
+    { name: '자격증 검색', url: `${SITE_URL}/` },
+    { name: cert.title, url: `${SITE_URL}/certificates/${id}` },
+  ])
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="container mx-auto px-4">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            asChild
-            className="text-slate-400 hover:text-white"
-          >
-            <Link href="/search">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              검색으로 돌아가기
-            </Link>
-          </Button>
-        </div>
-
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-start gap-6">
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              <div className="w-20 h-20 rounded-2xl bg-slate-800/50 flex items-center justify-center text-5xl">
-                📜
-              </div>
-            </div>
-
-            {/* Title & Meta */}
-            <div className="flex-1">
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2 mb-3">
-                {cert.categories.map((cat, idx) => (
-                  <Badge key={idx} variant="outline" className="border-emerald-500/30 text-emerald-400">
-                    {cat.name}
-                  </Badge>
-                ))}
-                {cert.series && (
-                  <Badge variant="secondary" className="bg-slate-800 text-slate-300">
-                    {cert.series}
-                  </Badge>
-                )}
-                {hasOfficialSources(cert) && cert.official_sources.issuing_organization && (
-                  <Badge variant="secondary" className="bg-cyan-900/30 text-cyan-400 border-cyan-500/30">
-                    {cert.official_sources.issuing_organization}
-                  </Badge>
-                )}
-              </div>
-
-              {/* Title */}
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                {cert.title}
-              </h1>
-
-              {/* View Count */}
-              <div className="flex items-center gap-1.5 text-slate-400 mb-4">
-                <Eye className="h-4 w-4" />
-                <span className="text-sm">조회 {(cert.view_count ?? 0).toLocaleString()}회</span>
-              </div>
-
-              {/* Quick Stats - 개선된 헤더 통계 */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {/* Difficulty */}
-                <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50">
-                  <div className="text-xs text-slate-500 mb-1">난이도</div>
-                  <DifficultyStars level={cert.difficulty} />
-                  <div className="text-xs text-slate-400 mt-1">
-                    {getDifficultyLabel(cert.difficulty)}
-                  </div>
-                </div>
-
-                {/* Study Period */}
-                <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50">
-                  <div className="text-xs text-slate-500 mb-1">준비기간</div>
-                  {cert.study_period_days ? (
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4 text-cyan-400" />
-                      <span className="text-lg font-bold text-white">
-                        약 {Math.round(cert.study_period_days / 30)}개월
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-slate-500">정보 없음</div>
-                  )}
-                </div>
-
-                {/* 자격 분류 */}
-                <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50">
-                  <div className="text-xs text-slate-500 mb-1">자격 분류</div>
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="h-4 w-4 text-violet-400" />
-                    <span className="text-sm font-medium text-slate-200 line-clamp-2">
-                      {cert.categories.length > 0
-                        ? cert.categories[0].name
-                        : '정보 없음'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Official Site Button - Prominent CTA */}
-          {hasOfficialSources(cert) && cert.official_sources.official_site && (
-            <div className="mt-6 p-4 bg-gradient-to-r from-cyan-900/30 to-emerald-900/30 rounded-xl border border-cyan-500/20">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
-                    <Building2 className="h-5 w-5 text-cyan-400" />
-                    공식 사이트 바로가기
-                  </h3>
-                  <p className="text-sm text-slate-300">
-                    📅 시험 일정, 접수 기간, 응시료 등 최신 정보를 공식 사이트에서 확인하세요
-                  </p>
-                </div>
-                <a
-                  href={cert.official_sources.official_site}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-shrink-0"
-                >
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-semibold shadow-lg shadow-cyan-500/20"
-                  >
-                    <ExternalLink className="mr-2 h-5 w-5" />
-                    확인하기
-                  </Button>
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Tabs - 새로운 5탭 구조 */}
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="bg-slate-900/50 p-1 flex-wrap h-auto">
-            <TabsTrigger value="overview">한눈에 보기</TabsTrigger>
-            <TabsTrigger value="exam">시험 정보</TabsTrigger>
-            <TabsTrigger value="feasibility">합격 전략</TabsTrigger>
-            <TabsTrigger value="career">취업 활용</TabsTrigger>
-            <TabsTrigger value="study-guide">학습 가이드</TabsTrigger>
-          </TabsList>
-
-          {/* 한눈에 보기 탭 */}
-          <TabsContent value="overview" className="mt-6">
-            <OverviewTab certificate={cert} />
-          </TabsContent>
-
-          {/* 시험 정보 탭 */}
-          <TabsContent value="exam" className="mt-6">
-            <ExamInfoTab certificate={cert} />
-          </TabsContent>
-
-          {/* 합격 전략 탭 (신규) */}
-          <TabsContent value="feasibility" className="mt-6">
-            <FeasibilityTab certificate={cert} />
-          </TabsContent>
-
-          {/* 취업 활용 탭 */}
-          <TabsContent value="career" className="mt-6">
-            <CareerTab certificate={cert} />
-          </TabsContent>
-
-          {/* 학습 가이드 탭 */}
-          <TabsContent value="study-guide" className="mt-6">
-            <StudyGuideTab certificate={cert} />
-          </TabsContent>
-        </Tabs>
-
-        {/* CTA Section */}
-        <div className="mt-8 text-center">
-          <Card className="bg-gradient-to-r from-slate-900/80 to-slate-900/60 border-slate-800/60">
-            <CardContent className="py-8 space-y-4">
-              <h3 className="text-2xl font-bold text-white">
-                {cert.title}에 대해 더 알아보세요
-              </h3>
-              <p className="text-slate-300">
-                시험 일정, 난이도, 준비 기간을 확인하고 다른 자격증과 비교해 보세요.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-slate-700 text-slate-200 hover:bg-slate-800"
-                  asChild
-                >
-                  <Link href="/search">다른 자격증 찾아보기</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+    <>
+      <CertificateJsonLd
+        certificate={{
+          id: cert.id,
+          title: cert.title,
+          overview: cert.overview ?? undefined,
+          category: cert.categories?.[0]?.name,
+          difficulty: cert.difficulty ? `${cert.difficulty}/5` : undefined,
+        }}
+      />
+      <JsonLd type="BreadcrumbList" data={breadcrumbData} />
+      <CertificateDetailContent certificate={cert} />
+    </>
   )
 }

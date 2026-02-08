@@ -13,7 +13,7 @@ export default function UseCaseCard({ persona, cert, story, result, avatar }: Us
   return (
     <Card
       data-testid="use-case-card"
-      className="bg-slate-900/50 border-slate-800/50 hover:border-emerald-500/30 transition-all duration-300"
+      className="bg-slate-900/50 border-slate-800/50 hover:border-emerald-500/30 transition-[box-shadow,transform] duration-300"
     >
       <CardContent className="p-6">
         {/* Avatar */}

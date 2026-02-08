@@ -50,7 +50,7 @@ function DifficultyBar({
       </div>
       <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
         <div
-          className={cn('h-full rounded-full transition-all', bgColorClass)}
+          className={cn('h-full rounded-full transition-[width]', bgColorClass)}
           style={{ width: `${percentage}%` }}
         />
       </div>

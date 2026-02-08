@@ -18,7 +18,7 @@ export default function ProblemCard({ icon: Icon, text, emotion }: ProblemCardPr
   return (
     <Card
       data-testid="problem-card"
-      className="bg-slate-900/50 border-slate-800/50 hover:border-slate-700/50 transition-all duration-300 animate-slide-up"
+      className="bg-slate-900/50 border-slate-800/50 hover:border-slate-700/50 transition-[box-shadow,transform] duration-300 animate-slide-up"
     >
       <CardContent className="p-6">
         <div className="flex items-start gap-4">

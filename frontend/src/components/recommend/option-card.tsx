@@ -33,9 +33,9 @@ export function OptionCard({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'relative rounded-xl transition-all duration-200',
+        'relative rounded-xl transition-[border-color,box-shadow,background-color] duration-200',
         'border-2 text-left w-full',
-        'focus:outline-none focus:ring-2 focus:ring-emerald-500/50',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50',
         'active:scale-[0.98] touch-manipulation',
         compact ? 'p-2 md:p-3' : 'p-3 md:p-4',
         selected

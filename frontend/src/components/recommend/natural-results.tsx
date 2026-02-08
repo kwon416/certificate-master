@@ -113,7 +113,7 @@ function RecommendationCard({ recommendation, rank }: RecommendationCardProps) {
   const { certificate, match_score, recommendation_reason, key_points, feasibility } = recommendation
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800/50 rounded-xl p-4 md:p-6 hover:border-emerald-500/30 transition-all">
+    <div className="bg-slate-900/50 border border-slate-800/50 rounded-xl p-4 md:p-6 hover:border-emerald-500/30 transition-[box-shadow,transform]">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">

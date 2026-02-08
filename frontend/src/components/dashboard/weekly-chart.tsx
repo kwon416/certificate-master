@@ -60,7 +60,7 @@ export function WeeklyChart({ data, targetHours = 3 }: WeeklyChartProps) {
                   {/* Bar */}
                   <div
                     className={cn(
-                      'w-full max-w-8 rounded-t-md transition-all duration-500',
+                      'w-full max-w-8 rounded-t-md transition-[height] duration-500',
                       isToday
                         ? 'bg-gradient-to-t from-emerald-600 to-emerald-400'
                         : metTarget

@@ -6,16 +6,15 @@ import {
   GraduationCap,
   Search,
   Sparkles,
-  Menu
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetClose,
-} from '@/components/ui/sheet'
+import dynamic from 'next/dynamic'
 import { cn } from '@/lib/utils'
+
+// 모바일 메뉴를 lazy-load하여 @radix-ui/react-dialog를 초기 번들에서 제거 (~20+ KiB 절감)
+const MobileNav = dynamic(
+  () => import('./mobile-nav').then((mod) => ({ default: mod.MobileNav })),
+  { ssr: false }
+)
 
 const navItems = [
   { href: '/', label: '자격증 검색', icon: Search },
@@ -60,40 +59,9 @@ export function Header() {
           })}
         </nav>
 
-        {/* Mobile Menu */}
-        <Sheet>
-          <SheetTrigger asChild className="md:hidden ml-auto">
-            <Button variant="ghost" size="icon" className="text-slate-400">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">메뉴 열기</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[280px] bg-slate-950 border-slate-800">
-            <nav className="flex flex-col gap-4 mt-8">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <SheetClose asChild key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-colors',
-                        pathname === item.href
-                          ? 'bg-slate-800 text-emerald-400'
-                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {item.label}
-                    </Link>
-                  </SheetClose>
-                )
-              })}
-            </nav>
-          </SheetContent>
-        </Sheet>
+        {/* Mobile Menu - lazy loaded */}
+        <MobileNav navItems={navItems} />
       </div>
     </header>
   )
 }
-

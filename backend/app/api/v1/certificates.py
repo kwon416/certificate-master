@@ -129,7 +129,7 @@ async def search_certificates(
 @router.get("/autocomplete", response_model=list[AutocompleteResult])
 async def autocomplete_certificates(
     db: DBSession,
-    q: str = Query(..., min_length=1, description="자동완성 검색어"),
+    q: str = Query(..., min_length=2, description="자동완성 검색어 (최소 2글자)"),
     limit: int = Query(10, ge=1, le=20, description="결과 개수"),
 ):
     """자격증 제목 자동완성.

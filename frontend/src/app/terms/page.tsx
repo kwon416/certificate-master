@@ -1,6 +1,26 @@
+import { Metadata } from 'next'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+
+export const metadata: Metadata = {
+  title: '이용약관',
+  description: '자격증 마스터의 이용약관입니다. 서비스 이용, 회원 계정 및 책임, 면책 및 책임 제한에 대해 안내합니다.',
+  openGraph: {
+    title: '이용약관 | 자격증 마스터',
+    description: '자격증 마스터의 이용약관입니다.',
+    type: 'website',
+    locale: 'ko_KR',
+    siteName: '자격증 마스터',
+    url: `${SITE_URL}/terms`,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '자격증 마스터 이용약관' }],
+  },
+  alternates: {
+    canonical: `${SITE_URL}/terms`,
+  },
+}
 
 const sections = [
   '서비스 이용',

@@ -149,7 +149,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
           disabled={isLoadingCategories}
         >
           <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-            <SelectValue placeholder={isLoadingCategories ? "로딩 중..." : "자격구분 선택"} />
+            <SelectValue placeholder={isLoadingCategories ? "로딩 중\u2026" : "자격구분 선택"} />
           </SelectTrigger>
           <SelectContent className="bg-slate-800 border-slate-700">
             <SelectItem
@@ -190,7 +190,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
               <SelectValue 
                 placeholder={
                   isLoadingSeries 
-                    ? "로딩 중..." 
+                    ? "로딩 중\u2026" 
                     : availableSeries.length === 0 
                     ? "계열 정보 없음"
                     : "계열 선택"

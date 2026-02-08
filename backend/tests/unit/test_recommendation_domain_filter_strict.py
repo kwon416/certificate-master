@@ -289,14 +289,22 @@ class TestDomainIndustryMappingExpansion:
         """IT개발 분야에 확장된 키워드가 포함되어야 함."""
         it_keywords = DOMAIN_INDUSTRY_MAPPING.get("IT개발", [])
 
-        # 기존 키워드
+        # 핵심 키워드
         assert "IT" in it_keywords
         assert "소프트웨어" in it_keywords
-        assert "개발" in it_keywords
+
+        # 2026-02-08: "개발"/"시스템" 단독 키워드 제거됨 (false positive 방지)
+        assert "개발" not in it_keywords, "범용 키워드 '개발'은 제거되어야 함"
+        assert "시스템" not in it_keywords, "범용 키워드 '시스템'은 제거되어야 함"
+
+        # compound 키워드로 대체
+        assert "소프트웨어개발" in it_keywords
+        assert "시스템개발" in it_keywords
+        assert "정보시스템" in it_keywords
 
         # 확장 키워드 (계획에 따른 추가)
         expected_new_keywords = [
-            "프로그래밍", "시스템", "전자계산", "네트워크", "보안",
+            "프로그래밍", "전자계산", "네트워크", "보안",
             "웹", "앱", "데이터베이스", "서버", "클라우드",
             "리눅스", "정보처리", "전산"
         ]
@@ -404,3 +412,178 @@ class TestNoFallbackBehavior:
             f"매칭 결과 0개일 때 빈 리스트를 반환해야 함 (폴백 제거). "
             f"실제 반환: {[c['title'] for c in filtered]}"
         )
+
+
+class TestDomainFilterFalsePositiveFix:
+    """도메인 필터 false positive 수정 테스트.
+
+    브라우저 테스트에서 발견된 심각한 추천 품질 문제:
+    - IT개발 선택 → 1위 "조선산업기사" (키워드 "개발"이 "해양플랜트 개발"에 매칭)
+    - 의료 선택 → 1위 "농작업안전보건기사" (키워드 "보건"이 "안전보건"에 매칭)
+    """
+
+    @pytest.fixture
+    def mock_db_session(self):
+        """Mock DB 세션."""
+        return MagicMock()
+
+    @pytest.fixture
+    def recommendation_service(self, mock_db_session):
+        """추천 서비스 인스턴스."""
+        return RecommendationService(db=mock_db_session)
+
+    @pytest.fixture
+    def it_dev_request(self):
+        """IT개발 분야 추천 요청."""
+        return RecommendationRequest(
+            purpose="취업",
+            interest_domains=["IT개발"],
+            study_timeline="6개월 이하",
+            difficulty_preference="중간",
+        )
+
+    @pytest.fixture
+    def medical_request(self):
+        """의료 분야 추천 요청."""
+        return RecommendationRequest(
+            purpose="취업",
+            interest_domains=["의료"],
+            study_timeline="6개월 이하",
+            difficulty_preference="중간",
+        )
+
+    # ===== False Positive 제거 테스트 =====
+
+    def test_it_dev_filter_excludes_shipbuilding_cert(
+        self, recommendation_service, it_dev_request
+    ):
+        """IT개발 선택 시 조선/해양 분야 자격증이 제외되어야 함.
+
+        근본 원인: "개발" 키워드가 overview의 "해양플랜트 개발"에 매칭되어
+        조선산업기사가 IT개발로 잘못 분류됨.
+        """
+        certificates = [
+            {
+                "id": "cert-ship",
+                "title": "조선산업기사",
+                "overview": "조선공학 분야의 전문 기술을 평가하는 자격증. 해양플랜트 개발 및 선박 설계 관련.",
+                "career_info": {
+                    "industry": ["조선업", "해양공학"],
+                    "related_jobs": ["조선공학 기술자", "선박설계사"],
+                },
+                "job_market_info": {"preferred_industries": ["조선업", "해양공학"]},
+            }
+        ]
+
+        filtered = recommendation_service._apply_domain_filter(
+            certificates, it_dev_request
+        )
+
+        assert len(filtered) == 0, (
+            f"IT개발 선택 시 조선산업기사가 제외되어야 함. "
+            f"실제 반환: {[c['title'] for c in filtered]}"
+        )
+
+    def test_medical_filter_excludes_agricultural_safety_cert(
+        self, recommendation_service, medical_request
+    ):
+        """의료 선택 시 농작업안전보건 자격증이 제외되어야 함.
+
+        근본 원인: "보건" 키워드가 title의 "안전보건"에 매칭되어
+        농작업안전보건기사가 의료로 잘못 분류됨.
+        """
+        certificates = [
+            {
+                "id": "cert-agri",
+                "title": "농작업안전보건기사",
+                "overview": "농업 현장의 안전보건 관리 전문가를 양성하는 자격증.",
+                "career_info": {
+                    "industry": ["농업", "공공기관"],
+                    "related_jobs": ["농업안전보건 관리자", "농작업 안전관리사"],
+                },
+                "job_market_info": {"preferred_industries": []},
+            }
+        ]
+
+        filtered = recommendation_service._apply_domain_filter(
+            certificates, medical_request
+        )
+
+        assert len(filtered) == 0, (
+            f"의료 선택 시 농작업안전보건기사가 제외되어야 함. "
+            f"실제 반환: {[c['title'] for c in filtered]}"
+        )
+
+    # ===== Regression 테스트 =====
+
+    def test_it_dev_filter_still_includes_info_processing_cert(
+        self, recommendation_service, it_dev_request
+    ):
+        """IT개발 선택 시 정보처리기사는 여전히 포함되어야 함 (regression).
+
+        "개발" 키워드 제거 후에도 "소프트웨어", "정보처리", "IT" 등으로 매칭되어야 함.
+        """
+        certificates = [
+            {
+                "id": "cert-info",
+                "title": "정보처리기사",
+                "overview": "소프트웨어 개발 및 정보시스템 구축 능력을 평가하는 자격증",
+                "career_info": {
+                    "industry": ["IT", "소프트웨어"],
+                    "related_jobs": ["개발자", "프로그래머", "시스템분석가"],
+                },
+                "job_market_info": {"preferred_industries": ["IT기업", "금융", "제조"]},
+            }
+        ]
+
+        filtered = recommendation_service._apply_domain_filter(
+            certificates, it_dev_request
+        )
+
+        assert len(filtered) == 1, (
+            f"IT개발 선택 시 정보처리기사는 포함되어야 함. "
+            f"실제 반환: {[c['title'] for c in filtered]}"
+        )
+        assert filtered[0]["title"] == "정보처리기사"
+
+    def test_medical_filter_still_includes_nursing_and_hygiene_certs(
+        self, recommendation_service, medical_request
+    ):
+        """의료 선택 시 간호사/위생사는 여전히 포함되어야 함 (regression).
+
+        "보건" 키워드 제거 후에도 "간호", "의료", "병원" 등으로 매칭되어야 함.
+        """
+        certificates = [
+            {
+                "id": "cert-nurse",
+                "title": "간호사",
+                "overview": "의료기관에서 환자 간호 업무를 수행하는 전문 자격증",
+                "career_info": {
+                    "industry": ["의료", "병원"],
+                    "related_jobs": ["간호사", "보건교사"],
+                },
+                "job_market_info": {"preferred_industries": ["병원", "보건소"]},
+            },
+            {
+                "id": "cert-hygiene",
+                "title": "위생사",
+                "overview": "공중보건 및 위생 관리 전문가 자격증",
+                "career_info": {
+                    "industry": ["보건의료", "공공기관"],
+                    "related_jobs": ["위생사", "보건관리자"],
+                },
+                "job_market_info": {"preferred_industries": ["보건소", "의료기관"]},
+            },
+        ]
+
+        filtered = recommendation_service._apply_domain_filter(
+            certificates, medical_request
+        )
+
+        assert len(filtered) == 2, (
+            f"의료 선택 시 간호사/위생사는 포함되어야 함. "
+            f"실제 반환: {[c['title'] for c in filtered]}"
+        )
+        titles = [c["title"] for c in filtered]
+        assert "간호사" in titles
+        assert "위생사" in titles

@@ -98,19 +98,6 @@ test.describe('Google OAuth Authentication', () => {
     });
   });
 
-  test.describe('Session Management', () => {
-    test('should persist session across page reloads', async ({ page }) => {
-      // 이 테스트는 실제 로그인 후에 실행되어야 하므로 skip
-      // 실제 Google 로그인은 E2E 테스트에서 자동화하기 어려움
-      test.skip();
-
-      // 로그인 후:
-      // await page.goto('/dashboard');
-      // await page.reload();
-      // await expect(page).toHaveURL('/dashboard');
-    });
-  });
-
   test.describe('Logout Functionality', () => {
     test('should have logout button in header when logged in', async ({ page }) => {
       // 로그인되지 않은 상태에서는 로그아웃 버튼이 없어야 함
