@@ -14,7 +14,7 @@ export function JsonLd({ type, data }: JsonLdProps) {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         name: '자격증 마스터',
-        alternateName: ['자격증마스터', 'Certificate Master'],
+        alternateName: ['자격증마스터', '자격증 마스터', 'Certificate Master', 'cert master', 'certmaster'],
         url: SITE_URL,
         description: '600개 이상의 자격증 정보를 한눈에! 난이도, 합격률, 시험일정까지 비교하고 나에게 맞는 자격증을 찾아보세요.',
         inLanguage: 'ko-KR',

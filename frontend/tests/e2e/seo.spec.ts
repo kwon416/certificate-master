@@ -189,6 +189,49 @@ test.describe('SEO - Keywords 메타 태그', () => {
     expect(keywords).toContain('자격증 공부')
   })
 
+  test('홈페이지 keywords에 브랜드 키워드 변형이 포함되어야 함 (띄어쓰기/붙여쓰기)', async ({ request }) => {
+    const response = await request.get('/')
+    const html = await response.text()
+    const keywordsMatch = html.match(/<meta[^>]*name="keywords"[^>]*content="([^"]*)"/)
+    expect(keywordsMatch).not.toBeNull()
+    const keywords = keywordsMatch![1]
+    // 붙여쓰기와 띄어쓰기 변형 모두 포함
+    expect(keywords).toContain('자격증마스터')
+    expect(keywords).toContain('자격증 마스터')
+  })
+
+  test('홈페이지 keywords에 타겟 검색 키워드가 포함되어야 함', async ({ request }) => {
+    const response = await request.get('/')
+    const html = await response.text()
+    const keywordsMatch = html.match(/<meta[^>]*name="keywords"[^>]*content="([^"]*)"/)
+    expect(keywordsMatch).not.toBeNull()
+    const keywords = keywordsMatch![1]
+
+    // 유저가 요청한 타겟 키워드들
+    const targetKeywords = [
+      '2026자격증',
+      '자격증추천',
+      '자격증TOP10',
+      '취업자격증',
+      '이직자격증',
+      'SQLD',
+      '정보처리기사',
+      '전기기사',
+      '자격증트렌드',
+      '자격증마스터',
+      '기사자격증',
+      '자격증시험',
+      '국가자격증',
+      '컴활자격증',
+      '전기자격증',
+      '자격증조회',
+    ]
+
+    for (const keyword of targetKeywords) {
+      expect(keywords, `키워드 "${keyword}"가 meta keywords에 포함되어야 함`).toContain(keyword)
+    }
+  })
+
   test('자격증 상세 페이지에 동적 keywords가 포함되어야 함', async ({ request }) => {
     const searchResponse = await request.get('/api/v1/certificates/search?page_size=1')
     if (searchResponse.status() !== 200) {
@@ -224,6 +267,59 @@ test.describe('SEO - Keywords 메타 태그', () => {
     const response = await request.get('/recommend')
     const html = await response.text()
     expect(html).toMatch(/<meta[^>]*name="keywords"[^>]*content="[^"]*자격증 추천[^"]*"/)
+  })
+})
+
+test.describe('SEO - 브랜드 검색 최적화 (자격증마스터/자격증 마스터)', () => {
+  test('WebSite JSON-LD의 alternateName에 띄어쓰기/붙여쓰기 변형이 포함되어야 함', async ({ request }) => {
+    const response = await request.get('/')
+    const html = await response.text()
+
+    // JSON-LD 스크립트 파싱
+    const jsonLdMatches = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gs)
+    expect(jsonLdMatches).not.toBeNull()
+
+    // WebSite 타입 JSON-LD 찾기
+    let websiteSchema: any = null
+    for (const match of jsonLdMatches!) {
+      const jsonStr = match.replace(/<script[^>]*>/, '').replace(/<\/script>/, '')
+      try {
+        const parsed = JSON.parse(jsonStr)
+        if (parsed['@type'] === 'WebSite') {
+          websiteSchema = parsed
+          break
+        }
+      } catch {
+        continue
+      }
+    }
+
+    expect(websiteSchema).not.toBeNull()
+    expect(websiteSchema.alternateName).toContain('자격증마스터')
+    expect(websiteSchema.alternateName).toContain('자격증 마스터')
+    expect(websiteSchema.alternateName).toContain('Certificate Master')
+    expect(websiteSchema.alternateName).toContain('cert master')
+  })
+
+  test('홈페이지 description에 브랜드명이 자연스럽게 포함되어야 함', async ({ request }) => {
+    const response = await request.get('/')
+    const html = await response.text()
+
+    // og:description 또는 meta description에서 브랜드명 확인
+    const descMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"/)
+    expect(descMatch).not.toBeNull()
+    const description = descMatch![1]
+
+    // description에 주요 타겟 키워드가 자연스럽게 포함되어야 함
+    expect(description).toContain('자격증')
+    expect(description).toContain('정보처리기사')
+    expect(description).toContain('전기기사')
+  })
+
+  test('홈페이지 title에 "자격증 마스터"가 포함되어야 함', async ({ request }) => {
+    const response = await request.get('/')
+    const html = await response.text()
+    expect(html).toMatch(/<title[^>]*>.*자격증 마스터.*<\/title>/)
   })
 })
 
