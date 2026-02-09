@@ -4,12 +4,59 @@ import { DollarSign, Gift, ClipboardList, Youtube, ExternalLink } from 'lucide-r
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import type { CostBreakdown } from '@/lib/api/types'
-import { cn } from '@/lib/utils'
+import { cn, isUrl, splitByUrls } from '@/lib/utils'
 
 interface CostBreakdownCardProps {
   costBreakdown?: CostBreakdown | null
   certificateTitle?: string
   className?: string
+}
+
+/**
+ * ResourceText - 무료 학습 자료 텍스트 렌더링
+ *
+ * URL이 포함된 텍스트는 새 탭에서 열리는 링크로 변환합니다.
+ */
+function ResourceText({ text }: { text: string }) {
+  // 전체 문자열이 URL인 경우
+  if (isUrl(text)) {
+    return (
+      <a
+        href={text.trim()}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 break-all"
+      >
+        {text.trim()}
+      </a>
+    )
+  }
+
+  // 텍스트 안에 URL이 포함된 경우
+  const parts = splitByUrls(text)
+  if (parts.length === 1 && parts[0].type === 'text') {
+    return <span>{text}</span>
+  }
+
+  return (
+    <span>
+      {parts.map((part, i) =>
+        part.type === 'url' ? (
+          <a
+            key={i}
+            href={part.value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 break-all"
+          >
+            {part.value}
+          </a>
+        ) : (
+          <span key={i}>{part.value}</span>
+        )
+      )}
+    </span>
+  )
 }
 
 /**
@@ -57,7 +104,7 @@ export function CostBreakdownCard({ costBreakdown, certificateTitle, className }
               {costBreakdown?.free_resources?.map((resource, idx) => (
                 <li key={idx} className="text-sm text-slate-400 flex items-start gap-2">
                   <span className="text-emerald-400">•</span>
-                  {resource}
+                  <ResourceText text={resource} />
                 </li>
               ))}
             </ul>
