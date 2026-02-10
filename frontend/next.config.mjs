@@ -1,3 +1,9 @@
+import bundleAnalyzer from '@next/bundle-analyzer'
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Barrel file import 최적화 (Vercel Best Practice: bundle-barrel-imports)
@@ -63,6 +69,26 @@ const nextConfig = {
       },
     ];
   },
+
+  // 프로덕션 최적화
+  swcMinify: true,
+  compiler: {
+    // React 프로덕션 최적화
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
+
+  // 번들 최적화
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
+    },
+  },
+
+  // 트레일링 슬래시 제거 (SEO)
+  trailingSlash: false,
+
+  // 파워드 바이 헤더 제거
+  poweredByHeader: false,
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
