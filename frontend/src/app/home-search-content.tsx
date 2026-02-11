@@ -293,7 +293,11 @@ export function HomeSearchContent() {
                 </div>
 
                 {/* Infinite Scroll Trigger & Loading Indicator */}
-                <div ref={observerTarget} className="mt-8 flex justify-center">
+                <div
+                  ref={observerTarget}
+                  data-testid="infinite-scroll-trigger"
+                  className="mt-8 flex justify-center items-center min-h-[60px]"
+                >
                   {isFetchingNextPage && (
                     <div className="flex items-center gap-2 text-slate-400">
                       <Loader2 className="h-5 w-5 animate-spin" />

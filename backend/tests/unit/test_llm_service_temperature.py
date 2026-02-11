@@ -20,9 +20,9 @@ class TestLLMServiceTemperature:
         assert service.should_skip_temperature() is True
 
     def test_should_not_skip_temperature_for_gpt4o_mini(self):
-        """gpt-4o-mini 모델에서는 temperature를 사용해야 합니다."""
+        """gpt-5-nano 모델에서는 temperature를 사용해야 합니다."""
         service = LLMService()
-        service.model = "gpt-4o-mini"
+        service.model = "gpt-5-nano"
 
         assert service.should_skip_temperature() is False
 
@@ -48,9 +48,9 @@ class TestLLMServiceTemperature:
         assert params["messages"] == [{"role": "user", "content": "test"}]
 
     def test_build_completion_params_with_temperature(self):
-        """gpt-4o-mini 모델에서 completion 파라미터에 temperature가 있어야 합니다."""
+        """gpt-5-nano 모델에서 completion 파라미터에 temperature가 있어야 합니다."""
         service = LLMService()
-        service.model = "gpt-4o-mini"
+        service.model = "gpt-5-nano"
 
         params = service.build_completion_params(
             messages=[{"role": "user", "content": "test"}],
@@ -58,7 +58,7 @@ class TestLLMServiceTemperature:
         )
 
         assert params["temperature"] == 0.4
-        assert params["model"] == "gpt-4o-mini"
+        assert params["model"] == "gpt-5-nano"
 
 
 @pytest.mark.asyncio
@@ -96,9 +96,9 @@ class TestLLMServicePhaseIntegration:
         assert "temperature" not in call_kwargs
 
     async def test_phase1_extract_uses_temperature_for_gpt4o_mini(self):
-        """gpt-4o-mini에서 _phase1_extract가 temperature와 함께 API를 호출해야 합니다."""
+        """gpt-5-nano에서 _phase1_extract가 temperature와 함께 API를 호출해야 합니다."""
         service = LLMService()
-        service.model = "gpt-4o-mini"
+        service.model = "gpt-5-nano"
 
         # Mock the client
         mock_response = MagicMock()

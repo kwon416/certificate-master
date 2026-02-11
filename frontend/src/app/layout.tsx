@@ -175,26 +175,8 @@ export default function RootLayout({
           </Script>
         </>
       )}
-      <head>
-        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
-        {/* Pretendard Variable Font - 단일 파일로 최적화 */}
-        <link
-          rel="preload"
-          as="font"
-          type="font/woff2"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2"
-          crossOrigin="anonymous"
-        />
-        <style>{`
-          @font-face {
-            font-family: 'Pretendard Variable';
-            font-weight: 45 920;
-            font-style: normal;
-            font-display: swap;
-            src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2') format('woff2-variations');
-          }
-        `}</style>
-      </head>
+      <head />
+
       <body className={`${outfit.variable} font-sans`}>
         {/* Google Tag Manager - Body (noscript) */}
         {GTM_ID && (

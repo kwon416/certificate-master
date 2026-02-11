@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { X, MessageSquare } from 'lucide-react'
 import { useRecommendStore, type WizardAnswers } from '@/stores/recommend-store'
+import { getContextualExamples } from '@/lib/get-contextual-examples'
 
 interface FieldOption {
   value: string
@@ -363,11 +364,7 @@ export function WizardStep({
 // Step 4 자연어 통합 컴포넌트 (선택적 자연어 입력)
 const MAX_NATURAL_LENGTH = 1000
 
-const EXAMPLE_PROMPTS = [
-  '비전공자인데 IT 분야 취업을 위해 자격증을 준비하고 있습니다.',
-  '직장인인데 이직을 위해 데이터 분석 관련 자격증을 취득하고 싶어요.',
-  '경력 단절 후 재취업을 준비 중입니다. 3개월 안에 취득 가능한 것을 찾고 있어요.',
-]
+// EXAMPLE_PROMPTS는 이제 getContextualExamples()로 동적 생성됨
 
 interface InputWithNaturalStepProps {
   title: string
@@ -384,7 +381,13 @@ function InputWithNaturalStep({
   const {
     naturalInputInWizard,
     setNaturalInputInWizard,
+    answers,
   } = useRecommendStore()
+
+  const examplePrompts = getContextualExamples(
+    answers.situation_goal as string | undefined,
+    answers.interest_domains as string | undefined
+  )
 
   const handleNaturalInputChange = (value: string) => {
     if (value.length <= MAX_NATURAL_LENGTH) {
@@ -428,7 +431,7 @@ function InputWithNaturalStep({
         {/* 예시 문장 */}
         <div className="space-y-2">
           <p className="text-xs text-slate-500">예시 문장:</p>
-          {EXAMPLE_PROMPTS.map((example, index) => (
+          {examplePrompts.map((example, index) => (
             <button
               key={index}
               onClick={() => handleExampleClick(example)}

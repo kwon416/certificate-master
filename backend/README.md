@@ -388,7 +388,7 @@ uv run python -m scripts.enrich_certificates --all
 - 단일: 8-10초 (7개 카테고리 검색 + 2-Phase LLM + 후처리)
 - 배치 처리: ~8초/자격증
 - 전체 (3545개): ~8시간 (예상)
-- 비용: ~$0.50 (OpenAI GPT-4o-mini)
+- 비용: ~$0.50 (OpenAI GPT-5-nano)
 
 ### 상세 가이드
 

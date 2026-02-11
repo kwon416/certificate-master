@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Framework | FastAPI (Python 3.11+) |
 | Database | MariaDB (SQLAlchemy), Supabase Auth |
 | Vector Store | ChromaDB |
-| AI/LLM | OpenAI API (GPT-4o-mini, text-embedding-3-small) |
+| AI/LLM | OpenAI API (GPT-5-nano, text-embedding-3-small) |
 | Search | SearXNG (메타 검색 엔진) |
 
 ---
@@ -79,7 +79,7 @@ services/
 ```
 API Endpoint → Service → Protocol → 구현체 (SearXNG/OpenAI/ChromaDB)
                  ↓
-            LLM Service (GPT-4o-mini)
+            LLM Service (GPT-5-nano)
 ```
 
 ### 데이터 흐름

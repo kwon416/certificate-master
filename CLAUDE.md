@@ -9,7 +9,7 @@
 
 | Layer | Stack |
 |-------|-------|
-| Backend | FastAPI, MariaDB, Supabase Auth, ChromaDB, GPT-4o-mini |
+| Backend | FastAPI, MariaDB, Supabase Auth, ChromaDB, GPT-5-nano |
 | Frontend | Next.js 14, TypeScript, Tailwind, shadcn/ui, Zustand, TanStack Query |
 | Deploy | Docker Compose (backend:8000, frontend:5100) |
 
