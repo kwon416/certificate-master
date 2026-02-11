@@ -16,10 +16,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params
   const cert = await fetchCertificateById(id)
 
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+
   if (!cert) {
     return {
-      title: '자격증을 찾을 수 없습니다 | 자격증 마스터',
+      title: '자격증을 찾을 수 없습니다',
       description: '요청하신 자격증 정보를 찾을 수 없습니다.',
+      robots: { index: false, follow: false },
+      alternates: {
+        canonical: `${SITE_URL}/certificates/${id}`,
+      },
     }
   }
 
@@ -36,7 +42,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : `${cert.title} 자격증 정보 - ${statsText ? statsText + '. ' : ''}시험 과목, 합격률, 응시료, 학습 가이드를 한눈에 확인하세요.`
 
   const title = `${cert.title} - 시험정보, 난이도, 합격률 | 자격증 마스터`
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
 
   // 동적 키워드 생성: 자격증명 기반 검색어 조합
   const categoryName = cert.categories?.[0]?.name

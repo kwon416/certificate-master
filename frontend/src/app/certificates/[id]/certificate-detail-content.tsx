@@ -4,13 +4,14 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import {
-  ArrowLeft,
+  ChevronRight,
   Star,
   Clock,
   Building2,
   ExternalLink,
   Eye,
   Loader2,
+  Home,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -88,19 +89,28 @@ export default function CertificateDetailContent({
   return (
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            asChild
-            className="text-slate-400 hover:text-white"
-          >
-            <Link href="/search">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              검색으로 돌아가기
-            </Link>
-          </Button>
-        </div>
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="breadcrumb" data-testid="breadcrumb" className="mb-6">
+          <ol className="flex items-center gap-1.5 text-sm text-slate-400">
+            <li>
+              <Link
+                href="/"
+                className="flex items-center gap-1 hover:text-white transition-colors"
+              >
+                <Home className="h-3.5 w-3.5" />
+                <span>자격증 검색</span>
+              </Link>
+            </li>
+            <li>
+              <ChevronRight className="h-3.5 w-3.5 text-slate-600" />
+            </li>
+            <li>
+              <span aria-current="page" className="text-white font-medium truncate max-w-[200px] sm:max-w-none">
+                {cert.title}
+              </span>
+            </li>
+          </ol>
+        </nav>
 
         {/* Header Section */}
         <div className="mb-8">

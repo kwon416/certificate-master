@@ -7,21 +7,41 @@ Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard
 Disallow: /study-plans
+Disallow: /login
+Disallow: /signup
 
 # Sitemap
 Sitemap: https://cert.i-ve.ai/sitemap.xml
 
-# Crawl-delay for polite crawling
+# Crawl-delay for polite crawling (Googlebot ignores this)
 Crawl-delay: 1
 
 # Google
 User-agent: Googlebot
 Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /study-plans
+Disallow: /login
+Disallow: /signup
 
 # Naver
 User-agent: Yeti
 Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /study-plans
+Disallow: /login
+Disallow: /signup
 
 # Bing
 User-agent: Bingbot
 Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /study-plans
+Disallow: /login
+Disallow: /signup

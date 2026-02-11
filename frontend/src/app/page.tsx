@@ -6,6 +6,7 @@ import { HomeSearchContent } from './home-search-content'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
 
 export const metadata: Metadata = {
+  title: '자격증 마스터 - 600+ 자격증 검색 및 비교',
   description: '자격증마스터에서 600개 이상의 자격증을 검색하고 비교하세요. 정보처리기사, 전기기사, SQLD 등 2026 인기 국가자격증부터 취업·이직 자격증까지. 난이도, 합격률, 시험일정을 한눈에 확인하고 AI 추천으로 나에게 맞는 자격증을 찾아보세요.',
   keywords: [
     // 브랜드 키워드

@@ -12,7 +12,7 @@ export function RecommendContent() {
   const { recommendations, inputMode, naturalRecommendations } = useRecommendStore()
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="py-8">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
