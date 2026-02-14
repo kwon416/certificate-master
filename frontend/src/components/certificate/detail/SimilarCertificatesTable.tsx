@@ -43,7 +43,7 @@ function SimilarCertificateItem({ cert }: { cert: SimilarCertificate }) {
         isLoading ? (
           <Loader2 className="h-4 w-4 text-slate-500 animate-spin" />
         ) : hasValidLink ? (
-          <Link href={`/certificates/${cert.certificate_id}`}>
+          <Link href={`/certificates/${cert.slug || cert.certificate_id}`}>
             <Button
               variant="ghost"
               size="sm"

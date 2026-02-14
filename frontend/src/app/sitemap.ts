@@ -96,8 +96,8 @@ async function fetchCertificatePages(): Promise<MetadataRoute.Sitemap> {
         }
 
         const data = await response.json()
-        const items = data.items?.map((cert: { id: string; updated_at?: string }) => ({
-          url: `${SITE_URL}/certificates/${cert.id}`,
+        const items = data.items?.map((cert: { id: string; slug?: string; updated_at?: string }) => ({
+          url: `${SITE_URL}/certificates/${cert.slug || cert.id}`,
           lastModified: cert.updated_at ? new Date(cert.updated_at) : new Date(),
           changeFrequency: 'weekly' as const,
           priority: 0.8,

@@ -72,6 +72,7 @@ export interface ExamScheduleDetail {
  */
 export interface SimilarCertificate {
   certificate_id?: string | null          // 연결된 자격증 ID (있을 경우)
+  slug?: string | null                    // 연결된 자격증 slug (있을 경우)
   title: string                           // 자격증명
   comparison: string | null               // 비교 설명
 }
@@ -225,6 +226,7 @@ export interface Certificate {
   // Basic Info
   id: string
   raw_id: string
+  slug: string
   title: string
   categories: CategoryInfo[]             // 복수 카테고리 지원 (객체 배열)
   // code 필드 삭제됨 - categories[].code 사용

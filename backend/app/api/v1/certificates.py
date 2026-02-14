@@ -3,11 +3,23 @@
 자격증의 검색, 조회, 업데이트 기능을 제공합니다.
 MariaDB (SQLAlchemy)로 마이그레이션됨.
 """
+import re
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import or_
 from sqlalchemy.dialects.mysql import JSON
+
+# UUID v4 패턴 감지용 정규식
+_UUID_PATTERN = re.compile(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    re.IGNORECASE,
+)
+
+
+def is_uuid(value: str) -> bool:
+    """문자열이 UUID v4 형식인지 확인."""
+    return bool(_UUID_PATTERN.match(value))
 
 from app.api.deps import DBSession
 from app.models.certificate import Certificate as CertificateModel
@@ -287,18 +299,18 @@ async def get_series_by_category(
     return result
 
 
-@router.get("/{certificate_id}", response_model=Certificate)
+@router.get("/{identifier}", response_model=Certificate)
 async def get_certificate(
-    certificate_id: str,
+    identifier: str,
     db: DBSession,
 ):
-    """자격증 상세 정보 조회 (ID).
+    """자격증 상세 정보 조회 (UUID 또는 slug).
 
-    UUID로 특정 자격증의 상세 정보를 조회합니다.
+    UUID 또는 slug로 특정 자격증의 상세 정보를 조회합니다.
     조회 시 view_count가 1 증가합니다.
 
     Args:
-        certificate_id: 자격증 UUID
+        identifier: 자격증 UUID 또는 slug
 
     Returns:
         Certificate: 자격증 상세 정보 (모든 강화 데이터 포함).
@@ -306,16 +318,23 @@ async def get_certificate(
     Raises:
         HTTPException: 404 - 자격증을 찾을 수 없음.
     """
-    cert = (
-        db.query(CertificateModel)
-        .filter(CertificateModel.id == certificate_id)
-        .first()
-    )
+    if is_uuid(identifier):
+        cert = (
+            db.query(CertificateModel)
+            .filter(CertificateModel.id == identifier)
+            .first()
+        )
+    else:
+        cert = (
+            db.query(CertificateModel)
+            .filter(CertificateModel.slug == identifier)
+            .first()
+        )
 
     if not cert:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Certificate with id {certificate_id} not found",
+            detail=f"Certificate with identifier '{identifier}' not found",
         )
 
     # 조회수 증가

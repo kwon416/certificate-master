@@ -132,7 +132,7 @@ export function StudyPlanList({ plans, onDelete, isDeleting }: StudyPlanListProp
                 </Button>
               </Link>
               {plan.certificate_id && (
-                <Link href={`/certificates/${plan.certificate_id}`}>
+                <Link href={`/certificates/${plan.certificate?.slug || plan.certificate_id}`}>
                   <Button variant="ghost">자격증 정보</Button>
                 </Link>
               )}

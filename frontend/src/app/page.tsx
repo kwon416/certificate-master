@@ -1,7 +1,9 @@
 import { Suspense } from 'react'
 import { Metadata } from 'next'
+import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { HomeSearchContent } from './home-search-content'
+import { fetchCertificateList } from '@/lib/api/server'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
 
@@ -87,10 +89,42 @@ function SearchPageLoading() {
   )
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const certificates = await fetchCertificateList(30)
+
   return (
-    <Suspense fallback={<SearchPageLoading />}>
-      <HomeSearchContent />
-    </Suspense>
+    <>
+      <Suspense fallback={<SearchPageLoading />}>
+        <HomeSearchContent />
+      </Suspense>
+
+      {/* SSR 내부 링크: Google 크롤러가 자격증 페이지를 발견할 수 있도록 */}
+      {certificates.length > 0 && (
+        <section
+          data-testid="ssr-certificate-links"
+          className="border-t border-slate-800/50 bg-slate-950/50"
+        >
+          <div className="container mx-auto px-4 py-12">
+            <h2 className="text-lg font-semibold text-slate-300 mb-6">
+              인기 자격증
+            </h2>
+            <nav aria-label="자격증 목록">
+              <ul className="flex flex-wrap gap-2">
+                {certificates.map((cert) => (
+                  <li key={cert.id}>
+                    <Link
+                      href={`/certificates/${cert.slug || cert.id}`}
+                      className="inline-block rounded-full border border-slate-800 bg-slate-900/50 px-3 py-1.5 text-sm text-slate-400 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
+                    >
+                      {cert.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
+        </section>
+      )}
+    </>
   )
 }

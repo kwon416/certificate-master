@@ -74,7 +74,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
             <div className="space-y-1.5 md:space-y-2 min-w-0">
-              <Link href={`/certificates/${certificate.id}`} className="block group">
+              <Link href={`/certificates/${certificate.slug || certificate.id}`} className="block group">
                 <h3 className="text-lg md:text-2xl font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-2">
                   {certificate.title}
                 </h3>
@@ -167,7 +167,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         {/* Actions */}
         <div className="pt-1">
           <Button asChild className="w-full h-10 md:h-11 text-sm md:text-base bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600">
-            <Link href={`/certificates/${certificate.id}`}>상세 정보 보기</Link>
+            <Link href={`/certificates/${certificate.slug || certificate.id}`}>상세 정보 보기</Link>
           </Button>
         </div>
       </div>

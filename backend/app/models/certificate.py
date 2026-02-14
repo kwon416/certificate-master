@@ -90,6 +90,12 @@ class Certificate(Base):
         nullable=False,
         comment="원본 식별자 (코드_자격증명, 중복 방지용)"
     )
+    slug = Column(
+        String(500),
+        unique=True,
+        nullable=True,
+        comment="URL용 슬러그 (예: 정보처리기사, 소방설비기사-전기분야)"
+    )
 
     # 보강 데이터 (LLM으로 생성)
     overview = Column(
@@ -226,6 +232,7 @@ class Certificate(Base):
             "series": self.series,
             "title": self.title,
             "raw_id": self.raw_id,
+            "slug": self.slug or "",
             "overview": self.overview,
             "difficulty": self.difficulty,
             "study_period_days": self.study_period_days,

@@ -280,6 +280,7 @@ export function HomeSearchContent() {
                     >
                       <CertificateCard
                         id={cert.id}
+                        slug={cert.slug}
                         title={cert.title}
                         categories={cert.categories}
                         difficulty={cert.difficulty ?? null}

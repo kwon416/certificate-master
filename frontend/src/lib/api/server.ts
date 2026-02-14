@@ -9,7 +9,7 @@
  */
 
 import { cache } from 'react'
-import type { Certificate } from './types'
+import type { Certificate, CertificateList } from './types'
 
 /**
  * 서버용 백엔드 API 기본 URL
@@ -53,5 +53,43 @@ export const fetchCertificateById = cache(async function fetchCertificateById(
   } catch (error) {
     console.error('[Server API] Failed to fetch certificate:', error)
     return null
+  }
+})
+
+/**
+ * 자격증 목록을 서버에서 fetch (인기순/전체)
+ *
+ * 홈페이지 SSR 내부 링크용. Google 크롤러가 자격증 상세 페이지를
+ * 발견할 수 있도록 서버 렌더링 시점에 링크를 생성한다.
+ *
+ * @param pageSize - 가져올 개수 (기본 30)
+ * @returns Certificate 배열 (에러 시 빈 배열)
+ */
+export const fetchCertificateList = cache(async function fetchCertificateList(
+  pageSize: number = 30
+): Promise<Pick<Certificate, 'id' | 'slug' | 'title' | 'categories' | 'difficulty'>[]> {
+  try {
+    const backendUrl = getBackendUrl()
+    const response = await fetch(
+      `${backendUrl}/api/v1/certificates/search?page_size=${pageSize}&page=1`,
+      { next: { revalidate: 3600 } } // 1시간 캐싱
+    )
+
+    if (!response.ok) {
+      console.error(`[Server API] Certificate list fetch failed: ${response.status}`)
+      return []
+    }
+
+    const data: CertificateList = await response.json()
+    return data.items.map((cert) => ({
+      id: cert.id,
+      slug: cert.slug,
+      title: cert.title,
+      categories: cert.categories,
+      difficulty: cert.difficulty,
+    }))
+  } catch (error) {
+    console.error('[Server API] Failed to fetch certificate list:', error)
+    return []
   }
 })

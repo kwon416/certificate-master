@@ -9,6 +9,7 @@ import type { CategoryInfo } from '@/lib/api/types'
 
 interface CertificateCardProps {
   id: string
+  slug?: string
   title: string
   categories: CategoryInfo[]
   difficulty: number | null
@@ -187,6 +188,7 @@ function getCategoryColor(category: string): CategoryColor {
 
 export function CertificateCard({
   id,
+  slug,
   title,
   categories,
   difficulty,
@@ -199,6 +201,7 @@ export function CertificateCard({
   const primaryCategory = categories[0]?.name || '기타'
   const isListView = variant === 'list'
   const categoryColor = getCategoryColor(primaryCategory)
+  const linkHref = `/certificates/${slug || id}`
 
   return (
     <Card
@@ -210,7 +213,7 @@ export function CertificateCard({
         `hover:${categoryColor.border}`
       )}
     >
-      <Link href={`/certificates/${id}`}>
+      <Link href={linkHref}>
         <CardContent className={cn(isListView ? 'p-4' : 'p-6', 'relative')}>
           {/* Category accent bar */}
           <div

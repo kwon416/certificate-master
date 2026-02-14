@@ -1,11 +1,18 @@
 import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { fetchCertificateById } from '@/lib/api/server'
 import { CertificateJsonLd, JsonLd, createBreadcrumbData } from '@/components/seo'
 import CertificateDetailContent from './certificate-detail-content'
 
 interface PageProps {
   params: Promise<{ id: string }>
+}
+
+/**
+ * UUID v4 형식인지 확인
+ */
+function isUUID(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 }
 
 /**
@@ -28,6 +35,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     }
   }
+
+  // canonical URL은 항상 slug 기반
+  const canonicalSlug = cert.slug || id
 
   const difficultyText = cert.difficulty
     ? `난이도 ${'★'.repeat(cert.difficulty)}${'☆'.repeat(5 - cert.difficulty)}`
@@ -92,7 +102,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       locale: 'ko_KR',
       siteName: '자격증 마스터',
-      url: `${SITE_URL}/certificates/${id}`,
+      url: `${SITE_URL}/certificates/${canonicalSlug}`,
       images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630, alt: `${cert.title} - 자격증 마스터` }],
     },
     twitter: {
@@ -102,7 +112,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: [`${SITE_URL}/og-image.png`],
     },
     alternates: {
-      canonical: `${SITE_URL}/certificates/${id}`,
+      canonical: `${SITE_URL}/certificates/${canonicalSlug}`,
     },
   }
 }
@@ -111,6 +121,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * 자격증 상세 페이지 (서버 컴포넌트)
  *
  * SSR로 데이터를 fetch하여 크롤러가 콘텐츠를 읽을 수 있게 함.
+ * UUID로 접근 시 slug URL로 301 redirect합니다.
  * 인터랙티브 UI는 CertificateDetailContent 클라이언트 컴포넌트에 위임.
  */
 export default async function CertificateDetailPage({ params }: PageProps) {
@@ -121,11 +132,17 @@ export default async function CertificateDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  // UUID로 접근했고, slug가 존재하면 slug URL로 301 redirect
+  if (isUUID(id) && cert.slug) {
+    redirect(`/certificates/${cert.slug}`)
+  }
+
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
+  const canonicalSlug = cert.slug || id
   const breadcrumbData = createBreadcrumbData([
     { name: '홈', url: SITE_URL },
     { name: '자격증 검색', url: `${SITE_URL}/` },
-    { name: cert.title, url: `${SITE_URL}/certificates/${id}` },
+    { name: cert.title, url: `${SITE_URL}/certificates/${canonicalSlug}` },
   ])
 
   return (

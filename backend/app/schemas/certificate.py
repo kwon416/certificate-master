@@ -291,6 +291,7 @@ class Certificate(CertificateBase):
 
     id: str = Field(..., description="UUID")
     raw_id: str = Field(..., description="고유 식별자")
+    slug: str = Field(default="", description="URL용 슬러그")
 
     # 벡터 ID (ChromaDB 동기화용)
     vector_id: Optional[str] = Field(None, description="ChromaDB 벡터 ID")

@@ -183,7 +183,7 @@ function RecommendationCard({ recommendation, rank }: RecommendationCardProps) {
       )}
 
       {/* Action Button */}
-      <Link href={`/certificates/${certificate.id}`}>
+      <Link href={`/certificates/${certificate.slug || certificate.id}`}>
         <Button variant="outline" className="w-full mt-2">
           상세 정보 보기
           <ChevronRight className="w-4 h-4 ml-2" />
