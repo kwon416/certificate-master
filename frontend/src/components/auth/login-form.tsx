@@ -127,6 +127,8 @@ export function LoginForm() {
                           {...field}
                           type="email"
                           placeholder="your@email.com"
+                          autoComplete="email"
+                          spellCheck={false}
                           className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
                         />
                       </div>
@@ -150,6 +152,7 @@ export function LoginForm() {
                           {...field}
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
+                          autoComplete="current-password"
                           className="pl-10 pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
                         />
                         <button

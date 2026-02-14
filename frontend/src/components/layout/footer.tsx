@@ -113,7 +113,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-slate-800/50">
-          <p className="text-center text-sm text-slate-600">
+          <p className="text-center text-sm text-slate-600" suppressHydrationWarning>
             © {new Date().getFullYear()} 자격증 마스터. All rights reserved.
           </p>
         </div>

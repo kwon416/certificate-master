@@ -59,7 +59,7 @@ export function OptionCard({
                 compact ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'
               )}
               role="img"
-              aria-label="icon"
+              aria-hidden="true"
             >
               {icon}
             </span>

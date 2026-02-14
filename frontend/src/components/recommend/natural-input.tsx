@@ -73,6 +73,7 @@ export function NaturalInput() {
             placeholder="상황을 자유롭게 설명해주세요. 예: 비전공자인데 IT 분야 취업을 위해 자격증을 준비하고 있습니다."
             value={localInput}
             onChange={(e) => handleInputChange(e.target.value)}
+            aria-label="상황 설명 입력"
             className="min-h-[160px] bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 resize-none pr-4 pb-8"
             disabled={isLoading}
           />
@@ -147,7 +148,7 @@ export function NaturalInput() {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 overscroll-contain">
           <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-8 text-center max-w-md mx-4">
             <Loader2 className="w-12 h-12 animate-spin text-emerald-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">

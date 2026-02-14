@@ -121,6 +121,7 @@ export function WizardStep({
           <Input
             value={typeof currentAnswer === 'string' ? currentAnswer : ''}
             placeholder={placeholder}
+            aria-label={title}
             onChange={(event) => {
               const nextValue = event.target.value
               onAnswer(nextValue.trim() ? nextValue : null)
@@ -261,6 +262,7 @@ export function WizardStep({
               <Input
                 value={keywordInput}
                 placeholder="예: 전기, 용접, 회계\u2026"
+                aria-label="관련 키워드 입력"
                 onChange={(e) => setKeywordInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="flex-1 bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
@@ -311,6 +313,7 @@ export function WizardStep({
             <Input
               value={typeof tertiaryAnswer === 'string' ? tertiaryAnswer : ''}
               placeholder={placeholder || '예: 데이터 분석 직무로 이직하고 싶어요'}
+              aria-label="추가 정보 입력"
               onChange={(e) => {
                 const nextValue = e.target.value
                 onTertiaryAnswer?.(nextValue.trim() ? nextValue : null)
@@ -414,6 +417,7 @@ function InputWithNaturalStep({
             value={naturalInputInWizard}
             onChange={(e) => handleNaturalInputChange(e.target.value)}
             placeholder="상황을 자유롭게 설명해주세요. AI가 분석하여 맞춤 자격증을 추천합니다."
+            aria-label="상황 설명 자유 입력"
             className="min-h-[140px] bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 resize-none pr-4 pb-8"
           />
           {/* 글자 수 카운터 */}

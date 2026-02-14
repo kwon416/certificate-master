@@ -127,6 +127,9 @@ export function SearchInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoFocus={autoFocus}
+          aria-label="자격증 검색"
+          autocomplete="off"
+          spellCheck={false}
           className="h-14 pl-12 pr-12 text-lg bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20"
         />
         {query && (
@@ -140,6 +143,15 @@ export function SearchInput({
             <X className="h-5 w-5" />
           </Button>
         )}
+      </div>
+
+      {/* Screen reader announcement for autocomplete results */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {!isLoading && suggestions.length > 0
+          ? `${suggestions.length}개 검색 결과`
+          : !isLoading && query.length >= 2 && suggestions.length === 0
+            ? '검색 결과 없음'
+            : ''}
       </div>
 
       {/* Autocomplete Dropdown */}

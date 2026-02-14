@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useCallback } from 'react'
 import {
   ChevronRight,
   Star,
@@ -85,6 +86,18 @@ export default function CertificateDetailContent({
   certificate: cert,
 }: CertificateDetailContentProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const currentTab = searchParams.get('tab') || 'overview'
+
+  const handleTabChange = useCallback((value: string) => {
+    const url = new URL(window.location.href)
+    if (value === 'overview') {
+      url.searchParams.delete('tab')
+    } else {
+      url.searchParams.set('tab', value)
+    }
+    router.replace(url.pathname + url.search, { scroll: false })
+  }, [router])
 
   return (
     <div className="min-h-screen py-8">
@@ -229,7 +242,7 @@ export default function CertificateDetailContent({
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="bg-slate-900/50 p-1 flex-wrap h-auto">
             <TabsTrigger value="overview">한눈에 보기</TabsTrigger>
             <TabsTrigger value="exam">시험 정보</TabsTrigger>
