@@ -17,6 +17,12 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/privacy`,
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '자격증 마스터 개인정보처리방침' }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: '개인정보처리방침 | 자격증 마스터',
+    description: '자격증 마스터의 개인정보처리방침입니다.',
+    images: [`${SITE_URL}/og-image.png`],
+  },
   alternates: {
     canonical: `${SITE_URL}/privacy`,
   },

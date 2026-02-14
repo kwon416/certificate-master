@@ -74,6 +74,14 @@ OPENAI_API_KEY
 NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_API_URL
 ```
 
+## Skills
+
+| 스킬 | 설명 |
+|------|------|
+| verify-api-consistency | 백엔드 API 엔드포인트의 인증/에러처리/응답형식 일관성 검증 |
+| verify-frontend-seo | 프론트엔드 페이지의 메타데이터, JSON-LD, OG, canonical URL 검증 |
+| verify-type-safety | TypeScript 타입 안전성 검증 (any 금지, Props 타이핑, API 타이핑) |
+
 ## Docs
 
 - [Backend Guide](./backend/CLAUDE.md) | [Frontend Guide](./frontend/CLAUDE.md) | [Deploy Guide](./deploy/README.md)

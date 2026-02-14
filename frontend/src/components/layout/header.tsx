@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 // 모바일 메뉴를 lazy-load하여 @radix-ui/react-dialog를 초기 번들에서 제거 (~20+ KiB 절감)
 const MobileNav = dynamic(
@@ -25,14 +26,14 @@ export function Header() {
   const pathname = usePathname()
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-800/50 bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-slate-950/80">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto flex h-16 items-center px-4">
         {/* Logo */}
         <Link href="/" className="mr-8 flex items-center space-x-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500">
             <GraduationCap className="h-5 w-5 text-slate-900" />
           </div>
-          <span className="font-bold text-lg tracking-tight text-white">
+          <span className="font-bold text-lg tracking-tight text-foreground">
             자격증 마스터
           </span>
         </Link>
@@ -48,8 +49,8 @@ export function Header() {
                 className={cn(
                   'flex items-center gap-2 text-sm font-medium transition-colors hover:text-emerald-400',
                   pathname === item.href
-                    ? 'text-emerald-400'
-                    : 'text-slate-400'
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -59,8 +60,11 @@ export function Header() {
           })}
         </nav>
 
-        {/* Mobile Menu - lazy loaded */}
-        <MobileNav navItems={navItems} />
+        {/* Theme Toggle & Mobile Menu */}
+        <div className="flex items-center gap-2 ml-auto md:ml-0">
+          <ThemeToggle />
+          <MobileNav navItems={navItems} />
+        </div>
       </div>
     </header>
   )

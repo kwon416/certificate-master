@@ -3,6 +3,7 @@
 복합 진행도 지표, 학습 패턴 분석, 이탈 위험 감지 기능을 제공합니다.
 MariaDB (SQLAlchemy)로 마이그레이션됨.
 """
+import logging
 from datetime import date, timedelta
 
 from fastapi import APIRouter, HTTPException, status
@@ -15,6 +16,7 @@ from app.services.analytics_service import AnalyticsService
 from app.services.learning_pattern_service import LearningPatternService
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 analytics_service = AnalyticsService()
 learning_pattern_service = LearningPatternService()
 

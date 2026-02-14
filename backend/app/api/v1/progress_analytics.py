@@ -7,14 +7,16 @@ for study plans.
 MariaDB(SQLAlchemy)로 마이그레이션됨 (2026-01-22).
 """
 
-from fastapi import APIRouter, HTTPException
-from typing import Any
+import logging
+
+from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import CurrentUser, DBSession
 from app.models.study_plan import StudyPlan
 from app.services.velocity_calculator import VelocityCalculator
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/{plan_id}/velocity")
@@ -22,7 +24,7 @@ async def get_velocity_metrics(
     plan_id: str,
     user: CurrentUser,
     db: DBSession,
-) -> Any:
+):
     """
     Get velocity and prediction metrics for a study plan.
 
@@ -54,7 +56,7 @@ async def get_velocity_metrics(
 
     if not study_plan_model:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Study plan not found or you don't have access"
         )
 

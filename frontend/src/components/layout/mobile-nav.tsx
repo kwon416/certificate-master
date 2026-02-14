@@ -23,13 +23,13 @@ export function MobileNav({ navItems }: { navItems: NavItem[] }) {
 
   return (
     <Sheet>
-      <SheetTrigger asChild className="md:hidden ml-auto">
-        <Button variant="ghost" size="icon" className="text-slate-400">
+      <SheetTrigger asChild className="md:hidden">
+        <Button variant="ghost" size="icon" className="text-muted-foreground">
           <Menu className="h-5 w-5" />
           <span className="sr-only">메뉴 열기</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[280px] bg-slate-950 border-slate-800">
+      <SheetContent side="right" className="w-[280px] bg-background border-border">
         <nav className="flex flex-col gap-4 mt-8">
           {navItems.map((item) => {
             const Icon = item.icon
@@ -40,8 +40,8 @@ export function MobileNav({ navItems }: { navItems: NavItem[] }) {
                   className={cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-colors',
                     pathname === item.href
-                      ? 'bg-slate-800 text-emerald-400'
-                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+                      ? 'bg-secondary text-primary'
+                      : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
                   )}
                 >
                   <Icon className="h-5 w-5" />

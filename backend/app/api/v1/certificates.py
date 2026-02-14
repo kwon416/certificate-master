@@ -3,6 +3,7 @@
 자격증의 검색, 조회, 업데이트 기능을 제공합니다.
 MariaDB (SQLAlchemy)로 마이그레이션됨.
 """
+import logging
 import re
 from typing import Optional
 
@@ -33,6 +34,7 @@ from app.schemas.certificate import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/search", response_model=CertificateList)

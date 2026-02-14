@@ -128,7 +128,7 @@ export function SearchInput({
           placeholder={placeholder}
           autoFocus={autoFocus}
           aria-label="자격증 검색"
-          autocomplete="off"
+          autoComplete="off"
           spellCheck={false}
           className="h-14 pl-12 pr-12 text-lg bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20"
         />

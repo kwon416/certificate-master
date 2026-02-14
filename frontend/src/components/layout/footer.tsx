@@ -17,7 +17,7 @@ const footerLinks = {
 
 export function Footer() {
   return (
-    <footer className="border-t border-slate-800/50 bg-slate-950">
+    <footer className="border-t border-border bg-background">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {/* Brand */}
@@ -26,11 +26,11 @@ export function Footer() {
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500">
                 <GraduationCap className="h-5 w-5 text-slate-900" />
               </div>
-              <span className="font-bold text-lg text-white">
+              <span className="font-bold text-lg text-foreground">
                 자격증 마스터
               </span>
             </Link>
-            <p className="mt-4 text-sm text-slate-500 leading-relaxed">
+            <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
               나에게 맞는 자격증 찾기
               <br />
               흩어진 자격증 정보를 한 화면에 모아
@@ -45,14 +45,14 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub"
-                className="text-slate-500 hover:text-emerald-400 transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors"
               >
                 <Github className="h-5 w-5" />
               </a>
               <a
                 href="mailto:contact@certmaster.kr"
                 aria-label="이메일 문의"
-                className="text-slate-500 hover:text-emerald-400 transition-colors"
+                className="text-muted-foreground hover:text-primary transition-colors"
               >
                 <Mail className="h-5 w-5" />
               </a>
@@ -61,13 +61,13 @@ export function Footer() {
 
           {/* Product Links */}
           <div>
-            <h3 className="font-semibold text-white mb-4">서비스</h3>
+            <h3 className="font-semibold text-foreground mb-4">서비스</h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-slate-500 hover:text-emerald-400 transition-colors"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -78,13 +78,13 @@ export function Footer() {
 
           {/* Community Links */}
           <div>
-            <h3 className="font-semibold text-white mb-4">커뮤니티</h3>
+            <h3 className="font-semibold text-foreground mb-4">커뮤니티</h3>
             <ul className="space-y-3">
               {footerLinks.community.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-slate-500 hover:text-emerald-400 transition-colors"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -95,13 +95,13 @@ export function Footer() {
 
           {/* Legal Links */}
           <div>
-            <h3 className="font-semibold text-white mb-4">법적 고지</h3>
+            <h3 className="font-semibold text-foreground mb-4">법적 고지</h3>
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-slate-500 hover:text-emerald-400 transition-colors"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -112,8 +112,8 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-800/50">
-          <p className="text-center text-sm text-slate-600" suppressHydrationWarning>
+        <div className="mt-12 pt-8 border-t border-border">
+          <p className="text-center text-sm text-muted-foreground" suppressHydrationWarning>
             © {new Date().getFullYear()} 자격증 마스터. All rights reserved.
           </p>
         </div>
@@ -121,4 +121,3 @@ export function Footer() {
     </footer>
   )
 }
-
