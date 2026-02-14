@@ -37,11 +37,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : ''
   const statsText = [difficultyText, studyPeriodText].filter(Boolean).join(', ')
 
-  const description = cert.overview
-    ? `${cert.title} 자격증 정보 - ${statsText ? statsText + '. ' : ''}${cert.overview.substring(0, 100)}`
+  // overview의 줄바꿈을 공백으로 치환하고, 문장 단위로 잘라서 깔끔한 description 생성
+  const cleanOverview = cert.overview
+    ? cert.overview.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim()
+    : ''
+  const maxDescLen = 120
+  const prefix = `${cert.title} 자격증 정보 - ${statsText ? statsText + '. ' : ''}`
+  const remainLen = maxDescLen - prefix.length
+  let overviewSnippet = ''
+  if (cleanOverview && remainLen > 20) {
+    const truncated = cleanOverview.substring(0, remainLen)
+    // 마지막 마침표(.) 위치에서 자르기, 없으면 마지막 공백에서 자르기
+    const lastPeriod = truncated.lastIndexOf('.')
+    const lastSpace = truncated.lastIndexOf(' ')
+    if (lastPeriod > remainLen * 0.5) {
+      overviewSnippet = truncated.substring(0, lastPeriod + 1)
+    } else if (lastSpace > remainLen * 0.5) {
+      overviewSnippet = truncated.substring(0, lastSpace)
+    } else {
+      overviewSnippet = truncated
+    }
+  }
+
+  const description = overviewSnippet
+    ? `${prefix}${overviewSnippet}`
     : `${cert.title} 자격증 정보 - ${statsText ? statsText + '. ' : ''}시험 과목, 합격률, 응시료, 학습 가이드를 한눈에 확인하세요.`
 
-  const title = `${cert.title} - 시험정보, 난이도, 합격률 | 자격증 마스터`
+  // layout.tsx의 title template이 '%s | 자격증 마스터'이므로, 여기선 '| 자격증 마스터' 제외
+  const title = `${cert.title} - 시험정보, 난이도, 합격률`
 
   // 동적 키워드 생성: 자격증명 기반 검색어 조합
   const categoryName = cert.categories?.[0]?.name
@@ -74,7 +97,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${cert.title} - 시험정보, 난이도, 합격률 | 자격증 마스터`,
+      title: `${cert.title} - 시험정보, 난이도, 합격률`,
       description,
       images: [`${SITE_URL}/og-image.png`],
     },
