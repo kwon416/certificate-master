@@ -44,10 +44,10 @@ const colorMap = {
     border: 'border-purple-500/20',
   },
   slate: {
-    icon: 'text-slate-400',
-    value: 'text-white',
-    bg: 'bg-slate-800/50',
-    border: 'border-slate-700/50',
+    icon: 'text-muted-foreground',
+    value: 'text-foreground',
+    bg: 'bg-muted/50',
+    border: 'border-border',
   },
 }
 
@@ -88,13 +88,13 @@ export function StatCard({
     >
       <div className="flex items-center gap-2 mb-2">
         <Icon className={cn('h-4 w-4', colors.icon)} />
-        <span className="text-sm text-slate-400">{label}</span>
+        <span className="text-sm text-muted-foreground">{label}</span>
       </div>
       <div className={cn('text-2xl font-bold', colors.value)}>
         {value}
       </div>
       {subValue && (
-        <div className="text-xs text-slate-500 mt-1">{subValue}</div>
+        <div className="text-xs text-muted-foreground mt-1">{subValue}</div>
       )}
     </div>
   )

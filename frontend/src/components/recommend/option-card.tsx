@@ -40,7 +40,7 @@ export function OptionCard({
         compact ? 'p-2 md:p-3' : 'p-3 md:p-4',
         selected
           ? 'border-emerald-500 bg-emerald-500/10'
-          : 'border-slate-700 hover:border-emerald-500 hover:bg-slate-800/50',
+          : 'border-border hover:border-emerald-500 hover:bg-muted/50',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
@@ -72,13 +72,13 @@ export function OptionCard({
               className={cn(
                 'font-medium transition-colors truncate',
                 compact ? 'text-sm md:text-base' : 'text-base md:text-lg',
-                selected ? 'text-emerald-400' : 'text-white'
+                selected ? 'text-emerald-400' : 'text-foreground'
               )}
             >
               {label}
             </span>
             {description && !compact && (
-              <span className="text-xs md:text-sm text-slate-400 line-clamp-2">
+              <span className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                 {description}
               </span>
             )}

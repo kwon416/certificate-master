@@ -32,16 +32,16 @@ function SimilarCertificateItem({ cert }: { cert: SimilarCertificate }) {
   const hasValidLink = !!cert.certificate_id && !!existingCert
 
   return (
-    <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg hover:bg-slate-800/50 transition-colors">
+    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
       <div className="flex-1">
-        <h4 className="font-medium text-white mb-1">{cert.title}</h4>
+        <h4 className="font-medium text-foreground mb-1">{cert.title}</h4>
         {cert.comparison && (
-          <p className="text-sm text-slate-400">{cert.comparison}</p>
+          <p className="text-sm text-muted-foreground">{cert.comparison}</p>
         )}
       </div>
       {cert.certificate_id && (
         isLoading ? (
-          <Loader2 className="h-4 w-4 text-slate-500 animate-spin" />
+          <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
         ) : hasValidLink ? (
           <Link href={`/certificates/${cert.slug || cert.certificate_id}`}>
             <Button
@@ -72,7 +72,7 @@ export function SimilarCertificatesTable({
   if (!certificates || certificates.length === 0) return null
 
   return (
-    <Card className={cn('bg-slate-900/50 border-slate-800/50', className)}>
+    <Card className={cn('bg-card/50 border-border', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Layers className="h-5 w-5 text-purple-400" />

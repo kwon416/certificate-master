@@ -21,7 +21,7 @@ interface CareerTabProps {
 
 function NoDataMessage({ message = '정보가 없습니다' }: { message?: string }) {
   return (
-    <div className="flex items-center gap-2 text-slate-500 py-8 justify-center">
+    <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
       <Info className="h-5 w-5" />
       <span>{message}</span>
     </div>
@@ -48,8 +48,8 @@ function SentenceSections({ text }: { text: string }) {
   return (
     <div className="space-y-3">
       {sentences.map((sentence, idx) => (
-        <div key={`${sentence}-${idx}`} className="rounded-lg bg-slate-800/30 p-4">
-          <p className="text-slate-300 leading-relaxed">{sentence}</p>
+        <div key={`${sentence}-${idx}`} className="rounded-lg bg-muted/30 p-4">
+          <p className="text-foreground/80 leading-relaxed">{sentence}</p>
         </div>
       ))}
     </div>
@@ -67,7 +67,7 @@ export function CareerTab({ certificate }: CareerTabProps) {
 
   if (!hasCareer) {
     return (
-      <Card className="bg-slate-900/50 border-slate-800/50">
+      <Card className="bg-card/50 border-border">
         <CardContent className="py-8">
           <NoDataMessage message="진로 및 활용 정보가 아직 등록되지 않았습니다" />
         </CardContent>
@@ -79,7 +79,7 @@ export function CareerTab({ certificate }: CareerTabProps) {
     <div className="space-y-6">
       {/* 활용 분야 */}
       {hasCareer && (cert.career_info?.use_cases?.length ?? 0) > 0 && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-emerald-400" />
@@ -104,7 +104,7 @@ export function CareerTab({ certificate }: CareerTabProps) {
 
       {/* 관련 직업 */}
       {hasCareer && (cert.career_info?.related_jobs?.length ?? 0) > 0 && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Award className="h-5 w-5 text-cyan-400" />
@@ -114,8 +114,8 @@ export function CareerTab({ certificate }: CareerTabProps) {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {splitItems(cert.career_info?.related_jobs ?? []).map((job, idx) => (
-                <div key={idx} className="bg-slate-800/30 p-3 rounded-lg text-center">
-                  <span className="text-slate-300">{job}</span>
+                <div key={idx} className="bg-muted/30 p-3 rounded-lg text-center">
+                  <span className="text-foreground/80">{job}</span>
                 </div>
               ))}
             </div>
@@ -125,7 +125,7 @@ export function CareerTab({ certificate }: CareerTabProps) {
 
       {/* 관련 산업 */}
       {hasCareer && (cert.career_info?.industry?.length ?? 0) > 0 && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-violet-400" />
@@ -150,7 +150,7 @@ export function CareerTab({ certificate }: CareerTabProps) {
 
       {/* 평균 연봉 */}
       {hasCareer && cert.career_info?.average_salary && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-amber-400" />
@@ -169,7 +169,7 @@ export function CareerTab({ certificate }: CareerTabProps) {
 
       {/* 취업 전망 */}
       {hasCareer && cert.career_info?.job_prospects && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-emerald-400" />

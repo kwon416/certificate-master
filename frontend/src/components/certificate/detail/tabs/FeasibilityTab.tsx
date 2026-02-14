@@ -26,7 +26,7 @@ interface FeasibilityTabProps {
 
 function NoDataMessage({ message = '정보가 없습니다' }: { message?: string }) {
   return (
-    <div className="flex items-center gap-2 text-slate-500 py-8 justify-center">
+    <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
       <Info className="h-5 w-5" />
       <span>{message}</span>
     </div>
@@ -45,8 +45,8 @@ function SentenceSections({ text }: { text: string }) {
   return (
     <div className="space-y-3">
       {sentences.map((sentence, idx) => (
-        <div key={`${sentence}-${idx}`} className="rounded-lg bg-slate-800/30 p-4">
-          <p className="text-slate-300 leading-relaxed">{sentence}</p>
+        <div key={`${sentence}-${idx}`} className="rounded-lg bg-muted/30 p-4">
+          <p className="text-foreground/80 leading-relaxed">{sentence}</p>
         </div>
       ))}
     </div>
@@ -69,7 +69,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
 
   if (!hasAnyData) {
     return (
-      <Card className="bg-slate-900/50 border-slate-800/50">
+      <Card className="bg-card/50 border-border">
         <CardContent className="py-8">
           <NoDataMessage message="합격 전략 정보가 아직 등록되지 않았습니다" />
         </CardContent>
@@ -89,7 +89,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
 
       {/* 준비기간 분포 */}
       {hasReviews && cert.user_reviews?.study_period_distribution && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calendar className="h-5 w-5 text-cyan-400" />
@@ -105,10 +105,10 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
                 ([period, percentage], idx) => (
                   <div key={idx} className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-300">{period}</span>
+                      <span className="text-foreground/80">{period}</span>
                       <span className="text-cyan-400 font-medium">{percentage}</span>
                     </div>
-                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-cyan-400 rounded-full transition-[width]"
                         style={{ width: percentage }}
@@ -119,23 +119,23 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
               )}
             </div>
             {cert.user_reviews.study_period_range_days && (
-              <div className="mt-4 p-3 bg-slate-800/30 rounded-lg">
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-xs text-slate-500">최소</p>
-                    <p className="text-sm font-bold text-slate-300">
+                    <p className="text-xs text-muted-foreground">최소</p>
+                    <p className="text-sm font-bold text-foreground/80">
                       {cert.user_reviews.study_period_range_days.min}일
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">평균</p>
+                    <p className="text-xs text-muted-foreground">평균</p>
                     <p className="text-sm font-bold text-cyan-400">
                       {cert.user_reviews.study_period_range_days.median}일
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">최대</p>
-                    <p className="text-sm font-bold text-slate-300">
+                    <p className="text-xs text-muted-foreground">최대</p>
+                    <p className="text-sm font-bold text-foreground/80">
                       {cert.user_reviews.study_period_range_days.max}일
                     </p>
                   </div>
@@ -148,7 +148,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
 
       {/* 합격자 후기 요약 */}
       {hasReviews && cert.user_reviews?.summary && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-emerald-400" />
@@ -163,7 +163,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
 
       {/* 난이도 평가 */}
       {hasReviews && cert.user_reviews?.difficulty_feedback && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Star className="h-5 w-5 text-amber-400" />
@@ -171,7 +171,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-slate-300 leading-relaxed">
+            <p className="text-foreground/80 leading-relaxed">
               {cert.user_reviews.difficulty_feedback}
             </p>
           </CardContent>
@@ -180,7 +180,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
 
       {/* 시험 당일 팁 */}
       {hasReviews && (cert.user_reviews?.exam_day_tips?.length ?? 0) > 0 && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-violet-400" />
@@ -198,7 +198,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
                   className="flex items-start gap-3 bg-violet-900/10 p-3 rounded-lg border border-violet-500/20"
                 >
                   <span className="text-violet-400 font-bold">{idx + 1}.</span>
-                  <span className="text-slate-300">{tip}</span>
+                  <span className="text-foreground/80">{tip}</span>
                 </li>
               ))}
             </ul>
@@ -208,7 +208,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
 
       {/* 공통 어려움 */}
       {hasReviews && (cert.user_reviews?.common_challenges?.length ?? 0) > 0 && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-amber-400" />
@@ -220,7 +220,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
               {cert.user_reviews?.common_challenges.map((challenge, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <span className="text-amber-400 mt-1">⚠️</span>
-                  <span className="text-slate-300">{challenge}</span>
+                  <span className="text-foreground/80">{challenge}</span>
                 </li>
               ))}
             </ul>
@@ -230,7 +230,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
 
       {/* 합격 팁 (학습 가이드에서) */}
       {hasGuide && (cert.study_guide?.success_tips?.length ?? 0) > 0 && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-yellow-400" />
@@ -245,7 +245,7 @@ export function FeasibilityTab({ certificate }: FeasibilityTabProps) {
                   className="flex items-start gap-3 bg-yellow-900/10 p-3 rounded-lg"
                 >
                   <Lightbulb className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-300">{tip}</span>
+                  <span className="text-foreground/80">{tip}</span>
                 </li>
               ))}
             </ul>

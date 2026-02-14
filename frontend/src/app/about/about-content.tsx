@@ -172,14 +172,14 @@ export default function AboutContent() {
 
             {/* Headline */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 animate-slide-up stagger-1">
-              <span className="text-white">
+              <span className="text-foreground">
                 나에게<br className="block md:hidden" /> 맞는{' '}
                 <span className="gradient-text">자격증</span> 찾기
               </span>
             </h1>
 
             {/* Subheadline */}
-            <p className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-slide-up stagger-2">
+            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed animate-slide-up stagger-2">
               흩어진 자격증 정보를 한 화면에 모아
               <br className="hidden md:block" />
               시험 정보 · 공부 방법 · 후기 기준으로 정리했어요.
@@ -200,7 +200,7 @@ export default function AboutContent() {
             </div>
 
             {/* Trust Indicators */}
-            <div className="mt-16 flex flex-wrap justify-center gap-8 text-sm text-slate-500 animate-slide-up stagger-4">
+            <div className="mt-16 flex flex-wrap justify-center gap-8 text-sm text-muted-foreground animate-slide-up stagger-4">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-emerald-400" />
                 <span>맞춤형 AI 자격증 추천</span>
@@ -220,14 +220,14 @@ export default function AboutContent() {
 
       {/* Problem Empathy Section */}
       <motion.section
-        className="py-24 bg-slate-900/30"
+        className="py-24 bg-card/30"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={sectionVariants}
       >
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-12">
             혹시 이런 고민, 하고 계신가요?
           </h2>
           <motion.div className="grid md:grid-cols-2 gap-6 mb-8" variants={listVariants}>
@@ -249,7 +249,7 @@ export default function AboutContent() {
         variants={sectionVariants}
       >
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-12">
             혹시 이런 방법으로 찾고 계셨나요?
           </h2>
           <motion.div className="grid md:grid-cols-3 gap-8 mb-8" variants={listVariants}>
@@ -259,7 +259,7 @@ export default function AboutContent() {
               </motion.div>
             ))}
           </motion.div>
-          <p className="text-center text-slate-400 text-lg font-medium">
+          <p className="text-center text-muted-foreground text-lg font-medium">
             정보는 많지만 나한테 맞는지 알 수 없었죠.
             <br className="hidden md:block" />
             이제 저희가 그 고민을 해결해드려요.
@@ -269,17 +269,17 @@ export default function AboutContent() {
 
       {/* Core Value Section */}
       <motion.section
-        className="py-24 bg-slate-900/30"
+        className="py-24 bg-card/30"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={sectionVariants}
       >
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-4">
             Certificate Master는 다릅니다
           </h2>
-          <p className="text-slate-400 text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
             결과로 증명하는 3가지 핵심 가치
           </p>
           <motion.div className="grid md:grid-cols-3 gap-8" variants={listVariants}>
@@ -304,10 +304,10 @@ export default function AboutContent() {
           <Badge variant="outline" className="mx-auto mb-4 border-emerald-500/30 text-emerald-400 block w-fit">
             이용 방법
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-4">
             복잡한 선택을 단순하게
           </h2>
-          <p className="text-slate-400 text-center mb-16 max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-center mb-16 max-w-2xl mx-auto">
             자격증 확인까지 1분이면 충분합니다.
           </p>
 
@@ -340,16 +340,16 @@ export default function AboutContent() {
         variants={sectionVariants}
       >
         <div className="container mx-auto px-4">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-card to-muted border border-border">
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl" />
 
             <div className="relative px-8 py-16 md:py-20 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                 지금 확인하고 결정하세요
               </h2>
-              <p className="text-slate-400 mb-8 max-w-xl mx-auto">
+              <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
                 자격증 선택, 더 이상 혼자 고민하지 마세요.
               </p>
 

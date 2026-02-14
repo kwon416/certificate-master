@@ -80,9 +80,9 @@ export function VelocityChart({ metrics }: VelocityChartProps) {
   }
 
   return (
-    <Card data-testid="velocity-chart" className="bg-slate-900 border-slate-800">
+    <Card data-testid="velocity-chart" className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-white">진행 속도 추이</CardTitle>
+        <CardTitle className="text-foreground">진행 속도 추이</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Velocity Status Indicator */}
@@ -95,7 +95,7 @@ export function VelocityChart({ metrics }: VelocityChartProps) {
           data-testid="velocity-indicator"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-400">진행 속도</span>
+            <span className="text-sm text-muted-foreground">진행 속도</span>
             <div className="flex items-center gap-2">
               <TrendIcon className={cn('h-5 w-5', text)} data-testid="velocity-trend-icon" />
               <span className={cn('text-lg font-bold', text)}>
@@ -108,23 +108,23 @@ export function VelocityChart({ metrics }: VelocityChartProps) {
         {/* Progress Comparison */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-slate-400 mb-1">예상 진행률</p>
-            <p className="text-2xl font-bold text-slate-300" data-testid="expected-progress">
+            <p className="text-sm text-muted-foreground mb-1">예상 진행률</p>
+            <p className="text-2xl font-bold text-foreground/80" data-testid="expected-progress">
               {expected_progress.toFixed(1)}%
             </p>
           </div>
           <div>
-            <p className="text-sm text-slate-400 mb-1">실제 진행률</p>
-            <p className="text-2xl font-bold text-white" data-testid="actual-progress">
+            <p className="text-sm text-muted-foreground mb-1">실제 진행률</p>
+            <p className="text-2xl font-bold text-foreground" data-testid="actual-progress">
               {actual_progress.toFixed(1)}%
             </p>
           </div>
         </div>
 
         {/* Predicted Completion Date */}
-        <div className="pt-4 border-t border-slate-700">
-          <p className="text-sm text-slate-400 mb-1">예상 완료일</p>
-          <p className="text-lg font-medium text-white" data-testid="predicted-date">
+        <div className="pt-4 border-t border-border">
+          <p className="text-sm text-muted-foreground mb-1">예상 완료일</p>
+          <p className="text-lg font-medium text-foreground" data-testid="predicted-date">
             {formatPredictedDate(predicted_date)}
           </p>
         </div>

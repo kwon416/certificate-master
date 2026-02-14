@@ -67,16 +67,16 @@ export const metadata: Metadata = {
 function SearchPageLoading() {
   return (
     <div className="min-h-screen">
-      <section data-testid="home-hero" className="relative overflow-hidden border-b border-slate-800/50">
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-slate-950 to-slate-950" />
+      <section data-testid="home-hero" className="relative overflow-hidden border-b border-border">
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-background to-background" />
         <div className="relative container mx-auto px-4 pt-12 pb-10 sm:pt-16 sm:pb-12">
           <div className="text-center max-w-3xl mx-auto mb-8">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">
-              <span className="text-white">나에게 맞는 </span>
+              <span className="text-foreground">나에게 맞는 </span>
               <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">자격증</span>
-              <span className="text-white">을 찾아보세요</span>
+              <span className="text-foreground">을 찾아보세요</span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-400">
+            <p className="text-base sm:text-lg text-muted-foreground">
               600개 이상의 자격증 정보를 한눈에 비교하세요
             </p>
           </div>
@@ -102,10 +102,10 @@ export default async function HomePage() {
       {certificates.length > 0 && (
         <section
           data-testid="ssr-certificate-links"
-          className="border-t border-slate-800/50 bg-slate-950/50"
+          className="border-t border-border bg-muted/50"
         >
           <div className="container mx-auto px-4 py-12">
-            <h2 className="text-lg font-semibold text-slate-300 mb-6">
+            <h2 className="text-lg font-semibold text-foreground mb-6">
               인기 자격증
             </h2>
             <nav aria-label="자격증 목록">
@@ -114,7 +114,7 @@ export default async function HomePage() {
                   <li key={cert.id}>
                     <Link
                       href={`/certificates/${cert.slug || cert.id}`}
-                      className="inline-block rounded-full border border-slate-800 bg-slate-900/50 px-3 py-1.5 text-sm text-slate-400 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
+                      className="inline-block rounded-full border border-border bg-card/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
                     >
                       {cert.title}
                     </Link>

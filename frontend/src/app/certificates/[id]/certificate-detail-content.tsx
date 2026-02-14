@@ -50,7 +50,7 @@ const StudyGuideTab = dynamic(
 )
 
 function DifficultyStars({ level }: { level: number | null | undefined }) {
-  if (!level) return <span className="text-sm text-slate-500">정보 없음</span>
+  if (!level) return <span className="text-sm text-muted-foreground">정보 없음</span>
 
   return (
     <div className="flex gap-0.5">
@@ -61,7 +61,7 @@ function DifficultyStars({ level }: { level: number | null | undefined }) {
             'h-4 w-4',
             star <= level
               ? 'fill-amber-400 text-amber-400'
-              : 'text-slate-600'
+              : 'text-muted-foreground/50'
           )}
         />
       ))}
@@ -104,21 +104,21 @@ export default function CertificateDetailContent({
       <div className="container mx-auto px-4">
         {/* Breadcrumb Navigation */}
         <nav aria-label="breadcrumb" data-testid="breadcrumb" className="mb-6">
-          <ol className="flex items-center gap-1.5 text-sm text-slate-400">
+          <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <li>
               <Link
                 href="/"
-                className="flex items-center gap-1 hover:text-white transition-colors"
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
               >
                 <Home className="h-3.5 w-3.5" />
                 <span>자격증 검색</span>
               </Link>
             </li>
             <li>
-              <ChevronRight className="h-3.5 w-3.5 text-slate-600" />
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
             </li>
             <li>
-              <span aria-current="page" className="text-white font-medium truncate max-w-[200px] sm:max-w-none">
+              <span aria-current="page" className="text-foreground font-medium truncate max-w-[200px] sm:max-w-none">
                 {cert.title}
               </span>
             </li>
@@ -130,7 +130,7 @@ export default function CertificateDetailContent({
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             {/* Icon */}
             <div className="flex-shrink-0">
-              <div className="w-20 h-20 rounded-2xl bg-slate-800/50 flex items-center justify-center text-5xl">
+              <div className="w-20 h-20 rounded-2xl bg-muted/50 flex items-center justify-center text-5xl">
                 📜
               </div>
             </div>
@@ -145,7 +145,7 @@ export default function CertificateDetailContent({
                   </Badge>
                 ))}
                 {cert.series && (
-                  <Badge variant="secondary" className="bg-slate-800 text-slate-300">
+                  <Badge variant="secondary" className="bg-muted text-foreground/80">
                     {cert.series}
                   </Badge>
                 )}
@@ -157,12 +157,12 @@ export default function CertificateDetailContent({
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                 {cert.title}
               </h1>
 
               {/* View Count */}
-              <div className="flex items-center gap-1.5 text-slate-400 mb-4">
+              <div className="flex items-center gap-1.5 text-muted-foreground mb-4">
                 <Eye className="h-4 w-4" />
                 <span className="text-sm">조회 {(cert.view_count ?? 0).toLocaleString()}회</span>
               </div>
@@ -170,35 +170,35 @@ export default function CertificateDetailContent({
               {/* Quick Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {/* Difficulty */}
-                <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50">
-                  <div className="text-xs text-slate-500 mb-1">난이도</div>
+                <div className="bg-card/50 rounded-lg p-3 border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">난이도</div>
                   <DifficultyStars level={cert.difficulty} />
-                  <div className="text-xs text-slate-400 mt-1">
+                  <div className="text-xs text-muted-foreground mt-1">
                     {getDifficultyLabel(cert.difficulty)}
                   </div>
                 </div>
 
                 {/* Study Period */}
-                <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50">
-                  <div className="text-xs text-slate-500 mb-1">준비기간</div>
+                <div className="bg-card/50 rounded-lg p-3 border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">준비기간</div>
                   {cert.study_period_days ? (
                     <div className="flex items-center gap-1.5">
                       <Clock className="h-4 w-4 text-cyan-400" />
-                      <span className="text-lg font-bold text-white">
+                      <span className="text-lg font-bold text-foreground">
                         약 {Math.round(cert.study_period_days / 30)}개월
                       </span>
                     </div>
                   ) : (
-                    <div className="text-sm text-slate-500">정보 없음</div>
+                    <div className="text-sm text-muted-foreground">정보 없음</div>
                   )}
                 </div>
 
                 {/* Category */}
-                <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50">
-                  <div className="text-xs text-slate-500 mb-1">자격 분류</div>
+                <div className="bg-card/50 rounded-lg p-3 border border-border">
+                  <div className="text-xs text-muted-foreground mb-1">자격 분류</div>
                   <div className="flex items-center gap-1.5">
                     <Building2 className="h-4 w-4 text-violet-400" />
-                    <span className="text-sm font-medium text-slate-200 line-clamp-2">
+                    <span className="text-sm font-medium text-foreground line-clamp-2">
                       {cert.categories.length > 0
                         ? cert.categories[0].name
                         : '정보 없음'}
@@ -214,11 +214,11 @@ export default function CertificateDetailContent({
             <div className="mt-6 p-4 bg-gradient-to-r from-cyan-900/30 to-emerald-900/30 rounded-xl border border-cyan-500/20">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-1">
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-1">
                     <Building2 className="h-5 w-5 text-cyan-400" />
                     공식 사이트 바로가기
                   </h3>
-                  <p className="text-sm text-slate-300">
+                  <p className="text-sm text-foreground/80">
                     📅 시험 일정, 접수 기간, 응시료 등 최신 정보를 공식 사이트에서 확인하세요
                   </p>
                 </div>
@@ -243,7 +243,7 @@ export default function CertificateDetailContent({
 
         {/* Tabs */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="bg-slate-900/50 p-1 flex-wrap h-auto">
+          <TabsList className="bg-card/50 p-1 flex-wrap h-auto">
             <TabsTrigger value="overview">한눈에 보기</TabsTrigger>
             <TabsTrigger value="exam">시험 정보</TabsTrigger>
             <TabsTrigger value="feasibility">합격 전략</TabsTrigger>
@@ -274,19 +274,19 @@ export default function CertificateDetailContent({
 
         {/* CTA Section */}
         <div className="mt-8 text-center">
-          <Card className="bg-gradient-to-r from-slate-900/80 to-slate-900/60 border-slate-800/60">
+          <Card className="bg-gradient-to-r from-card/80 to-card/60 border-border">
             <CardContent className="py-8 space-y-4">
-              <h3 className="text-2xl font-bold text-white">
+              <h3 className="text-2xl font-bold text-foreground">
                 {cert.title}에 대해 더 알아보세요
               </h3>
-              <p className="text-slate-300">
+              <p className="text-foreground/80">
                 시험 일정, 난이도, 준비 기간을 확인하고 다른 자격증과 비교해 보세요.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-slate-700 text-slate-200 hover:bg-slate-800"
+                  className="border-border text-foreground hover:bg-muted"
                   asChild
                 >
                   <Link href="/search">다른 자격증 찾아보기</Link>

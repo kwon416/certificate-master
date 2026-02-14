@@ -19,17 +19,17 @@ export default function UsageStep({ step, title, description, icon: Icon }: Usag
         </div>
 
         {/* Icon Circle */}
-        <div className="w-12 h-12 rounded-full bg-slate-800/50 border border-slate-700/50 flex items-center justify-center mb-4">
+        <div className="w-12 h-12 rounded-full bg-muted/50 border border-border/50 flex items-center justify-center mb-4">
           <Icon className="h-6 w-6 text-emerald-400" />
         </div>
 
         {/* Title */}
-        <h3 className="text-xl font-bold text-white mb-3 leading-relaxed">
+        <h3 className="text-xl font-bold text-foreground mb-3 leading-relaxed">
           {step}. {title}
         </h3>
 
         {/* Description */}
-        <p className="text-slate-400 leading-relaxed mb-4 max-w-xs">
+        <p className="text-muted-foreground leading-relaxed mb-4 max-w-xs">
           {description}
         </p>
 

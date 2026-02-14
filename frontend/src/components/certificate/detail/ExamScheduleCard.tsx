@@ -26,7 +26,7 @@ export function ExamScheduleCard({ scheduleDetail, className }: ExamScheduleCard
   if (!hasAnyData) return null
 
   return (
-    <Card className={cn('bg-slate-900/50 border-slate-800/50', className)}>
+    <Card className={cn('bg-card/50 border-border', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Calendar className="h-5 w-5 text-cyan-400" />
@@ -40,7 +40,7 @@ export function ExamScheduleCard({ scheduleDetail, className }: ExamScheduleCard
             <div className="bg-cyan-900/10 rounded-lg p-4 border border-cyan-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-cyan-400" />
-                <span className="text-sm text-slate-400">연간 시험</span>
+                <span className="text-sm text-muted-foreground">연간 시험</span>
               </div>
               <span className="text-xl font-bold text-cyan-400">
                 {scheduleDetail.annual_exam_count}회
@@ -58,7 +58,7 @@ export function ExamScheduleCard({ scheduleDetail, className }: ExamScheduleCard
             <div className="bg-cyan-900/10 rounded-lg p-4 border border-cyan-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-cyan-400" />
-                <span className="text-sm text-slate-400">시험 방식</span>
+                <span className="text-sm text-muted-foreground">시험 방식</span>
               </div>
               <Badge variant="outline" className="text-sm border-cyan-500/30 text-cyan-400">
                 {scheduleDetail.exam_type}

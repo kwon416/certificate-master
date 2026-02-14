@@ -35,7 +35,7 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
   if (!hasAnyData) return null
 
   return (
-    <Card className={cn('bg-slate-900/50 border-slate-800/50', className)}>
+    <Card className={cn('bg-card/50 border-border', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Target className="h-5 w-5 text-emerald-400" />
@@ -52,7 +52,7 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
             <div className="bg-emerald-900/10 rounded-lg p-4 border border-emerald-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <Users className="h-4 w-4 text-emerald-400" />
-                <span className="text-sm text-slate-400">비전공자 합격률</span>
+                <span className="text-sm text-muted-foreground">비전공자 합격률</span>
               </div>
               <span className="text-xl font-bold text-emerald-400">
                 {feasibilityInfo.non_major_pass_rate}
@@ -65,7 +65,7 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
             <div className="bg-cyan-900/10 rounded-lg p-4 border border-cyan-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-cyan-400" />
-                <span className="text-sm text-slate-400">1회 합격률</span>
+                <span className="text-sm text-muted-foreground">1회 합격률</span>
               </div>
               <span className="text-xl font-bold text-cyan-400">
                 {feasibilityInfo.first_attempt_pass_rate}
@@ -89,7 +89,7 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
                 ) : (
                   <XCircle className="h-4 w-4 text-amber-400" />
                 )}
-                <span className="text-sm text-slate-400">독학 가능</span>
+                <span className="text-sm text-muted-foreground">독학 가능</span>
               </div>
               <span
                 className={cn(
@@ -107,7 +107,7 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
             <div className="bg-violet-900/10 rounded-lg p-4 border border-violet-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-violet-400" />
-                <span className="text-sm text-slate-400">최소 준비 기간</span>
+                <span className="text-sm text-muted-foreground">최소 준비 기간</span>
               </div>
               <span className="text-xl font-bold text-violet-400">
                 {feasibilityInfo.minimum_study_period >= 30
@@ -120,7 +120,7 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
 
         {/* 직장인 팁 */}
         {(feasibilityInfo.working_adult_tips?.length ?? 0) > 0 && (
-          <div className="mt-4 pt-4 border-t border-slate-800/50">
+          <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center gap-2 mb-3">
               <Briefcase className="h-4 w-4 text-amber-400" />
               <span className="text-sm font-medium text-amber-400">직장인 학습 팁</span>
@@ -129,7 +129,7 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
               {feasibilityInfo.working_adult_tips.map((tip, idx) => (
                 <li key={idx} className="flex items-start gap-2 text-sm">
                   <span className="text-amber-400 mt-0.5">•</span>
-                  <span className="text-slate-300">{tip}</span>
+                  <span className="text-foreground/80">{tip}</span>
                 </li>
               ))}
             </ul>

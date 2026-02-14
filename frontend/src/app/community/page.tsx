@@ -55,10 +55,10 @@ export default function CommunityPage() {
         <Badge className="mb-4 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20">
           준비 중
         </Badge>
-        <h1 className="text-3xl md:text-4xl font-bold text-white">
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground">
           커뮤니티
         </h1>
-        <p className="mt-4 text-slate-400 leading-relaxed">
+        <p className="mt-4 text-muted-foreground leading-relaxed">
           자격증 준비 경험을 공유하고, 서로의 목표를 응원할 수 있는 공간을 만들고 있습니다.
         </p>
       </div>
@@ -67,15 +67,15 @@ export default function CommunityPage() {
         {upcomingFeatures.map((feature) => {
           const Icon = feature.icon
           return (
-            <Card key={feature.title} className="border-slate-800/60 bg-slate-900/60">
+            <Card key={feature.title} className="border-border bg-card/60">
               <CardContent className="p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
                   <Icon className="h-5 w-5" />
                 </div>
-                <h2 className="mt-4 text-lg font-semibold text-white">
+                <h2 className="mt-4 text-lg font-semibold text-foreground">
                   {feature.title}
                 </h2>
-                <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                   {feature.description}
                 </p>
               </CardContent>

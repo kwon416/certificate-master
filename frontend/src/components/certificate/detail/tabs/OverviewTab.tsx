@@ -23,7 +23,7 @@ interface OverviewTabProps {
 
 function NoDataMessage({ message = '정보가 없습니다' }: { message?: string }) {
   return (
-    <div className="flex items-center gap-2 text-slate-500 py-8 justify-center">
+    <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
       <Info className="h-5 w-5" />
       <span>{message}</span>
     </div>
@@ -42,8 +42,8 @@ function SentenceSections({ text }: { text: string }) {
   return (
     <div className="space-y-3">
       {sentences.map((sentence, idx) => (
-        <div key={`${sentence}-${idx}`} className="rounded-lg bg-slate-800/30 p-4">
-          <p className="text-slate-300 leading-relaxed">{sentence}</p>
+        <div key={`${sentence}-${idx}`} className="rounded-lg bg-muted/30 p-4">
+          <p className="text-foreground/80 leading-relaxed">{sentence}</p>
         </div>
       ))}
     </div>
@@ -61,7 +61,7 @@ export function OverviewTab({ certificate }: OverviewTabProps) {
   return (
     <div className="space-y-6">
       {/* 자격증 개요 */}
-      <Card className="bg-slate-900/50 border-slate-800/50">
+      <Card className="bg-card/50 border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-emerald-400" />
@@ -95,7 +95,7 @@ export function OverviewTab({ certificate }: OverviewTabProps) {
 
       {/* 공식 출처 */}
       {hasOfficialSources(cert) && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ExternalLink className="h-5 w-5 text-cyan-400" />
@@ -114,16 +114,16 @@ export function OverviewTab({ certificate }: OverviewTabProps) {
                   {cert.official_sources.official_site}
                   <ExternalLink className="h-4 w-4" />
                 </a>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   최신 시험 일정, 접수 기간, 합격 발표일을 확인할 수 있습니다
                 </p>
               </div>
             )}
             {cert.official_sources.issuing_organization && (
               <div>
-                <div className="text-sm text-slate-500 mb-2">발급 기관</div>
-                <div className="flex items-center gap-2 text-white">
-                  <Building2 className="h-4 w-4 text-slate-400" />
+                <div className="text-sm text-muted-foreground mb-2">발급 기관</div>
+                <div className="flex items-center gap-2 text-foreground">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
                   {cert.official_sources.issuing_organization}
                 </div>
               </div>

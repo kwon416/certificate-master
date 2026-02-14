@@ -41,39 +41,39 @@ function StructuredContextCard({ context }: StructuredContextCardProps) {
     <div className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
       <div className="flex items-center gap-2 mb-3">
         <Brain className="w-5 h-5 text-emerald-400" />
-        <h3 className="font-semibold text-white">분석된 상황</h3>
+        <h3 className="font-semibold text-foreground">분석된 상황</h3>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
         <div>
-          <span className="text-slate-500">목표</span>
-          <div className="flex items-center gap-1 text-white mt-1">
+          <span className="text-muted-foreground">목표</span>
+          <div className="flex items-center gap-1 text-foreground mt-1">
             {GOAL_ICONS[context.goal] || <Target className="w-4 h-4" />}
             <span>{context.goal}</span>
           </div>
         </div>
 
         <div>
-          <span className="text-slate-500">현재 상태</span>
-          <p className="text-white mt-1">{context.employment_status}</p>
+          <span className="text-muted-foreground">현재 상태</span>
+          <p className="text-foreground mt-1">{context.employment_status}</p>
         </div>
 
         <div>
-          <span className="text-slate-500">배경</span>
-          <p className="text-white mt-1">{context.major_background}</p>
+          <span className="text-muted-foreground">배경</span>
+          <p className="text-foreground mt-1">{context.major_background}</p>
         </div>
 
         <div>
-          <span className="text-slate-500">주당 학습</span>
-          <div className="flex items-center gap-1 text-white mt-1">
-            <Clock className="w-4 h-4 text-slate-400" />
+          <span className="text-muted-foreground">주당 학습</span>
+          <div className="flex items-center gap-1 text-foreground mt-1">
+            <Clock className="w-4 h-4 text-muted-foreground" />
             <span>{context.weekly_study_hours}시간</span>
           </div>
         </div>
 
         <div>
-          <span className="text-slate-500">준비 기간</span>
-          <p className="text-white mt-1">
+          <span className="text-muted-foreground">준비 기간</span>
+          <p className="text-foreground mt-1">
             {context.max_study_period_days >= 365
               ? `${Math.round(context.max_study_period_days / 365)}년`
               : context.max_study_period_days >= 30
@@ -83,14 +83,14 @@ function StructuredContextCard({ context }: StructuredContextCardProps) {
         </div>
 
         <div>
-          <span className="text-slate-500">난이도 선호</span>
-          <p className="text-white mt-1">{context.difficulty_preference}</p>
+          <span className="text-muted-foreground">난이도 선호</span>
+          <p className="text-foreground mt-1">{context.difficulty_preference}</p>
         </div>
       </div>
 
       {context.preferred_industries.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-slate-700/50">
-          <span className="text-slate-500 text-sm">관심 분야</span>
+        <div className="mt-3 pt-3 border-t border-border/50">
+          <span className="text-muted-foreground text-sm">관심 분야</span>
           <div className="flex flex-wrap gap-2 mt-1">
             {context.preferred_industries.map((industry, index) => (
               <Badge key={index} variant="outline" className="border-emerald-500/30 text-emerald-400">
@@ -113,7 +113,7 @@ function RecommendationCard({ recommendation, rank }: RecommendationCardProps) {
   const { certificate, match_score, recommendation_reason, key_points, feasibility } = recommendation
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800/50 rounded-xl p-4 md:p-6 hover:border-emerald-500/30 transition-[box-shadow,transform]">
+    <div className="bg-card/50 border border-border rounded-xl p-4 md:p-6 hover:border-emerald-500/30 transition-[box-shadow,transform]">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -121,8 +121,8 @@ function RecommendationCard({ recommendation, rank }: RecommendationCardProps) {
             {rank}
           </div>
           <div>
-            <h3 className="font-bold text-white text-lg">{certificate.title}</h3>
-            <p className="text-sm text-slate-400">{recommendation.qualification_category}</p>
+            <h3 className="font-bold text-foreground text-lg">{certificate.title}</h3>
+            <p className="text-sm text-muted-foreground">{recommendation.qualification_category}</p>
           </div>
         </div>
 
@@ -133,7 +133,7 @@ function RecommendationCard({ recommendation, rank }: RecommendationCardProps) {
               ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
               : match_score >= 60
               ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
-              : 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+              : 'bg-slate-500/20 text-muted-foreground border-slate-500/30'
           )}
         >
           {match_score}% 매치
@@ -143,19 +143,19 @@ function RecommendationCard({ recommendation, rank }: RecommendationCardProps) {
       {/* Quick Stats */}
       <div className="flex flex-wrap gap-2 mb-4">
         {certificate.difficulty && (
-          <Badge variant="outline" className="border-slate-700 text-slate-300">
+          <Badge variant="outline" className="border-border text-foreground/80">
             난이도 {DIFFICULTY_LABELS[certificate.difficulty] || certificate.difficulty}
           </Badge>
         )}
         {feasibility.estimated_days && (
-          <Badge variant="outline" className="border-slate-700 text-slate-300">
+          <Badge variant="outline" className="border-border text-foreground/80">
             예상 준비 {feasibility.estimated_days >= 30
               ? `${Math.round(feasibility.estimated_days / 30)}개월`
               : `${feasibility.estimated_days}일`}
           </Badge>
         )}
         {certificate.passing_rate && (
-          <Badge variant="outline" className="border-slate-700 text-slate-300">
+          <Badge variant="outline" className="border-border text-foreground/80">
             합격률 {certificate.passing_rate}%
           </Badge>
         )}
@@ -163,17 +163,17 @@ function RecommendationCard({ recommendation, rank }: RecommendationCardProps) {
 
       {/* Recommendation Reason */}
       <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4 mb-4">
-        <p className="text-sm text-slate-500 mb-1">추천 이유</p>
-        <p className="text-slate-300 leading-relaxed">{recommendation_reason}</p>
+        <p className="text-sm text-muted-foreground mb-1">추천 이유</p>
+        <p className="text-foreground/80 leading-relaxed">{recommendation_reason}</p>
       </div>
 
       {/* Key Points */}
       {key_points.length > 0 && (
         <div className="mb-4">
-          <p className="text-sm text-slate-500 mb-2">핵심 포인트</p>
+          <p className="text-sm text-muted-foreground mb-2">핵심 포인트</p>
           <ul className="space-y-1">
             {key_points.map((point, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm text-slate-400">
+              <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
                 <span className="text-emerald-400 mt-0.5 shrink-0">•</span>
                 <span className="break-words whitespace-normal">{point}</span>
               </li>
@@ -211,12 +211,12 @@ export function NaturalResults() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* User Query Display */}
       {naturalInput && (
-        <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-4 mb-6">
+        <div className="bg-muted/30 border border-border/50 rounded-xl p-4 mb-6">
           <div className="flex items-start gap-3">
-            <MessageCircle className="w-5 h-5 text-slate-400 mt-0.5" />
+            <MessageCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-sm text-slate-500 mb-1">내 요청</p>
-              <p className="text-white">&quot;{naturalInput}&quot;</p>
+              <p className="text-sm text-muted-foreground mb-1">내 요청</p>
+              <p className="text-foreground">&quot;{naturalInput}&quot;</p>
             </div>
           </div>
         </div>
@@ -228,8 +228,8 @@ export function NaturalResults() {
       {/* Results Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-white">추천 결과</h2>
-          <p className="text-slate-400 text-sm">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">추천 결과</h2>
+          <p className="text-muted-foreground text-sm">
             {totalMatched > 0
               ? `${totalMatched}개의 자격증 중 상위 추천`
               : '조건에 맞는 자격증을 찾지 못했습니다'}
@@ -258,7 +258,7 @@ export function NaturalResults() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-slate-400 mb-4">추천 결과가 없습니다</p>
+          <p className="text-muted-foreground mb-4">추천 결과가 없습니다</p>
           <Button onClick={resetWizard}>
             <RefreshCw className="w-4 h-4 mr-2" />
             다시 추천받기

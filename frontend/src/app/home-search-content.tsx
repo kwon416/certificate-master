@@ -99,10 +99,10 @@ export function HomeSearchContent() {
       {/* Hero Section */}
       <section
         data-testid="home-hero"
-        className="relative overflow-hidden border-b border-slate-800/50"
+        className="relative overflow-hidden border-b border-border"
       >
         {/* Background effects */}
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-slate-950 to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-background to-background" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
         {/* Glow orbs */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-[128px] animate-pulse-glow" />
@@ -118,13 +118,13 @@ export function HomeSearchContent() {
           {/* Headline - with stagger animation */}
           <div className="text-center max-w-3xl mx-auto mb-8">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 opacity-0 animate-slide-up">
-              <span className="text-white">나에게 맞는 </span>
+              <span className="text-foreground">나에게 맞는</span>
               <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
                 자격증
               </span>
-              <span className="text-white">을 찾아보세요</span>
+              <span className="text-foreground">을 찾아보세요</span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-400 leading-relaxed opacity-0 animate-slide-up stagger-1">
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed opacity-0 animate-slide-up stagger-1">
               600개 이상의 자격증 정보를 한눈에 비교하고,<br className="hidden sm:block" />
               AI 추천으로 내 상황에 딱 맞는 자격증을 발견하세요
             </p>
@@ -150,7 +150,7 @@ export function HomeSearchContent() {
             </Link>
             <Link
               href="/about"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-6 py-3 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-6 py-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
               서비스 소개
             </Link>
@@ -182,11 +182,11 @@ export function HomeSearchContent() {
             {!error && !isLoading && (
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="border-slate-700 text-slate-300">
+                  <Badge variant="outline" className="border-border text-foreground">
                     {totalCount > 0 ? `${totalCount}개 결과` : '0개 결과'}
                   </Badge>
                   {query && (
-                    <span className="text-slate-400">
+                    <span className="text-muted-foreground">
                       &quot;{query}&quot; 검색 결과
                     </span>
                   )}
@@ -195,10 +195,10 @@ export function HomeSearchContent() {
                 {/* View Mode Toggle */}
                 {results.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-500 hidden sm:inline">
+                    <span className="text-sm text-muted-foreground hidden sm:inline">
                       보기 방식
                     </span>
-                    <div className="flex rounded-lg bg-slate-800/50 p-1">
+                    <div className="flex rounded-lg bg-muted/50 p-1">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -207,8 +207,8 @@ export function HomeSearchContent() {
                         className={cn(
                           'h-8 w-8',
                           viewMode === 'grid'
-                            ? 'bg-slate-700 text-white'
-                            : 'text-slate-400 hover:text-white'
+                            ? 'bg-muted text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
                         )}
                       >
                         <Grid3X3 className="h-4 w-4" />
@@ -221,8 +221,8 @@ export function HomeSearchContent() {
                         className={cn(
                           'h-8 w-8',
                           viewMode === 'list'
-                            ? 'bg-slate-700 text-white'
-                            : 'text-slate-400 hover:text-white'
+                            ? 'bg-muted text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
                         )}
                       >
                         <List className="h-4 w-4" />
@@ -300,13 +300,13 @@ export function HomeSearchContent() {
                   className="mt-8 flex justify-center items-center min-h-[60px]"
                 >
                   {isFetchingNextPage && (
-                    <div className="flex items-center gap-2 text-slate-400">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-5 w-5 animate-spin" />
                       <span>더 많은 결과를 불러오는 중\u2026</span>
                     </div>
                   )}
                   {!hasNextPage && results.length > 0 && (
-                    <div className="text-slate-500 text-sm">
+                    <div className="text-muted-foreground text-sm">
                       모든 결과를 불러왔습니다 ({totalCount}개)
                     </div>
                   )}

@@ -13,7 +13,7 @@ export default function UseCaseCard({ persona, cert, story, result, avatar }: Us
   return (
     <Card
       data-testid="use-case-card"
-      className="bg-slate-900/50 border-slate-800/50 hover:border-emerald-500/30 transition-[box-shadow,transform] duration-300"
+      className="bg-card/50 border-border hover:border-emerald-500/30 transition-[box-shadow,transform] duration-300"
     >
       <CardContent className="p-6">
         {/* Avatar */}
@@ -21,14 +21,14 @@ export default function UseCaseCard({ persona, cert, story, result, avatar }: Us
 
         {/* Persona & Certificate */}
         <div className="mb-4">
-          <h4 className="text-white font-bold text-lg mb-1">{persona}</h4>
-          <Badge variant="secondary" className="bg-slate-800 text-emerald-400 border-emerald-500/20">
+          <h4 className="text-foreground font-bold text-lg mb-1">{persona}</h4>
+          <Badge variant="secondary" className="bg-muted text-emerald-400 border-emerald-500/20">
             {cert}
           </Badge>
         </div>
 
         {/* Story */}
-        <p className="text-slate-400 leading-relaxed mb-4 text-sm">
+        <p className="text-muted-foreground leading-relaxed mb-4 text-sm">
           &quot;{story}&quot;
         </p>
 

@@ -14,11 +14,11 @@ export default function SignupPage() {
             <AlertCircle className="h-5 w-5" />
             <span className="text-sm font-medium">회원가입 준비 중</span>
           </div>
-          <CardTitle className="text-2xl text-white mt-2">
+          <CardTitle className="text-2xl text-foreground mt-2">
             회원가입 기능을 준비하고 있어요
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-slate-300">
+        <CardContent className="space-y-4 text-foreground/80">
           <p>
             자격증 검색만 제공하는 기간이라 회원가입 기능을 잠시 닫아두었습니다.
             검색 결과와 상세 정보는 바로 확인할 수 있어요.

@@ -29,7 +29,7 @@ function DifficultyStars({ level }: { level: number }) {
             'h-3.5 w-3.5',
             star <= level
               ? 'fill-amber-400 text-amber-400'
-              : 'text-slate-600'
+              : 'text-muted-foreground/50'
           )}
         />
       ))}
@@ -124,9 +124,9 @@ const COLOR_MAP: Record<string, CategoryColor> = {
   '전자': { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', accent: 'bg-yellow-500', shadow: 'hover:shadow-yellow-500/20' },
   '전기전자': { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', accent: 'bg-yellow-500', shadow: 'hover:shadow-yellow-500/20' },
   // 기계 / 금속 → slate
-  '기계': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400', accent: 'bg-slate-500', shadow: 'hover:shadow-slate-500/20' },
-  '금속': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400', accent: 'bg-slate-500', shadow: 'hover:shadow-slate-500/20' },
-  '재료': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400', accent: 'bg-slate-500', shadow: 'hover:shadow-slate-500/20' },
+  '기계': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-muted-foreground', accent: 'bg-slate-500', shadow: 'hover:shadow-slate-500/20' },
+  '금속': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-muted-foreground', accent: 'bg-slate-500', shadow: 'hover:shadow-slate-500/20' },
+  '재료': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-muted-foreground', accent: 'bg-slate-500', shadow: 'hover:shadow-slate-500/20' },
   // 보건 / 의료 → rose
   '보건': { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400', accent: 'bg-rose-500', shadow: 'hover:shadow-rose-500/20' },
   '의료': { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400', accent: 'bg-rose-500', shadow: 'hover:shadow-rose-500/20' },
@@ -166,7 +166,7 @@ const COLOR_MAP: Record<string, CategoryColor> = {
   '국가전문자격': { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', accent: 'bg-cyan-500', shadow: 'hover:shadow-cyan-500/20' },
   '과정평가형자격': { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', accent: 'bg-amber-500', shadow: 'hover:shadow-amber-500/20' },
   '국가자격': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', accent: 'bg-emerald-500', shadow: 'hover:shadow-emerald-500/20' },
-  '민간자격': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400', accent: 'bg-slate-400', shadow: 'hover:shadow-slate-500/20' },
+  '민간자격': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-muted-foreground', accent: 'bg-slate-400', shadow: 'hover:shadow-slate-500/20' },
   '공인자격': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', accent: 'bg-blue-500', shadow: 'hover:shadow-blue-500/20' },
 }
 
@@ -207,7 +207,7 @@ export function CertificateCard({
     <Card
       data-testid="certificate-card"
       className={cn(
-        'group relative bg-slate-900/50 border-slate-800/50 transition-[transform,box-shadow] duration-300 overflow-hidden',
+        'group relative bg-card border-border transition-[transform,box-shadow] duration-300 overflow-hidden',
         'hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl',
         categoryColor.shadow,
         `hover:${categoryColor.border}`
@@ -236,7 +236,7 @@ export function CertificateCard({
               <div className="flex-1 min-w-0 pr-8">
                 {/* Title + Categories */}
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h3 className="text-base font-semibold text-white group-hover:text-emerald-400 transition-colors truncate">
+                  <h3 className="text-base font-semibold text-foreground group-hover:text-emerald-400 transition-colors truncate">
                     {title}
                   </h3>
                   <div className="flex flex-wrap gap-1">
@@ -260,13 +260,13 @@ export function CertificateCard({
                   {difficulty !== null && (
                     <div className="flex items-center gap-1.5">
                       <DifficultyStars level={difficulty} />
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         {getDifficultyLabel(difficulty)}
                       </span>
                     </div>
                   )}
                   {(difficulty !== null && (passRate !== null || studyPeriod !== null)) && (
-                    <span className="text-slate-600">•</span>
+                    <span className="text-muted-foreground/50">•</span>
                   )}
                   {passRate !== null && (
                     <div className="flex items-center gap-1">
@@ -277,12 +277,12 @@ export function CertificateCard({
                     </div>
                   )}
                   {(passRate !== null && studyPeriod !== null) && (
-                    <span className="text-slate-600">•</span>
+                    <span className="text-muted-foreground/50">•</span>
                   )}
                   {studyPeriod !== null && (
                     <div className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 text-cyan-400" />
-                      <span className="text-sm text-slate-300">
+                      <span className="text-sm text-foreground/80">
                         {getStudyPeriodLabel(studyPeriod)}
                       </span>
                     </div>
@@ -291,7 +291,7 @@ export function CertificateCard({
               </div>
 
               {/* Arrow indicator */}
-              <ChevronRight className="h-5 w-5 text-slate-500 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-emerald-400 transition-colors flex-shrink-0" />
             </div>
           ) : (
             /* Grid View - Original Layout */
@@ -318,24 +318,24 @@ export function CertificateCard({
               </div>
 
               {/* Title */}
-              <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2">
                 {title}
               </h3>
 
               {/* Overview */}
               {overview && (
-                <p className="text-sm text-slate-500 mb-4 line-clamp-1">
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-1">
                   {overview}
                 </p>
               )}
 
               {/* Stats - Chip style */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-800/50">
+              <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
                 {/* Difficulty */}
                 {difficulty !== null && (
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-800/80 px-3 py-1.5">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5">
                     <DifficultyStars level={difficulty} />
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-muted-foreground">
                       {getDifficultyLabel(difficulty)}
                     </span>
                   </div>
@@ -343,7 +343,7 @@ export function CertificateCard({
 
                 {/* Pass Rate */}
                 {passRate !== null && (
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-800/80 px-3 py-1.5">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5">
                     <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
                     <span className="text-xs font-medium text-emerald-400">
                       {(passRate * 100).toFixed(0)}%
@@ -353,9 +353,9 @@ export function CertificateCard({
 
                 {/* Study Period */}
                 {studyPeriod !== null && (
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-800/80 px-3 py-1.5">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5">
                     <Clock className="h-3.5 w-3.5 text-cyan-400" />
-                    <span className="text-xs text-slate-300">
+                    <span className="text-xs text-foreground/80">
                       {getStudyPeriodLabel(studyPeriod)}
                     </span>
                   </div>

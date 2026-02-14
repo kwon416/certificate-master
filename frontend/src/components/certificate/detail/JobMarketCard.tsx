@@ -35,7 +35,7 @@ export function JobMarketCard({ jobMarketInfo, className }: JobMarketCardProps) 
   if (!hasAnyData) return null
 
   return (
-    <Card className={cn('bg-slate-900/50 border-slate-800/50', className)}>
+    <Card className={cn('bg-card/50 border-border', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Briefcase className="h-5 w-5 text-violet-400" />
@@ -52,7 +52,7 @@ export function JobMarketCard({ jobMarketInfo, className }: JobMarketCardProps) 
             <div className="bg-violet-900/10 rounded-lg p-4 border border-violet-500/20">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-violet-400" />
-                <span className="text-sm text-slate-400">채용 공고</span>
+                <span className="text-sm text-muted-foreground">채용 공고</span>
               </div>
               <span className="text-lg font-bold text-violet-400">
                 {jobMarketInfo.job_posting_frequency}
@@ -72,7 +72,7 @@ export function JobMarketCard({ jobMarketInfo, className }: JobMarketCardProps) 
             >
               <div className="flex items-center gap-2 mb-1">
                 <BadgeCheck className="h-4 w-4 text-emerald-400" />
-                <span className="text-sm text-slate-400">자격 요건</span>
+                <span className="text-sm text-muted-foreground">자격 요건</span>
               </div>
               <span
                 className={cn(
@@ -90,7 +90,7 @@ export function JobMarketCard({ jobMarketInfo, className }: JobMarketCardProps) 
             <div className="col-span-2 bg-cyan-900/10 rounded-lg p-4 border border-cyan-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <Award className="h-4 w-4 text-cyan-400" />
-                <span className="text-sm text-slate-400">공무원/공기업 가산점</span>
+                <span className="text-sm text-muted-foreground">공무원/공기업 가산점</span>
               </div>
               <span className="text-xl font-bold text-cyan-400">
                 {jobMarketInfo.public_sector_points}
@@ -103,7 +103,7 @@ export function JobMarketCard({ jobMarketInfo, className }: JobMarketCardProps) 
             <div className="col-span-2 bg-amber-900/10 rounded-lg p-4 border border-amber-500/20">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="h-4 w-4 text-amber-400" />
-                <span className="text-sm text-slate-400">연봉 프리미엄</span>
+                <span className="text-sm text-muted-foreground">연봉 프리미엄</span>
               </div>
               <span className="text-xl font-bold text-amber-400">
                 {jobMarketInfo.salary_premium}
@@ -114,10 +114,10 @@ export function JobMarketCard({ jobMarketInfo, className }: JobMarketCardProps) 
 
         {/* 우대 산업 */}
         {(jobMarketInfo.preferred_industries?.length ?? 0) > 0 && (
-          <div className="mt-4 pt-4 border-t border-slate-800/50">
+          <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center gap-2 mb-3">
-              <Building2 className="h-4 w-4 text-slate-400" />
-              <span className="text-sm font-medium text-slate-300">우대 산업</span>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground/80">우대 산업</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {jobMarketInfo.preferred_industries.map((industry, idx) => (
@@ -135,7 +135,7 @@ export function JobMarketCard({ jobMarketInfo, className }: JobMarketCardProps) 
 
         {/* 우대 기업 */}
         {(jobMarketInfo.preferred_companies?.length ?? 0) > 0 && (
-          <div className="mt-4 pt-4 border-t border-slate-800/50">
+          <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center gap-2 mb-3">
               <Building2 className="h-4 w-4 text-emerald-400" />
               <span className="text-sm font-medium text-emerald-400">우대 기업</span>
@@ -151,7 +151,7 @@ export function JobMarketCard({ jobMarketInfo, className }: JobMarketCardProps) 
                 </Badge>
               ))}
               {jobMarketInfo.preferred_companies.length > 10 && (
-                <Badge variant="secondary" className="bg-slate-800 text-slate-400">
+                <Badge variant="secondary" className="bg-muted text-muted-foreground">
                   +{jobMarketInfo.preferred_companies.length - 10}개 더
                 </Badge>
               )}

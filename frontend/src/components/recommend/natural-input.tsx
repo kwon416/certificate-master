@@ -58,37 +58,37 @@ export function NaturalInput() {
           <Sparkles className="w-4 h-4 text-emerald-400" />
           <span className="text-sm font-medium text-emerald-400">AI 자연어 분석</span>
         </div>
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
           상황을 자유롭게 설명해주세요
         </h2>
-        <p className="text-slate-400">
+        <p className="text-muted-foreground">
           AI가 당신의 상황을 분석하여 맞춤 자격증을 추천해드립니다
         </p>
       </div>
 
       {/* Input Area */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-2xl p-4 md:p-6 mb-4">
+      <div className="bg-card/50 backdrop-blur-xl border border-border rounded-2xl p-4 md:p-6 mb-4">
         <div className="relative">
           <Textarea
             placeholder="상황을 자유롭게 설명해주세요. 예: 비전공자인데 IT 분야 취업을 위해 자격증을 준비하고 있습니다."
             value={localInput}
             onChange={(e) => handleInputChange(e.target.value)}
             aria-label="상황 설명 입력"
-            className="min-h-[160px] bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 resize-none pr-4 pb-8"
+            className="min-h-[160px] bg-muted/50 border-border text-foreground placeholder:text-muted-foreground resize-none pr-4 pb-8"
             disabled={isLoading}
           />
 
           {/* Character Count */}
-          <div className="absolute bottom-3 right-3 text-xs text-slate-500">
-            <span className={localInput.length < MIN_LENGTH ? 'text-amber-400' : 'text-slate-400'}>
+          <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
+            <span className={localInput.length < MIN_LENGTH ? 'text-amber-400' : 'text-muted-foreground'}>
               {localInput.length}
             </span>
-            <span className="text-slate-600"> / {MAX_LENGTH}</span>
+            <span className="text-muted-foreground/50"> / {MAX_LENGTH}</span>
           </div>
         </div>
 
         {/* Validation Hint */}
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs text-muted-foreground mt-2">
           {localInput.length < MIN_LENGTH ? (
             <span className="text-amber-400">10자 이상 입력해주세요 ({MIN_LENGTH - localInput.length}자 부족)</span>
           ) : (
@@ -99,16 +99,16 @@ export function NaturalInput() {
 
       {/* Example Prompts */}
       <div className="mb-6">
-        <p className="text-sm text-slate-500 mb-3">예시 문장:</p>
+        <p className="text-sm text-muted-foreground mb-3">예시 문장:</p>
         <div className="space-y-2">
           {EXAMPLE_PROMPTS.map((example, index) => (
             <button
               key={index}
               onClick={() => handleExampleClick(example)}
-              className="w-full text-left px-4 py-3 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 rounded-lg text-sm text-slate-400 hover:text-slate-300 transition-colors"
+              className="w-full text-left px-4 py-3 bg-muted/30 hover:bg-muted/50 border border-border/50 hover:border-border rounded-lg text-sm text-muted-foreground hover:text-foreground/80 transition-colors"
               disabled={isLoading}
             >
-              <MessageSquare className="w-4 h-4 inline mr-2 text-slate-500" />
+              <MessageSquare className="w-4 h-4 inline mr-2 text-muted-foreground" />
               {example}
             </button>
           ))}
@@ -148,16 +148,16 @@ export function NaturalInput() {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 overscroll-contain">
-          <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-8 text-center max-w-md mx-4">
+        <div className="fixed inset-0 bg-card/80 backdrop-blur-sm flex items-center justify-center z-50 overscroll-contain">
+          <div className="bg-muted/90 border border-border rounded-xl p-8 text-center max-w-md mx-4">
             <Loader2 className="w-12 h-12 animate-spin text-emerald-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               AI가 분석 중입니다{'\u2026'}
             </h3>
-            <p className="text-slate-400 text-sm mb-4">
+            <p className="text-muted-foreground text-sm mb-4">
               당신의 상황을 이해하고 맞춤 자격증을 찾고 있어요.
             </p>
-            <div className="space-y-2 text-xs text-slate-500">
+            <div className="space-y-2 text-xs text-muted-foreground">
               <p>1. 상황 분석 중{'\u2026'}</p>
               <p>2. 조건에 맞는 자격증 검색 중{'\u2026'}</p>
               <p>3. 추천 이유 생성 중{'\u2026'}</p>

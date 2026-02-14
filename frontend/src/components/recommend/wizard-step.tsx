@@ -94,8 +94,8 @@ export function WizardStep({
     return (
       <div className="space-y-4 md:space-y-6">
         <div className="text-center mb-4 md:mb-8">
-          <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
-          <p className="text-sm md:text-base text-slate-400">{description}</p>
+          <h2 className="text-xl md:text-3xl font-bold text-foreground mb-2 md:mb-3">{title}</h2>
+          <p className="text-sm md:text-base text-muted-foreground">{description}</p>
         </div>
 
         <TimeSlider
@@ -113,8 +113,8 @@ export function WizardStep({
     return (
       <div className="space-y-4 md:space-y-6">
         <div className="text-center mb-4 md:mb-8">
-          <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
-          <p className="text-sm md:text-base text-slate-400">{description}</p>
+          <h2 className="text-xl md:text-3xl font-bold text-foreground mb-2 md:mb-3">{title}</h2>
+          <p className="text-sm md:text-base text-muted-foreground">{description}</p>
         </div>
 
         <div className="max-w-xl mx-auto space-y-3">
@@ -126,7 +126,7 @@ export function WizardStep({
               const nextValue = event.target.value
               onAnswer(nextValue.trim() ? nextValue : null)
             }}
-            className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500 text-base"
+            className="bg-card border-border text-foreground placeholder:text-muted-foreground text-base"
           />
         </div>
       </div>
@@ -150,8 +150,8 @@ export function WizardStep({
     return (
       <div className="space-y-6 md:space-y-10">
         <div className="text-center mb-4 md:mb-8">
-          <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
-          <p className="text-sm md:text-base text-slate-400">{description}</p>
+          <h2 className="text-xl md:text-3xl font-bold text-foreground mb-2 md:mb-3">{title}</h2>
+          <p className="text-sm md:text-base text-muted-foreground">{description}</p>
         </div>
 
         <div className="space-y-4">
@@ -173,8 +173,8 @@ export function WizardStep({
 
         <div className="space-y-3 md:space-y-4">
           <div className="text-center">
-            <h3 className="text-base md:text-lg font-semibold text-white">목표 기간</h3>
-            <p className="text-xs md:text-sm text-slate-400">언제까지 취득하고 싶으세요?</p>
+            <h3 className="text-base md:text-lg font-semibold text-foreground">목표 기간</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">언제까지 취득하고 싶으세요?</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
             {secondaryOptions?.map((option) => {
@@ -212,15 +212,15 @@ export function WizardStep({
     return (
       <div className="space-y-6 md:space-y-8">
         <div className="text-center mb-4 md:mb-6">
-          <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
-          <p className="text-sm md:text-base text-slate-400">{description}</p>
+          <h2 className="text-xl md:text-3xl font-bold text-foreground mb-2 md:mb-3">{title}</h2>
+          <p className="text-sm md:text-base text-muted-foreground">{description}</p>
         </div>
 
         {/* 섹션 1: 자격증 등급 선호 */}
         <div className="space-y-3">
           <div className="text-center">
-            <h3 className="text-base md:text-lg font-semibold text-white">자격증 등급</h3>
-            <p className="text-xs md:text-sm text-slate-400">선호하는 자격증 등급이 있나요?</p>
+            <h3 className="text-base md:text-lg font-semibold text-foreground">자격증 등급</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">선호하는 자격증 등급이 있나요?</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             {options?.map((option) => {
@@ -252,8 +252,8 @@ export function WizardStep({
         {/* 섹션 2: 관련 키워드 입력 */}
         <div className="space-y-3">
           <div className="text-center">
-            <h3 className="text-base md:text-lg font-semibold text-white">관련 키워드</h3>
-            <p className="text-xs md:text-sm text-slate-400">
+            <h3 className="text-base md:text-lg font-semibold text-foreground">관련 키워드</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">
               찾고 싶은 자격증과 관련된 키워드를 입력하세요 (최대 5개)
             </p>
           </div>
@@ -265,14 +265,14 @@ export function WizardStep({
                 aria-label="관련 키워드 입력"
                 onChange={(e) => setKeywordInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 bg-slate-900 border-slate-700 text-white placeholder:text-slate-500"
+                className="flex-1 bg-card border-border text-foreground placeholder:text-muted-foreground"
                 disabled={keywords.length >= 5}
               />
               <button
                 type="button"
                 onClick={handleAddKeyword}
                 disabled={!keywordInput.trim() || keywords.length >= 5}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-muted disabled:text-muted-foreground text-white rounded-lg text-sm font-medium transition-colors"
               >
                 추가
               </button>
@@ -283,7 +283,7 @@ export function WizardStep({
                   <Badge
                     key={keyword}
                     variant="secondary"
-                    className="bg-emerald-900/50 text-emerald-300 border-emerald-700 px-3 py-1 text-sm"
+                    className="bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 px-3 py-1 text-sm"
                   >
                     {keyword}
                     <button
@@ -304,8 +304,8 @@ export function WizardStep({
         {/* 섹션 3: 자유 입력 (기존 user_summary) */}
         <div className="space-y-3">
           <div className="text-center">
-            <h3 className="text-base md:text-lg font-semibold text-white">추가 정보</h3>
-            <p className="text-xs md:text-sm text-slate-400">
+            <h3 className="text-base md:text-lg font-semibold text-foreground">추가 정보</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">
               더 구체적인 상황이나 목표가 있다면 알려주세요
             </p>
           </div>
@@ -318,7 +318,7 @@ export function WizardStep({
                 const nextValue = e.target.value
                 onTertiaryAnswer?.(nextValue.trim() ? nextValue : null)
               }}
-              className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500 text-base"
+              className="bg-card border-border text-foreground placeholder:text-muted-foreground text-base"
             />
           </div>
         </div>
@@ -329,8 +329,8 @@ export function WizardStep({
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="text-center mb-4 md:mb-8">
-        <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
-        <p className="text-sm md:text-base text-slate-400">{description}</p>
+        <h2 className="text-xl md:text-3xl font-bold text-foreground mb-2 md:mb-3">{title}</h2>
+        <p className="text-sm md:text-base text-muted-foreground">{description}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 max-h-[50vh] md:max-h-none overflow-y-auto md:overflow-visible pr-1 md:pr-0">
@@ -406,8 +406,8 @@ function InputWithNaturalStep({
     <div className="space-y-6">
       {/* 헤더 */}
       <div className="text-center mb-4 md:mb-6">
-        <h2 className="text-xl md:text-3xl font-bold text-white mb-2 md:mb-3">{title}</h2>
-        <p className="text-sm md:text-base text-slate-400">{description}</p>
+        <h2 className="text-xl md:text-3xl font-bold text-foreground mb-2 md:mb-3">{title}</h2>
+        <p className="text-sm md:text-base text-muted-foreground">{description}</p>
       </div>
 
       {/* 자연어 입력 */}
@@ -418,30 +418,30 @@ function InputWithNaturalStep({
             onChange={(e) => handleNaturalInputChange(e.target.value)}
             placeholder="상황을 자유롭게 설명해주세요. AI가 분석하여 맞춤 자격증을 추천합니다."
             aria-label="상황 설명 자유 입력"
-            className="min-h-[140px] bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 resize-none pr-4 pb-8"
+            className="min-h-[140px] bg-muted/50 border-border text-foreground placeholder:text-muted-foreground resize-none pr-4 pb-8"
           />
           {/* 글자 수 카운터 */}
-          <div className="absolute bottom-3 right-3 text-xs text-slate-500">
-            <span className="text-slate-400">{naturalInputInWizard.length}</span>
-            <span className="text-slate-600"> / {MAX_NATURAL_LENGTH}</span>
+          <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
+            <span className="text-muted-foreground">{naturalInputInWizard.length}</span>
+            <span className="text-muted-foreground/50"> / {MAX_NATURAL_LENGTH}</span>
           </div>
         </div>
 
         {/* 힌트 */}
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           선택사항이에요. 건너뛰어도 됩니다.
         </p>
 
         {/* 예시 문장 */}
         <div className="space-y-2">
-          <p className="text-xs text-slate-500">예시 문장:</p>
+          <p className="text-xs text-muted-foreground">예시 문장:</p>
           {examplePrompts.map((example, index) => (
             <button
               key={index}
               onClick={() => handleExampleClick(example)}
-              className="w-full text-left px-3 py-2 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 rounded-lg text-xs text-slate-400 hover:text-slate-300 transition-colors"
+              className="w-full text-left px-3 py-2 bg-muted/30 hover:bg-muted/50 border border-border/50 hover:border-border rounded-lg text-xs text-muted-foreground hover:text-foreground/80 transition-colors"
             >
-              <MessageSquare className="w-3 h-3 inline mr-2 text-slate-500" />
+              <MessageSquare className="w-3 h-3 inline mr-2 text-muted-foreground" />
               {example}
             </button>
           ))}

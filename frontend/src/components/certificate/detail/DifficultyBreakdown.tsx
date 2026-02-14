@@ -33,7 +33,7 @@ function DifficultyBar({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className={cn('h-4 w-4', textColorClass)} />
-          <span className="text-sm text-slate-300">{label}</span>
+          <span className="text-sm text-foreground/80">{label}</span>
         </div>
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -41,14 +41,14 @@ function DifficultyBar({
               key={star}
               className={cn(
                 'h-3.5 w-3.5',
-                star <= value ? `fill-current ${textColorClass}` : 'text-slate-700'
+                star <= value ? `fill-current ${textColorClass}` : 'text-border'
               )}
             />
           ))}
-          <span className="text-sm text-slate-400 ml-2">{value.toFixed(1)}</span>
+          <span className="text-sm text-muted-foreground ml-2">{value.toFixed(1)}</span>
         </div>
       </div>
-      <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div
           className={cn('h-full rounded-full transition-[width]', bgColorClass)}
           style={{ width: `${percentage}%` }}
@@ -70,7 +70,7 @@ export function DifficultyBreakdown({ difficulty, className }: DifficultyBreakdo
     difficulty.interview !== null
 
   return (
-    <Card className={cn('bg-slate-900/50 border-slate-800/50', className)}>
+    <Card className={cn('bg-card/50 border-border', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Star className="h-5 w-5 text-amber-400" />
@@ -81,7 +81,7 @@ export function DifficultyBreakdown({ difficulty, className }: DifficultyBreakdo
         {/* 전체 난이도 */}
         <div className="mb-6 p-4 bg-amber-900/10 rounded-lg border border-amber-500/20">
           <div className="flex items-center justify-between">
-            <span className="text-slate-300 font-medium">전체 난이도</span>
+            <span className="text-foreground/80 font-medium">전체 난이도</span>
             <div className="flex items-center gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
@@ -90,7 +90,7 @@ export function DifficultyBreakdown({ difficulty, className }: DifficultyBreakdo
                     'h-5 w-5',
                     star <= difficulty.overall
                       ? 'fill-amber-400 text-amber-400'
-                      : 'text-slate-700'
+                      : 'text-border'
                   )}
                 />
               ))}
@@ -99,7 +99,7 @@ export function DifficultyBreakdown({ difficulty, className }: DifficultyBreakdo
               </span>
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             {difficulty.overall <= 2
               ? '비교적 쉬운 난이도로 단기간 합격이 가능합니다.'
               : difficulty.overall <= 3

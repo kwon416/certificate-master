@@ -25,7 +25,7 @@ interface ExamInfoTabProps {
 
 function NoDataMessage({ message = '정보가 없습니다' }: { message?: string }) {
   return (
-    <div className="flex items-center gap-2 text-slate-500 py-8 justify-center">
+    <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
       <Info className="h-5 w-5" />
       <span>{message}</span>
     </div>
@@ -56,7 +56,7 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
 
   if (!hasExam && !hasSchedule) {
     return (
-      <Card className="bg-slate-900/50 border-slate-800/50">
+      <Card className="bg-card/50 border-border">
         <CardContent className="py-8">
           <NoDataMessage message="시험 정보가 아직 등록되지 않았습니다" />
           {hasSources && cert.official_sources.official_site && (
@@ -87,7 +87,7 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
 
       {/* 시험 과목 */}
       {hasExam && cert.exam_info.subjects.length > 0 && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-emerald-400" />
@@ -100,11 +100,11 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
                 <li key={index}>
                   {isExamSubject(subject) ? (
                     /* 새 형식: {name, details, topics} 객체 */
-                    <div className="bg-slate-800/30 p-4 rounded-lg">
+                    <div className="bg-muted/30 p-4 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold text-white">{subject.name}</span>
+                        <span className="font-semibold text-foreground">{subject.name}</span>
                         {subject.details && (
-                          <span className="text-sm text-slate-400">{subject.details}</span>
+                          <span className="text-sm text-muted-foreground">{subject.details}</span>
                         )}
                       </div>
                       {subject.topics && subject.topics.length > 0 && (
@@ -122,9 +122,9 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
                     </div>
                   ) : (
                     /* 기존 형식: 문자열 */
-                    <div className="flex items-start gap-2 bg-slate-800/30 p-3 rounded-lg">
+                    <div className="flex items-start gap-2 bg-muted/30 p-3 rounded-lg">
                       <span className="text-emerald-400 mt-1">•</span>
-                      <span className="text-slate-300">{subject}</span>
+                      <span className="text-foreground/80">{subject}</span>
                     </div>
                   )}
                 </li>
@@ -138,7 +138,7 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
       {hasExam && (
         <div className="grid md:grid-cols-2 gap-6">
           {cert.exam_info.exam_type && (
-            <Card className="bg-slate-900/50 border-slate-800/50">
+            <Card className="bg-card/50 border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <FileText className="h-5 w-5 text-cyan-400" />
@@ -146,13 +146,13 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-300">{cert.exam_info.exam_type}</p>
+                <p className="text-foreground/80">{cert.exam_info.exam_type}</p>
               </CardContent>
             </Card>
           )}
 
           {cert.exam_info.passing_criteria && (
-            <Card className="bg-slate-900/50 border-slate-800/50">
+            <Card className="bg-card/50 border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Target className="h-5 w-5 text-violet-400" />
@@ -160,7 +160,7 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-300">{cert.exam_info.passing_criteria}</p>
+                <p className="text-foreground/80">{cert.exam_info.passing_criteria}</p>
               </CardContent>
             </Card>
           )}
@@ -169,7 +169,7 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
 
       {/* 응시료 */}
       {hasExam && cert.exam_info.total_fee && (
-        <Card className="bg-slate-900/50 border-slate-800/50">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-amber-400" />
@@ -178,13 +178,13 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between p-4 bg-amber-900/10 rounded-lg border border-amber-500/20">
-              <span className="text-slate-300">총 응시료</span>
+              <span className="text-foreground/80">총 응시료</span>
               <span className="text-2xl font-bold text-amber-400">
                 {formatFee(cert.exam_info.total_fee)}
               </span>
             </div>
             {cert.cost_breakdown?.exam_fee_refund && (
-              <p className="text-xs text-slate-500 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 환불 정책: {cert.cost_breakdown.exam_fee_refund}
               </p>
             )}
@@ -198,10 +198,10 @@ export function ExamInfoTab({ certificate }: ExamInfoTabProps) {
           <CardContent className="py-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex-1">
-                <h3 className="font-semibold text-white mb-1">
+                <h3 className="font-semibold text-foreground mb-1">
                   📅 최신 시험 일정이 필요하신가요?
                 </h3>
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-foreground/80">
                   접수 기간, 시험일, 합격 발표일 등 정확한 정보는 공식 사이트에서 확인하세요.
                 </p>
               </div>

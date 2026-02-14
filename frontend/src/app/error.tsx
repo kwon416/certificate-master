@@ -25,10 +25,10 @@ export default function Error({
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-white mb-3">
+        <h1 className="text-3xl font-bold text-foreground mb-3">
           오류가 발생했습니다
         </h1>
-        <p className="text-slate-400 mb-8 leading-relaxed">
+        <p className="text-muted-foreground mb-8 leading-relaxed">
           일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.
         </p>
 
@@ -40,7 +40,7 @@ export default function Error({
             <RefreshCw className="mr-2 h-4 w-4" />
             다시 시도
           </Button>
-          <Button asChild variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">
+          <Button asChild variant="outline" className="border-border text-foreground/80 hover:bg-muted">
             <Link href="/">
               <Home className="mr-2 h-4 w-4" />
               홈으로 돌아가기

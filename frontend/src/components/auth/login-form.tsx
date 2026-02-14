@@ -88,7 +88,7 @@ export function LoginForm() {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md bg-slate-900/80 border-slate-800/50 backdrop-blur-sm">
+      <Card className="w-full max-w-md bg-card/80 border-border backdrop-blur-sm">
         <CardHeader className="text-center pb-8">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
@@ -96,10 +96,10 @@ export function LoginForm() {
               <GraduationCap className="h-7 w-7 text-slate-900" />
             </div>
           </Link>
-          <CardTitle className="text-2xl font-bold text-white">
+          <CardTitle className="text-2xl font-bold text-foreground">
             합격을 위한 준비, 여기서 시작해요.
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-muted-foreground">
             Certificate Master에 로그인하세요
           </CardDescription>
         </CardHeader>
@@ -119,17 +119,17 @@ export function LoginForm() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">이메일</FormLabel>
+                    <FormLabel className="text-foreground/80">이메일</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           {...field}
                           type="email"
                           placeholder="your@email.com"
                           autoComplete="email"
                           spellCheck={false}
-                          className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
+                          className="pl-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus-visible:border-emerald-500"
                         />
                       </div>
                     </FormControl>
@@ -144,22 +144,22 @@ export function LoginForm() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">비밀번호</FormLabel>
+                    <FormLabel className="text-foreground/80">비밀번호</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           {...field}
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="current-password"
-                          className="pl-10 pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
+                          className="pl-10 pr-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus-visible:border-emerald-500"
                         />
                         <button
                           type="button"
                           aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground/80"
                         >
                           {showPassword ? (
                             <EyeOff className="h-5 w-5" />
@@ -178,7 +178,7 @@ export function LoginForm() {
               <div className="text-right">
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-slate-400 hover:text-emerald-400 transition-colors"
+                  className="text-sm text-muted-foreground hover:text-emerald-400 transition-colors"
                 >
                   비밀번호를 잊으셨나요?
                 </Link>
@@ -201,7 +201,7 @@ export function LoginForm() {
               </Button>
 
               {/* Sign Up Link */}
-              <p className="text-center text-sm text-slate-400">
+              <p className="text-center text-sm text-muted-foreground">
                 계정이 없으신가요?{' '}
                 <Link
                   href="/signup"

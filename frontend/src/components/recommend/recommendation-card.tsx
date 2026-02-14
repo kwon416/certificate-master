@@ -67,7 +67,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
   const examType = recommendation.quick_stats?.exam_type || certificate.exam_info?.exam_type || null
 
   return (
-    <div className="relative overflow-hidden rounded-xl md:rounded-2xl border border-slate-800/70 bg-slate-900/70 p-4 md:p-6 shadow-lg shadow-emerald-500/5 card-hover">
+    <div className="relative overflow-hidden rounded-xl md:rounded-2xl border border-border bg-card/70 p-4 md:p-6 shadow-lg shadow-emerald-500/5 card-hover">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-transparent to-cyan-500/10" />
       <div className="relative space-y-3 md:space-y-4">
         {/* Header */}
@@ -75,16 +75,16 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
           <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
             <div className="space-y-1.5 md:space-y-2 min-w-0">
               <Link href={`/certificates/${certificate.slug || certificate.id}`} className="block group">
-                <h3 className="text-lg md:text-2xl font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-2">
+                <h3 className="text-lg md:text-2xl font-bold text-foreground group-hover:text-emerald-400 transition-colors line-clamp-2">
                   {certificate.title}
                 </h3>
               </Link>
-              <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-slate-400">
+              <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground">
                 {certificate.categories.map((cat, idx) => (
-                  <span key={idx} className="rounded-full bg-slate-800 px-2 py-0.5 md:py-1">{cat.name}</span>
+                  <span key={idx} className="rounded-full bg-muted px-2 py-0.5 md:py-1">{cat.name}</span>
                 ))}
                 {certificate.series && (
-                  <span className="rounded-full bg-slate-800 px-2 py-0.5 md:py-1">
+                  <span className="rounded-full bg-muted px-2 py-0.5 md:py-1">
                     {certificate.series}
                   </span>
                 )}
@@ -94,7 +94,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
           <div className="flex flex-col items-start sm:items-end gap-1.5 md:gap-2">
             <div className="inline-flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30">
               <Hash className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
-              <span className="text-lg md:text-xl font-bold text-white">{rank}</span>
+              <span className="text-lg md:text-xl font-bold text-foreground">{rank}</span>
             </div>
           </div>
         </div>
@@ -102,31 +102,31 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         {/* Quick Stats - 3개로 축소 */}
         <div className="grid gap-2 md:gap-3 grid-cols-3">
           <InfoChip
-            icon={<TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-300" />}
+            icon={<TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-600 dark:text-emerald-300" />}
             label="난이도"
             value={formatDifficulty(certificate.difficulty)}
           />
           <InfoChip
-            icon={<Clock3 className="w-3.5 h-3.5 md:w-4 md:h-4 text-cyan-300" />}
+            icon={<Clock3 className="w-3.5 h-3.5 md:w-4 md:h-4 text-cyan-600 dark:text-cyan-300" />}
             label="준비 기간"
             value={formatStudyPeriod(effectiveDuration)}
           />
           <InfoChip
-            icon={<FileText className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-300" />}
+            icon={<FileText className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-600 dark:text-amber-300" />}
             label="시험 유형"
             value={examType || '정보 없음'}
           />
         </div>
 
         {/* Recommendation Reason - 문장별 줄바꿈 */}
-        <div className="rounded-lg md:rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 md:p-4">
-          <p className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-emerald-200">
+        <div className="rounded-lg md:rounded-xl border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 p-3 md:p-4">
+          <p className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-emerald-700 dark:text-emerald-200">
             <Briefcase className="w-3.5 h-3.5 md:w-4 md:h-4" />
             추천 이유
           </p>
           <div className="mt-1.5 md:mt-2 space-y-1.5">
             {recommendation_reason.split(/(?<=\.)\s+/).map((sentence, idx) => (
-              <p key={idx} className="text-sm md:text-base leading-relaxed text-slate-50">
+              <p key={idx} className="text-sm md:text-base leading-relaxed text-foreground">
                 {sentence.trim()}
               </p>
             ))}
@@ -136,7 +136,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         {/* Key Points */}
         {filteredKeyPoints.length > 0 && (
           <div className="space-y-2.5">
-            <span className="text-sm md:text-base font-semibold text-slate-200 flex items-center gap-1.5">
+            <span className="text-sm md:text-base font-semibold text-foreground flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-emerald-400" />
               핵심 포인트
             </span>
@@ -151,12 +151,12 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
                 return (
                   <li
                     key={index}
-                    className="flex flex-col gap-1 text-sm md:text-base bg-slate-800/40 rounded-lg px-3 py-2.5"
+                    className="flex flex-col gap-1 text-sm md:text-base bg-muted/40 rounded-lg px-3 py-2.5"
                   >
                     {label && (
                       <span className="text-xs font-medium text-emerald-400 break-words">{label}</span>
                     )}
-                    <span className="text-slate-200 break-words whitespace-normal">{content}</span>
+                    <span className="text-foreground break-words whitespace-normal">{content}</span>
                   </li>
                 )
               })}
@@ -183,13 +183,13 @@ interface InfoChipProps {
 
 function InfoChip({ icon, label, value }: InfoChipProps) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-lg border border-slate-800/70 bg-slate-900/70 px-2 py-2 md:px-3 md:py-2.5">
-      <div className="flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-md bg-slate-800/80">
+    <div className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card/70 px-2 py-2 md:px-3 md:py-2.5">
+      <div className="flex h-6 w-6 md:h-8 md:w-8 items-center justify-center rounded-md bg-muted">
         {icon}
       </div>
       <div className="text-center space-y-0.5">
-        <p className="text-[10px] md:text-xs text-slate-400">{label}</p>
-        <p className="text-[11px] md:text-sm font-semibold text-white text-center leading-tight">{value}</p>
+        <p className="text-[10px] md:text-xs text-muted-foreground">{label}</p>
+        <p className="text-[11px] md:text-sm font-semibold text-foreground text-center leading-tight">{value}</p>
       </div>
     </div>
   )

@@ -19,13 +19,13 @@ export function WeeklyChart({ data, targetHours = 3 }: WeeklyChartProps) {
   const avgHours = totalHours / data.length
 
   return (
-    <Card className="bg-slate-900/50 border-slate-800/50">
+    <Card className="bg-card/50 border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white">주간 학습 현황</CardTitle>
+          <CardTitle className="text-foreground">주간 학습 현황</CardTitle>
           <div className="text-right">
-            <div className="text-lg font-bold text-white">{totalHours}시간</div>
-            <p className="text-xs text-slate-500">평균 {avgHours.toFixed(1)}시간/일</p>
+            <div className="text-lg font-bold text-foreground">{totalHours}시간</div>
+            <p className="text-xs text-muted-foreground">평균 {avgHours.toFixed(1)}시간/일</p>
           </div>
         </div>
       </CardHeader>
@@ -46,12 +46,12 @@ export function WeeklyChart({ data, targetHours = 3 }: WeeklyChartProps) {
                   {/* Target Line */}
                   {index === 0 && (
                     <div
-                      className="absolute w-[calc(100%*7+24px)] left-0 border-t border-dashed border-slate-600"
+                      className="absolute w-[calc(100%*7+24px)] left-0 border-t border-dashed border-border"
                       style={{
                         bottom: `${(targetHours / maxHours) * 100}%`,
                       }}
                     >
-                      <span className="absolute -right-12 -top-2.5 text-xs text-slate-500">
+                      <span className="absolute -right-12 -top-2.5 text-xs text-muted-foreground">
                         목표
                       </span>
                     </div>
@@ -65,7 +65,7 @@ export function WeeklyChart({ data, targetHours = 3 }: WeeklyChartProps) {
                         ? 'bg-gradient-to-t from-emerald-600 to-emerald-400'
                         : metTarget
                         ? 'bg-emerald-500/60'
-                        : 'bg-slate-700'
+                        : 'bg-border'
                     )}
                     style={{
                       height: `${Math.max(heightPercent, 4)}%`,
@@ -77,7 +77,7 @@ export function WeeklyChart({ data, targetHours = 3 }: WeeklyChartProps) {
                     <span
                       className={cn(
                         'absolute text-xs font-medium',
-                        isToday ? 'text-emerald-400' : 'text-slate-400'
+                        isToday ? 'text-emerald-400' : 'text-muted-foreground'
                       )}
                       style={{
                         bottom: `${Math.max(heightPercent, 4) + 4}%`,
@@ -92,7 +92,7 @@ export function WeeklyChart({ data, targetHours = 3 }: WeeklyChartProps) {
                 <span
                   className={cn(
                     'text-xs mt-2',
-                    isToday ? 'text-emerald-400 font-medium' : 'text-slate-500'
+                    isToday ? 'text-emerald-400 font-medium' : 'text-muted-foreground'
                   )}
                 >
                   {item.day}

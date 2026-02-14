@@ -35,7 +35,7 @@ const taskTypeColors = {
   lecture: 'text-cyan-400',
   problem: 'text-violet-400',
   review: 'text-amber-400',
-  other: 'text-slate-400',
+  other: 'text-muted-foreground',
 }
 
 export function TodayTasks({
@@ -61,17 +61,17 @@ export function TodayTasks({
   const totalCount = localTasks.length
 
   return (
-    <Card className="bg-slate-900/50 border-slate-800/50">
+    <Card className="bg-card/50 border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white">오늘의 학습</CardTitle>
+          <CardTitle className="text-foreground">오늘의 학습</CardTitle>
           {hasCheckedInToday ? (
             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
               <Sparkles className="mr-1 h-3 w-3" />
               체크인 완료
             </Badge>
           ) : (
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-muted-foreground">
               {completedCount}/{totalCount} 완료
             </span>
           )}
@@ -90,7 +90,7 @@ export function TodayTasks({
                   'w-full flex items-center gap-4 p-4 rounded-xl transition-colors duration-200',
                   task.completed
                     ? 'bg-emerald-500/10 border border-emerald-500/20'
-                    : 'bg-slate-800/50 border border-slate-700/50 hover:border-slate-600'
+                    : 'bg-muted/50 border border-border/50 hover:border-border'
                 )}
               >
                 {/* Checkbox */}
@@ -98,7 +98,7 @@ export function TodayTasks({
                   {task.completed ? (
                     <CheckCircle2 className="h-6 w-6 text-emerald-400" />
                   ) : (
-                    <Circle className="h-6 w-6 text-slate-500" />
+                    <Circle className="h-6 w-6 text-muted-foreground" />
                   )}
                 </div>
 
@@ -113,8 +113,8 @@ export function TodayTasks({
                     className={cn(
                       'font-medium',
                       task.completed
-                        ? 'text-slate-400 line-through'
-                        : 'text-white'
+                        ? 'text-muted-foreground line-through'
+                        : 'text-foreground'
                     )}
                   >
                     {task.title}
@@ -122,7 +122,7 @@ export function TodayTasks({
                 </div>
 
                 {/* Duration */}
-                <div className="flex-shrink-0 text-sm text-slate-500">
+                <div className="flex-shrink-0 text-sm text-muted-foreground">
                   {task.duration}
                 </div>
               </button>
@@ -136,12 +136,12 @@ export function TodayTasks({
             {/* Today's Summary */}
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-slate-300">오늘의 학습 시간</span>
+                <span className="text-sm text-foreground/80">오늘의 학습 시간</span>
                 <span className="text-2xl font-bold text-emerald-400">
                   {todayStudyHours}h
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 오늘도 목표를 향해 한 걸음 전진했어요! 🎉
               </p>
             </div>
@@ -150,7 +150,7 @@ export function TodayTasks({
             <Button
               onClick={onEditCheckin}
               variant="outline"
-              className="w-full border-slate-700 hover:border-slate-600"
+              className="w-full border-border hover:border-border"
             >
               <Edit3 className="mr-2 h-4 w-4" />
               체크인 수정하기
@@ -164,7 +164,7 @@ export function TodayTasks({
               'w-full',
               completedCount >= totalCount
                 ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-900 hover:from-emerald-400 hover:to-cyan-400'
-                : 'bg-slate-800 text-slate-400'
+                : 'bg-muted text-muted-foreground'
             )}
           >
             {completedCount >= totalCount ? (

@@ -20,9 +20,9 @@ interface StudyTimelineProps {
 
 export function StudyTimeline({ milestones }: StudyTimelineProps) {
   return (
-    <Card className="bg-slate-900/50 border-slate-800/50">
+    <Card className="bg-card/50 border-border">
       <CardHeader>
-        <CardTitle className="text-white">학습 계획 타임라인</CardTitle>
+        <CardTitle className="text-foreground">학습 계획 타임라인</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-0">
@@ -41,7 +41,7 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                         ? 'bg-emerald-500/20 border-emerald-500'
                         : milestone.status === 'in-progress'
                         ? 'bg-cyan-500/20 border-cyan-500'
-                        : 'bg-slate-800 border-slate-700'
+                        : 'bg-muted border-border'
                     )}
                   >
                     {milestone.status === 'completed' ? (
@@ -49,7 +49,7 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                     ) : milestone.status === 'in-progress' ? (
                       <Circle className="h-5 w-5 text-cyan-400" />
                     ) : (
-                      <Lock className="h-4 w-4 text-slate-500" />
+                      <Lock className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
 
@@ -60,7 +60,7 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                         'w-0.5 flex-1 min-h-12',
                         milestone.status === 'completed'
                           ? 'bg-emerald-500/50'
-                          : 'bg-slate-700'
+                          : 'bg-border'
                       )}
                     />
                   )}
@@ -81,16 +81,16 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                           ? 'bg-emerald-500/20 text-emerald-400'
                           : milestone.status === 'in-progress'
                           ? 'bg-cyan-500/20 text-cyan-400'
-                          : 'bg-slate-800 text-slate-500'
+                          : 'bg-muted text-muted-foreground'
                       )}
                     >
                       {milestone.week}
                     </span>
                   </div>
-                  <h4 className="text-white font-medium mb-1">
+                  <h4 className="text-foreground font-medium mb-1">
                     {milestone.title}
                   </h4>
-                  <p className="text-sm text-slate-400 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     {milestone.description}
                   </p>
 
@@ -98,7 +98,7 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                   {milestone.status !== 'locked' && (
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
-                        <span className="text-slate-500">진행도</span>
+                        <span className="text-muted-foreground">진행도</span>
                         <span
                           className={cn(
                             milestone.status === 'completed'
@@ -111,7 +111,7 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                       </div>
                       <Progress
                         value={milestone.progress}
-                        className="h-2 bg-slate-700"
+                        className="h-2 bg-border"
                       />
                     </div>
                   )}

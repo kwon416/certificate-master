@@ -14,11 +14,11 @@ export default function LoginPage() {
             <AlertCircle className="h-5 w-5" />
             <span className="text-sm font-medium">로그인 비활성화</span>
           </div>
-          <CardTitle className="text-2xl text-white mt-2">
+          <CardTitle className="text-2xl text-foreground mt-2">
             현재 로그인 기능을 제공하지 않습니다
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-slate-300">
+        <CardContent className="space-y-4 text-foreground/80">
           <p>
             이번 배포에서는 자격증 검색 기능만 이용할 수 있어요. 필요한 자격증 정보를 바로 찾아보세요.
           </p>

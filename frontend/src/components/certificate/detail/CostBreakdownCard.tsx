@@ -74,7 +74,7 @@ export function CostBreakdownCard({ costBreakdown, certificateTitle, className }
   }
 
   return (
-    <Card className={cn('bg-slate-900/50 border-slate-800/50', className)}>
+    <Card className={cn('bg-card/50 border-border', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <ClipboardList className="h-5 w-5 text-emerald-400" />
@@ -84,12 +84,12 @@ export function CostBreakdownCard({ costBreakdown, certificateTitle, className }
       <CardContent className="space-y-4">
         {/* 응시료 */}
         {hasExamFee && (
-          <div className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-amber-400" />
-              <span className="text-slate-300">응시료</span>
+              <span className="text-foreground/80">응시료</span>
             </div>
-            <span className="font-medium text-white">{costBreakdown?.exam_fee}</span>
+            <span className="font-medium text-foreground">{costBreakdown?.exam_fee}</span>
           </div>
         )}
 
@@ -102,7 +102,7 @@ export function CostBreakdownCard({ costBreakdown, certificateTitle, className }
             </div>
             <ul className="space-y-1">
               {costBreakdown?.free_resources?.map((resource, idx) => (
-                <li key={idx} className="text-sm text-slate-400 flex items-start gap-2">
+                <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
                   <span className="text-emerald-400">•</span>
                   <ResourceText text={resource} />
                 </li>
@@ -112,15 +112,15 @@ export function CostBreakdownCard({ costBreakdown, certificateTitle, className }
         )}
 
         {/* 유튜브 강의 검색 (항상 표시) */}
-        <div className="p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
+        <div className="p-4 bg-muted/30 rounded-lg border border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/10">
                 <Youtube className="h-5 w-5 text-red-500" />
               </div>
               <div>
-                <p className="text-sm font-medium text-white">무료 강의 찾기</p>
-                <p className="text-xs text-slate-400">유튜브에서 관련 강의를 검색해보세요</p>
+                <p className="text-sm font-medium text-foreground">무료 강의 찾기</p>
+                <p className="text-xs text-muted-foreground">유튜브에서 관련 강의를 검색해보세요</p>
               </div>
             </div>
             <Button

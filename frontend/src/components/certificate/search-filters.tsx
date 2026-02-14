@@ -138,7 +138,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       {/* Category Filter (Level 1) */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-white">자격구분</label>
+          <label className="text-sm font-medium text-foreground">자격구분</label>
           <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs">
             1단계
           </Badge>
@@ -148,13 +148,13 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
           onValueChange={handleCategoryChange}
           disabled={isLoadingCategories}
         >
-          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+          <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue placeholder={isLoadingCategories ? "로딩 중\u2026" : "자격구분 선택"} />
           </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
+          <SelectContent className="bg-muted border-border">
             <SelectItem
               value="all"
-              className="text-slate-200 focus:bg-slate-700 focus:text-white"
+              className="text-foreground focus:bg-muted focus:text-foreground"
             >
               전체
             </SelectItem>
@@ -162,7 +162,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
               <SelectItem
                 key={cat.code}
                 value={cat.name}
-                className="text-slate-200 focus:bg-slate-700 focus:text-white"
+                className="text-foreground focus:bg-muted focus:text-foreground"
               >
                 {cat.name}
               </SelectItem>
@@ -176,7 +176,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
         <div className="space-y-3 pl-4 border-l-2 border-emerald-500/30">
           <div className="flex items-center gap-2">
             <ChevronRight className="h-4 w-4 text-emerald-400" />
-            <label className="text-sm font-medium text-white">계열</label>
+            <label className="text-sm font-medium text-foreground">계열</label>
             <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 text-xs">
               2단계
             </Badge>
@@ -186,21 +186,21 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
             onValueChange={handleSeriesChange}
             disabled={isLoadingSeries || availableSeries.length === 0}
           >
-            <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-              <SelectValue 
+            <SelectTrigger className="bg-muted border-border text-foreground">
+              <SelectValue
                 placeholder={
-                  isLoadingSeries 
-                    ? "로딩 중\u2026" 
-                    : availableSeries.length === 0 
+                  isLoadingSeries
+                    ? "로딩 중\u2026"
+                    : availableSeries.length === 0
                     ? "계열 정보 없음"
                     : "계열 선택"
-                } 
+                }
               />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700 max-h-[300px]">
+            <SelectContent className="bg-muted border-border max-h-[300px]">
               <SelectItem
                 value="all"
-                className="text-slate-200 focus:bg-slate-700 focus:text-white"
+                className="text-foreground focus:bg-muted focus:text-foreground"
               >
                 전체
               </SelectItem>
@@ -208,7 +208,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
                 <SelectItem
                   key={series}
                   value={series}
-                  className="text-slate-200 focus:bg-slate-700 focus:text-white"
+                  className="text-foreground focus:bg-muted focus:text-foreground"
                 >
                   {series}
                 </SelectItem>
@@ -220,20 +220,20 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
 
       {/* Study Period Filter */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-white">준비기간</label>
+        <label className="text-sm font-medium text-foreground">준비기간</label>
         <Select
           value={filters.studyPeriod || 'all'}
           onValueChange={handleStudyPeriodChange}
         >
-          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+          <SelectTrigger className="bg-muted border-border text-foreground">
             <SelectValue placeholder="준비기간 선택" />
           </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
+          <SelectContent className="bg-muted border-border">
             {studyPeriods.map((period) => (
               <SelectItem
                 key={period.value}
                 value={period.value}
-                className="text-slate-200 focus:bg-slate-700 focus:text-white"
+                className="text-foreground focus:bg-muted focus:text-foreground"
               >
                 {period.label}
               </SelectItem>
@@ -245,8 +245,8 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       {/* Difficulty Filter */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-white">난이도</label>
-          <span className="text-sm text-slate-400">
+          <label className="text-sm font-medium text-foreground">난이도</label>
+          <span className="text-sm text-muted-foreground">
             {filters.difficulty[0]} - {filters.difficulty[1]}
           </span>
         </div>
@@ -258,7 +258,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
           onValueChange={handleDifficultyChange}
           className="py-2"
         />
-        <div className="flex justify-between text-xs text-slate-500">
+        <div className="flex justify-between text-xs text-muted-foreground">
           <span>쉬움</span>
           <span>어려움</span>
         </div>
@@ -267,7 +267,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       {/* Reset Button */}
       <Button
         variant="outline"
-        className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+        className="w-full border-border text-foreground/80 hover:bg-muted"
         onClick={handleReset}
       >
         <RotateCcw className="mr-2 h-4 w-4" />
@@ -276,8 +276,8 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
 
       {/* Active Filters Summary */}
       {activeFilterCount > 0 && (
-        <div className="pt-4 border-t border-slate-800">
-          <div className="text-xs text-slate-500 mb-2">적용된 필터</div>
+        <div className="pt-4 border-t border-border">
+          <div className="text-xs text-muted-foreground mb-2">적용된 필터</div>
           <div className="flex flex-wrap gap-2">
             {filters.categories && filters.categories.length > 0 && (
               <Badge variant="secondary" className="bg-emerald-900/30 text-emerald-400">
@@ -290,12 +290,12 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
               </Badge>
             )}
             {filters.studyPeriod && (
-              <Badge variant="secondary" className="bg-slate-800 text-slate-300">
+              <Badge variant="secondary" className="bg-muted text-foreground/80">
                 {studyPeriods.find(p => p.value === filters.studyPeriod)?.label}
               </Badge>
             )}
             {(filters.difficulty[0] !== 1 || filters.difficulty[1] !== 5) && (
-              <Badge variant="secondary" className="bg-slate-800 text-slate-300">
+              <Badge variant="secondary" className="bg-muted text-foreground/80">
                 난이도 {filters.difficulty[0]}-{filters.difficulty[1]}
               </Badge>
             )}
@@ -309,9 +309,9 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
     <>
       {/* Desktop Filters */}
       <div className="hidden lg:block">
-        <div className="sticky top-24 space-y-6 rounded-xl bg-slate-900/50 border border-slate-800/50 p-6">
+        <div className="sticky top-24 space-y-6 rounded-xl bg-card/50 border border-border p-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-white flex items-center gap-2">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
               <Filter className="h-4 w-4" />
               필터
             </h3>
@@ -331,7 +331,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
           <SheetTrigger asChild>
             <Button
               variant="outline"
-              className="border-slate-700 text-slate-300"
+              className="border-border text-foreground/80"
             >
               <Filter className="mr-2 h-4 w-4" />
               필터
@@ -345,9 +345,9 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[300px] bg-slate-950 border-slate-800">
+          <SheetContent side="right" className="w-[300px] bg-background border-border">
             <SheetHeader>
-              <SheetTitle className="text-white flex items-center gap-2">
+              <SheetTitle className="text-foreground flex items-center gap-2">
                 <Filter className="h-5 w-5" />
                 필터
               </SheetTitle>

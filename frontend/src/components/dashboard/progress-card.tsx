@@ -42,15 +42,15 @@ export function ProgressCard({
   const isOnTrack = progressPercent >= (100 - (daysRemaining / 90) * 100)
 
   return (
-    <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700/50 overflow-hidden">
+    <Card className="bg-gradient-to-br from-card to-muted border-border overflow-hidden">
       {/* Decorative gradient */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       
       <CardHeader className="relative">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-slate-400 mb-1">현재 학습 중</p>
-            <CardTitle className="text-2xl font-bold text-white">
+            <p className="text-sm text-muted-foreground mb-1">현재 학습 중</p>
+            <CardTitle className="text-2xl font-bold text-foreground">
               {certificateTitle}
             </CardTitle>
           </div>
@@ -58,7 +58,7 @@ export function ProgressCard({
             <div className="text-3xl font-bold text-emerald-400">
               D-{daysRemaining}
             </div>
-            <p className="text-sm text-slate-400">{targetDate} 목표</p>
+            <p className="text-sm text-muted-foreground">{targetDate} 목표</p>
           </div>
         </div>
       </CardHeader>
@@ -67,18 +67,18 @@ export function ProgressCard({
         {/* Overall Progress */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-400">전체 진행도</span>
-            <span className="text-lg font-semibold text-white">
+            <span className="text-sm text-muted-foreground">전체 진행도</span>
+            <span className="text-lg font-semibold text-foreground">
               {progressPercent}%
             </span>
           </div>
-          <Progress value={progressPercent} className="h-3 bg-slate-700" />
+          <Progress value={progressPercent} className="h-3 bg-border" />
           <div className="flex items-center justify-between text-sm">
             <span className={`flex items-center gap-1 ${isOnTrack ? 'text-emerald-400' : 'text-amber-400'}`}>
               <TrendingUp className="h-4 w-4" />
               {isOnTrack ? '계획대로 진행 중' : '조금 더 분발이 필요해요'}
             </span>
-            <span className="text-slate-500">현재 단계: {currentPhase}</span>
+            <span className="text-muted-foreground">현재 단계: {currentPhase}</span>
           </div>
         </div>
 
@@ -95,7 +95,7 @@ export function ProgressCard({
             data-testid="velocity-metrics-inline"
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">진행 속도</span>
+              <span className="text-sm text-muted-foreground">진행 속도</span>
               <div className="flex items-center gap-2">
                 {velocityMetrics.progressDelta >= 0 ? (
                   <TrendingUp
@@ -131,10 +131,10 @@ export function ProgressCard({
                 </span>
               </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-slate-700">
+            <div className="mt-2 pt-2 border-t border-border">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500">예상 완료일</span>
-                <span className="text-slate-300 font-medium" data-testid="predicted-completion-date">
+                <span className="text-muted-foreground">예상 완료일</span>
+                <span className="text-foreground/80 font-medium" data-testid="predicted-completion-date">
                   {new Date(velocityMetrics.predictedDate).toLocaleDateString('ko-KR', {
                     year: 'numeric',
                     month: 'long',
@@ -148,20 +148,20 @@ export function ProgressCard({
 
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-4 rounded-xl bg-slate-800/50">
+          <div className="text-center p-4 rounded-xl bg-muted/50">
             <Clock className="h-5 w-5 text-cyan-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">{studyHoursToday}h</div>
-            <p className="text-xs text-slate-500">오늘 학습</p>
+            <div className="text-2xl font-bold text-foreground">{studyHoursToday}h</div>
+            <p className="text-xs text-muted-foreground">오늘 학습</p>
           </div>
-          <div className="text-center p-4 rounded-xl bg-slate-800/50">
+          <div className="text-center p-4 rounded-xl bg-muted/50">
             <Calendar className="h-5 w-5 text-violet-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">{studyHoursWeek}h</div>
-            <p className="text-xs text-slate-500">이번 주</p>
+            <div className="text-2xl font-bold text-foreground">{studyHoursWeek}h</div>
+            <p className="text-xs text-muted-foreground">이번 주</p>
           </div>
-          <div className="text-center p-4 rounded-xl bg-slate-800/50">
+          <div className="text-center p-4 rounded-xl bg-muted/50">
             <Flame className="h-5 w-5 text-orange-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">{streakDays}일</div>
-            <p className="text-xs text-slate-500">연속 학습</p>
+            <div className="text-2xl font-bold text-foreground">{streakDays}일</div>
+            <p className="text-xs text-muted-foreground">연속 학습</p>
           </div>
         </div>
 

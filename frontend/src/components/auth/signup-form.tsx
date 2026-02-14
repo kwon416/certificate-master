@@ -109,15 +109,15 @@ export function SignupForm() {
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
         </div>
 
-        <Card className="w-full max-w-md bg-slate-900/80 border-slate-800/50 backdrop-blur-sm">
+        <Card className="w-full max-w-md bg-card/80 border-border backdrop-blur-sm">
           <CardContent className="pt-10 pb-10 text-center">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
               가입이 완료되었습니다!
             </h2>
-            <p className="text-slate-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               이메일 인증을 완료하시면 모든 기능을 이용하실 수 있습니다.
             </p>
             <Button
@@ -140,7 +140,7 @@ export function SignupForm() {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md bg-slate-900/80 border-slate-800/50 backdrop-blur-sm">
+      <Card className="w-full max-w-md bg-card/80 border-border backdrop-blur-sm">
         <CardHeader className="text-center pb-6">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
@@ -148,10 +148,10 @@ export function SignupForm() {
               <GraduationCap className="h-7 w-7 text-slate-900" />
             </div>
           </Link>
-          <CardTitle className="text-2xl font-bold text-white">
+          <CardTitle className="text-2xl font-bold text-foreground">
             함께 시작해요!
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-muted-foreground">
             무료 계정을 만들고 자격증 준비를 시작하세요
           </CardDescription>
         </CardHeader>
@@ -171,15 +171,15 @@ export function SignupForm() {
                 name="fullName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">이름</FormLabel>
+                    <FormLabel className="text-foreground/80">이름</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           {...field}
                           type="text"
                           placeholder="홍길동"
-                          className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
+                          className="pl-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus-visible:border-emerald-500"
                         />
                       </div>
                     </FormControl>
@@ -194,15 +194,15 @@ export function SignupForm() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">이메일</FormLabel>
+                    <FormLabel className="text-foreground/80">이메일</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           {...field}
                           type="email"
                           placeholder="your@email.com"
-                          className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
+                          className="pl-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus-visible:border-emerald-500"
                         />
                       </div>
                     </FormControl>
@@ -217,21 +217,21 @@ export function SignupForm() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">비밀번호</FormLabel>
+                    <FormLabel className="text-foreground/80">비밀번호</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           {...field}
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
-                          className="pl-10 pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
+                          className="pl-10 pr-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus-visible:border-emerald-500"
                         />
                         <button
                           type="button"
                           aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground/80"
                         >
                           {showPassword ? (
                             <EyeOff className="h-5 w-5" />
@@ -250,7 +250,7 @@ export function SignupForm() {
                             className={`text-xs px-2 py-1 rounded ${
                               req.met
                                 ? 'bg-emerald-500/20 text-emerald-400'
-                                : 'bg-slate-800 text-slate-500'
+                                : 'bg-muted text-muted-foreground'
                             }`}
                           >
                             {req.label}
@@ -269,21 +269,21 @@ export function SignupForm() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-slate-300">비밀번호 확인</FormLabel>
+                    <FormLabel className="text-foreground/80">비밀번호 확인</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           {...field}
                           type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="••••••••"
-                          className="pl-10 pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus-visible:border-emerald-500"
+                          className="pl-10 pr-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground focus-visible:border-emerald-500"
                         />
                         <button
                           type="button"
                           aria-label={showConfirmPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground/80"
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-5 w-5" />
@@ -312,7 +312,7 @@ export function SignupForm() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className="text-sm text-slate-400 font-normal">
+                      <FormLabel className="text-sm text-muted-foreground font-normal">
                         <Link href="/terms" className="text-emerald-400 hover:underline">
                           이용약관
                         </Link>{' '}
@@ -345,7 +345,7 @@ export function SignupForm() {
               </Button>
 
               {/* Login Link */}
-              <p className="text-center text-sm text-slate-400">
+              <p className="text-center text-sm text-muted-foreground">
                 이미 계정이 있으신가요?{' '}
                 <Link
                   href="/login"

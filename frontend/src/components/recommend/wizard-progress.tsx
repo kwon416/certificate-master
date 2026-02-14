@@ -17,14 +17,14 @@ export function WizardProgress({ currentStep, totalSteps }: WizardProgressProps)
     <div className="mb-4 md:mb-8">
       {/* Step indicator */}
       <div className="flex items-center justify-between mb-1.5 md:mb-2">
-        <span className="text-xs md:text-sm text-slate-400">
+        <span className="text-xs md:text-sm text-muted-foreground">
           Step {currentStep}/{totalSteps}
         </span>
-        <span className="text-xs md:text-sm text-slate-400">{Math.round(progress)}%</span>
+        <span className="text-xs md:text-sm text-muted-foreground">{Math.round(progress)}%</span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-1.5 md:h-2 bg-slate-800 rounded-full overflow-hidden">
+      <div className="h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-[width] duration-300 ease-out"
           style={{ width: `${progress}%` }}

@@ -59,7 +59,7 @@ export function GoogleLoginForm() {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md bg-slate-900/80 border-slate-800/50 backdrop-blur-sm">
+      <Card className="w-full max-w-md bg-card/80 border-border backdrop-blur-sm">
         <CardHeader className="text-center pb-8">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
@@ -67,10 +67,10 @@ export function GoogleLoginForm() {
               <GraduationCap className="h-7 w-7 text-slate-900" />
             </div>
           </Link>
-          <CardTitle className="text-2xl font-bold text-white">
+          <CardTitle className="text-2xl font-bold text-foreground">
             합격을 위한 준비, 여기서 시작해요.
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-muted-foreground">
             Certificate Master에 로그인하세요
           </CardDescription>
         </CardHeader>
@@ -112,7 +112,7 @@ export function GoogleLoginForm() {
           </Button>
 
           {/* Divider or Additional Info */}
-          <div className="text-center text-sm text-slate-500 pt-4">
+          <div className="text-center text-sm text-muted-foreground pt-4">
             <p>Google 계정으로 간편하게 시작하세요</p>
             <p className="mt-2 text-xs">
               로그인 시 서비스 이용약관 및 개인정보처리방침에 동의하게 됩니다

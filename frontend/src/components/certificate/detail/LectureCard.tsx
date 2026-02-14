@@ -20,7 +20,7 @@ export function LectureCard({ lecture, className }: LectureCardProps) {
   return (
     <div
       className={cn(
-        'p-4 rounded-lg transition-colors bg-slate-800/30 hover:bg-slate-800/50',
+        'p-4 rounded-lg transition-colors bg-muted/30 hover:bg-muted/50',
         className
       )}
     >
@@ -34,12 +34,12 @@ export function LectureCard({ lecture, className }: LectureCardProps) {
           </div>
 
           {/* 제목 */}
-          <h4 className="text-slate-200 font-medium mb-2 line-clamp-2">
+          <h4 className="text-foreground font-medium mb-2 line-clamp-2">
             {lecture.title}
           </h4>
 
           {/* 메타 정보 */}
-          <div className="flex flex-wrap gap-3 text-sm text-slate-400">
+          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
             {lecture.instructor && lecture.instructor !== 'null' && (
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
@@ -57,7 +57,7 @@ export function LectureCard({ lecture, className }: LectureCardProps) {
                 <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                 {lecture.rating.toFixed(1)}
                 {lecture.review_count && (
-                  <span className="text-slate-500">({lecture.review_count.toLocaleString()})</span>
+                  <span className="text-muted-foreground">({lecture.review_count.toLocaleString()})</span>
                 )}
               </span>
             )}
@@ -75,7 +75,7 @@ export function LectureCard({ lecture, className }: LectureCardProps) {
           <Button
             variant="outline"
             size="sm"
-            className="border-slate-700"
+            className="border-border"
           >
             바로가기
             <ExternalLink className="ml-2 h-3 w-3" />

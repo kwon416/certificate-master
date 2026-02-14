@@ -116,7 +116,7 @@ export function InteractionWizard() {
       <WizardProgress currentStep={currentStep} totalSteps={WIZARD_STEPS.length} />
 
       {/* Step Content - 모바일에서 패딩 축소 */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-2xl p-4 md:p-8 mb-6 transition-[transform,opacity] duration-300">
+      <div className="bg-card/50 backdrop-blur-xl border border-border rounded-2xl p-4 md:p-8 mb-6 transition-[transform,opacity] duration-300">
         <WizardStep
           step={currentStepConfig.step}
           title={currentStepConfig.title}
@@ -156,7 +156,7 @@ export function InteractionWizard() {
       </div>
 
       {/* Navigation Buttons - 모바일에서 하단 고정 */}
-      <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto bg-slate-950/95 md:bg-transparent backdrop-blur-lg md:backdrop-blur-none border-t border-slate-800 md:border-0 p-4 md:p-0 z-40">
+      <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-auto bg-background/95 md:bg-transparent backdrop-blur-lg md:backdrop-blur-none border-t border-border md:border-0 p-4 md:p-0 z-40">
         <div className="flex items-center justify-between max-w-3xl mx-auto gap-3">
           <Button
             variant="outline"
@@ -195,13 +195,13 @@ export function InteractionWizard() {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-50">
-          <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-8 text-center max-w-md">
+        <div className="absolute inset-0 bg-card/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-50">
+          <div className="bg-muted/90 border border-border rounded-xl p-8 text-center max-w-md">
             <Loader2 className="w-12 h-12 animate-spin text-emerald-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               추천 검색 중{'\u2026'}
             </h3>
-            <p className="text-slate-400 text-sm">
+            <p className="text-muted-foreground text-sm">
               AI가 당신에게 맞는 자격증을 찾고 있습니다.
             </p>
           </div>
