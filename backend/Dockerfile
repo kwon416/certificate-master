@@ -52,6 +52,9 @@ COPY --chown=appuser:appuser pyproject.toml uv.lock ./
 COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser scripts ./scripts
 
+# Create logs directory (볼륨 마운트 없을 때 대비)
+RUN mkdir -p /app/logs && chown appuser:appuser /app/logs
+
 # Switch to non-root user
 USER appuser
 

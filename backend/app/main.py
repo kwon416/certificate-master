@@ -33,26 +33,32 @@ def setup_logging(settings) -> None:
 
     # 파일 핸들러 (LOG_DIR 설정 시)
     if settings.LOG_DIR:
-        os.makedirs(settings.LOG_DIR, exist_ok=True)
-        file_handler = logging.handlers.RotatingFileHandler(
-            os.path.join(settings.LOG_DIR, "backend.log"),
-            maxBytes=50 * 1024 * 1024,  # 50MB
-            backupCount=5,
-            encoding="utf-8",
-        )
-        file_handler.setFormatter(logging.Formatter(log_format))
-        root_logger.addHandler(file_handler)
+        try:
+            os.makedirs(settings.LOG_DIR, exist_ok=True)
+            file_handler = logging.handlers.RotatingFileHandler(
+                os.path.join(settings.LOG_DIR, "backend.log"),
+                maxBytes=50 * 1024 * 1024,  # 50MB
+                backupCount=5,
+                encoding="utf-8",
+            )
+            file_handler.setFormatter(logging.Formatter(log_format))
+            root_logger.addHandler(file_handler)
 
-        # 에러 전용 로그
-        error_handler = logging.handlers.RotatingFileHandler(
-            os.path.join(settings.LOG_DIR, "error.log"),
-            maxBytes=50 * 1024 * 1024,
-            backupCount=5,
-            encoding="utf-8",
-        )
-        error_handler.setLevel(logging.ERROR)
-        error_handler.setFormatter(logging.Formatter(log_format))
-        root_logger.addHandler(error_handler)
+            # 에러 전용 로그
+            error_handler = logging.handlers.RotatingFileHandler(
+                os.path.join(settings.LOG_DIR, "error.log"),
+                maxBytes=50 * 1024 * 1024,
+                backupCount=5,
+                encoding="utf-8",
+            )
+            error_handler.setLevel(logging.ERROR)
+            error_handler.setFormatter(logging.Formatter(log_format))
+            root_logger.addHandler(error_handler)
+        except PermissionError:
+            root_logger.warning(
+                f"파일 로깅 설정 실패: '{settings.LOG_DIR}' 쓰기 권한 없음. "
+                f"stdout만 사용합니다."
+            )
 
 
 setup_logging(get_settings())
