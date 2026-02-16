@@ -1,7 +1,7 @@
 # ============================================================
 # Certificate Master Backend - 운영 환경 Docker Compose
 # ============================================================
-# 사용법: DOCKER_BUILDKIT=1 docker-compose -f docker-compose.production.yml up -d --build
+# 사용법: docker-compose -f docker-compose.production.yml up -d --build
 # ============================================================
 
 version: "3.9"

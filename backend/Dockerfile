@@ -1,5 +1,4 @@
-# Backend Dockerfile - Python FastAPI (Multi-stage optimized)
-# syntax=docker/dockerfile:1.4
+# Backend Dockerfile - Python FastAPI (Multi-stage, BuildKit 불필요)
 
 # ============================================================
 # Stage 1: Builder - 의존성 설치 (build-essential 포함)
@@ -9,24 +8,21 @@ FROM python:3.11-slim AS builder
 WORKDIR /app
 
 # Install system dependencies for building C extensions
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv for fast package management
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install uv
+RUN pip install uv
 
-# Copy dependency files first (레이어 캐싱)
+# Copy dependency files first (Docker 레이어 캐싱 활용)
+# pyproject.toml/uv.lock이 변경되지 않으면 이 아래 레이어는 캐시 hit
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies with cache mount (핵심 최적화)
+# Install dependencies
 # --no-dev: 개발 의존성 제외
 # --frozen: lockfile 기반 정확한 버전 설치
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --frozen
+RUN uv sync --no-dev --frozen
 
 # ============================================================
 # Stage 2: Runner - 최소 런타임 이미지
@@ -36,28 +32,25 @@ FROM python:3.11-slim AS runner
 WORKDIR /app
 
 # Install runtime-only dependencies (curl for healthcheck)
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install uv (uv run 명령에 필요)
+RUN pip install uv
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser
 
-# Copy virtual environment from builder (이미 올바른 소유권으로)
+# Copy virtual environment from builder (COPY --chown으로 chown -R 대체)
 COPY --from=builder --chown=appuser:appuser /app/.venv ./.venv
-
-# Copy application code
-COPY --chown=appuser:appuser app ./app
-COPY --chown=appuser:appuser scripts ./scripts
 
 # Copy dependency files (uv run에 필요)
 COPY --chown=appuser:appuser pyproject.toml uv.lock ./
 
-# Install uv in runner (uv run 명령에 필요)
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install uv
+# Copy application code
+COPY --chown=appuser:appuser app ./app
+COPY --chown=appuser:appuser scripts ./scripts
 
 # Switch to non-root user
 USER appuser
