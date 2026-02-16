@@ -218,3 +218,31 @@ class TestFormatterIntegration:
 
                 # chunk_text가 공통 포맷터의 결과와 동일해야 함
                 assert record["chunk_text"] == direct_text
+
+
+class TestBuildMetadataDomain:
+    """build_certificate_metadata의 domain 메타데이터 테스트."""
+
+    def test_build_metadata_includes_domain(self):
+        """build_certificate_metadata가 domain 필드를 포함한다."""
+        from app.utils.certificate_formatter import build_certificate_metadata
+
+        cert = {
+            "title": "정보처리기사",
+            "categories": [{"code": "T", "name": "국가기술자격"}],
+            "series": "기사",
+            "domain": "IT/소프트웨어",
+        }
+        metadata = build_certificate_metadata(cert)
+        assert metadata["domain"] == "IT/소프트웨어"
+
+    def test_build_metadata_domain_defaults_empty(self):
+        """domain이 없으면 빈 문자열로 기본값 설정."""
+        from app.utils.certificate_formatter import build_certificate_metadata
+
+        cert = {
+            "title": "테스트",
+            "categories": [],
+        }
+        metadata = build_certificate_metadata(cert)
+        assert metadata["domain"] == ""

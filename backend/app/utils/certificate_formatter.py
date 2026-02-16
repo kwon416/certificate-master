@@ -307,6 +307,8 @@ def build_certificate_metadata(cert: dict) -> dict:
         "weekly_hours_required": _calculate_weekly_hours_required(cert),
         "target_job_types": target_job_types[:200],
         "target_company_types": target_company_types[:200],
+        # 도메인 분류 (NEW)
+        "domain": cert.get("domain", "") or "",
     }
 
 
