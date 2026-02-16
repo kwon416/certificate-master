@@ -1,8 +1,6 @@
 'use client'
 
-import { useState } from 'react'
 import { DomainSelector } from '@/components/recommend/domain-selector'
-import { NaturalResults } from '@/components/recommend'
 import { useRecommendStore } from '@/stores/recommend-store'
 import { recommendationsAPI } from '@/lib/api/recommendations'
 import { Button } from '@/components/ui/button'
