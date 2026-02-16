@@ -1,0 +1,48 @@
+# Python virtual environments (1.4GB+)
+.venv
+venv
+env
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+dist
+build
+.mypy_cache
+.ruff_cache
+
+# Test & coverage
+tests
+.pytest_cache
+.coverage
+htmlcov
+coverage.xml
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Docker files (자기 자신 제외)
+Dockerfile.legacy
+docker-compose*.yml
+
+# Data & logs
+data/raw
+*.log
+*.tmp
+
+# Documentation
+*.md
+docs
+LICENSE

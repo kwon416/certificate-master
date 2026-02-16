@@ -1,23 +1,21 @@
-# Backend Dockerfile - Python FastAPI (Optimized with BuildKit cache)
+# Backend Dockerfile - Python FastAPI (Multi-stage optimized)
 # syntax=docker/dockerfile:1.4
 
-FROM python:3.11-slim AS base
+# ============================================================
+# Stage 1: Builder - 의존성 설치 (build-essential 포함)
+# ============================================================
+FROM python:3.11-slim AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Create non-root user first
-RUN useradd -m -u 1000 appuser
-
-# Install system dependencies (캐시 레이어)
+# Install system dependencies for building C extensions
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y \
-    curl \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv for fast package management (캐시 레이어)
+# Install uv for fast package management
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install uv
 
@@ -25,15 +23,41 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies with cache mount (핵심 최적화)
+# --no-dev: 개발 의존성 제외
+# --frozen: lockfile 기반 정확한 버전 설치
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-dev --frozen
 
-# Change ownership of .venv to appuser (권한 문제 해결)
-RUN chown -R appuser:appuser /app/.venv
+# ============================================================
+# Stage 2: Runner - 최소 런타임 이미지
+# ============================================================
+FROM python:3.11-slim AS runner
 
-# Copy application code with correct ownership
+WORKDIR /app
+
+# Install runtime-only dependencies (curl for healthcheck)
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser
+
+# Copy virtual environment from builder (이미 올바른 소유권으로)
+COPY --from=builder --chown=appuser:appuser /app/.venv ./.venv
+
+# Copy application code
 COPY --chown=appuser:appuser app ./app
 COPY --chown=appuser:appuser scripts ./scripts
+
+# Copy dependency files (uv run에 필요)
+COPY --chown=appuser:appuser pyproject.toml uv.lock ./
+
+# Install uv in runner (uv run 명령에 필요)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install uv
 
 # Switch to non-root user
 USER appuser
@@ -41,7 +65,7 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Health check (운영: start-period 60s로 증가)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
