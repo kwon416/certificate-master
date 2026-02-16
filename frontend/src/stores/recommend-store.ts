@@ -105,6 +105,22 @@ interface RecommendState {
   naturalInputInWizard: string    // Step 4 자연어 입력
   useNaturalMode: boolean         // 자연어 모드 토글
 
+  // 통합 플로우 (Redesign)
+  selectedDomains: string[]
+  unifiedInput: string
+  unifiedStep: 'domain' | 'input' | 'loading' | 'results'
+  unifiedRecommendations: NaturalRecommendedCertificate[] | null
+  unifiedContext: StructuredUserContext | null
+  unifiedQueryUsed: string | null
+  unifiedTotalMatched: number
+
+  // 통합 액션
+  setSelectedDomains: (domains: string[]) => void
+  setUnifiedInput: (input: string) => void
+  setUnifiedStep: (step: 'domain' | 'input' | 'loading' | 'results') => void
+  setUnifiedRecommendations: (response: { structured_context: StructuredUserContext; recommendations: NaturalRecommendedCertificate[]; query_used: string; total_matched: number }) => void
+  resetUnified: () => void
+
   // 액션
   setInputMode: (mode: InputMode) => void
   setAnswer: (key: keyof WizardAnswers, value: WizardAnswers[keyof WizardAnswers]) => void
@@ -168,6 +184,40 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
   naturalInputInWizard: '',
   useNaturalMode: false,
 
+  // 통합 플로우 (Redesign)
+  selectedDomains: [],
+  unifiedInput: '',
+  unifiedStep: 'domain',
+  unifiedRecommendations: null,
+  unifiedContext: null,
+  unifiedQueryUsed: null,
+  unifiedTotalMatched: 0,
+
+  // 통합 액션
+  setSelectedDomains: (domains) => set({ selectedDomains: domains }),
+  setUnifiedInput: (input) => set({ unifiedInput: input }),
+  setUnifiedStep: (step) => set({ unifiedStep: step }),
+  setUnifiedRecommendations: (response) => set({
+    unifiedContext: response.structured_context,
+    unifiedRecommendations: response.recommendations,
+    unifiedQueryUsed: response.query_used,
+    unifiedTotalMatched: response.total_matched,
+    unifiedStep: 'results',
+    isLoading: false,
+    error: null,
+  }),
+  resetUnified: () => set({
+    selectedDomains: [],
+    unifiedInput: '',
+    unifiedStep: 'domain',
+    unifiedRecommendations: null,
+    unifiedContext: null,
+    unifiedQueryUsed: null,
+    unifiedTotalMatched: 0,
+    isLoading: false,
+    error: null,
+  }),
+
   // 입력 모드 전환
   setInputMode: (mode) => {
     set({ inputMode: mode })
@@ -211,15 +261,21 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
       querySummary: null,
       totalMatched: 0,
       error: null,
-      // 자연어 상태도 초기화
       naturalInput: '',
       structuredContext: null,
       naturalRecommendations: null,
       queryUsed: null,
       followUpQuestion: null,
-      // Step 4 자연어 통합 상태 초기화
       naturalInputInWizard: '',
       useNaturalMode: false,
+      // 통합 플로우 초기화
+      selectedDomains: [],
+      unifiedInput: '',
+      unifiedStep: 'domain',
+      unifiedRecommendations: null,
+      unifiedContext: null,
+      unifiedQueryUsed: null,
+      unifiedTotalMatched: 0,
     })
   },
 

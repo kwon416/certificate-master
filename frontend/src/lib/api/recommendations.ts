@@ -10,7 +10,21 @@ import type {
   Certificate,
   NaturalLanguageRequest,
   NaturalLanguageResponse,
+  StructuredUserContext,
 } from './types'
+
+// Unified recommendation types (Redesign)
+export interface UnifiedRecommendationRequest {
+  domains: string[]
+  user_input: string
+}
+
+export interface UnifiedRecommendationResponse {
+  structured_context: StructuredUserContext
+  recommendations: RecommendedCertificate[]
+  query_used: string
+  total_matched: number
+}
 
 // Request types
 export interface RecommendationRequest {
@@ -145,6 +159,38 @@ export const recommendationsAPI = {
       return response
     } catch (error) {
       // Even on error, show loading UI for minimum time
+      const elapsed = Date.now() - startTime
+      if (elapsed < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 통합 자격증 추천 (분야 선택 + 자연어)
+   */
+  async getUnifiedRecommendations(
+    request: UnifiedRecommendationRequest
+  ): Promise<UnifiedRecommendationResponse> {
+    console.log('🌐 [API] POST /api/v1/recommendations/unified')
+
+    const minLoadingTime = 2000
+    const startTime = Date.now()
+
+    try {
+      const response = await api.post<UnifiedRecommendationResponse>(
+        '/api/v1/recommendations/unified',
+        request
+      )
+
+      const elapsed = Date.now() - startTime
+      if (elapsed < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
+      }
+
+      return response
+    } catch (error) {
       const elapsed = Date.now() - startTime
       if (elapsed < minLoadingTime) {
         await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
