@@ -116,3 +116,44 @@ CONTEXT_EXTRACTION_USER_PROMPT_TEMPLATE = """다음 사용자 입력을 분석�
 {user_input}
 
 위 내용을 분석하여 JSON 형식으로 출력해주세요."""
+
+
+# ===== 통합 프롬프트 (Redesign) =====
+
+UNIFIED_SYSTEM_PROMPT = """당신은 자격증 추천 시스템의 상황 분석 전문가입니다.
+
+사용자의 자연어 입력과 선택한 분야를 분석하여 두 가지를 생성합니다:
+1. 구조화된 사용자 상황 (context)
+2. 벡터 검색에 최적화된 쿼리 텍스트 (search_query)
+
+## 출력 형식 (JSON)
+{
+    "context": {
+        "goal": "취업 | 이직 | 전문성 강화 | 개인 관심 | 창업",
+        "employment_status": "재직 중 | 구직 중 | 학생 | 무직",
+        "major_background": "전공자 | 비전공자 | 관련 경험 있음",
+        "weekly_study_hours": 1-40,
+        "max_study_period_days": 30-730,
+        "difficulty_preference": "하 | 중하 | 중 | 중상 | 상",
+        "preferred_industries": ["산업1", ...] (최대 5개)
+    },
+    "search_query": "벡터 검색에 최적화된 한국어 쿼리 (50-150자)"
+}
+
+## search_query 생성 규칙
+- 사용자의 상황, 목표, 관심 분야를 자연스럽게 포함
+- 자격증 임베딩과 유사도가 높도록 자격증 관련 용어 사용
+- 너무 일반적이지 않고 구체적으로 작성
+
+## 추론 규칙
+- "직장인" → employment_status: "재직 중"
+- "빨리 취득" → max_study_period_days: 60-90
+- "쉬운 것부터" → difficulty_preference: "하"
+- 시간 많지 않음 → weekly_study_hours: 5-10
+- 기본값: goal=취업, employment_status=구직 중, major_background=비전공자, weekly_study_hours=15, max_study_period_days=180, difficulty_preference=중
+"""
+
+UNIFIED_USER_PROMPT_TEMPLATE = """[사용자 선택 분야]: {selected_domains}
+[사용자 입력]: {user_input}
+
+위 정보를 분석하여 JSON을 생성하세요."""

@@ -89,6 +89,56 @@ class ContextExtractorService:
 
         return json.loads(content)
 
+    async def extract_context_and_query(
+        self,
+        user_input: str,
+        selected_domains: list[str],
+    ) -> tuple[StructuredUserContext, str]:
+        """상황 구조화와 검색 쿼리를 동시에 생성합니다.
+
+        기존 extract_context()와 QueryGeneratorService를 통합합니다.
+
+        Args:
+            user_input: 사용자의 자연어 입력.
+            selected_domains: 사용자가 선택한 분야 목록.
+
+        Returns:
+            (StructuredUserContext, search_query) 튜플.
+        """
+        if not self.client:
+            raise ValueError("OPENAI_API_KEY not configured")
+
+        logger.info(f"[ContextExtractor] Processing (unified): {user_input[:50]}...")
+
+        from app.services.study.prompts.context_extraction import (
+            UNIFIED_SYSTEM_PROMPT,
+            UNIFIED_USER_PROMPT_TEMPLATE,
+        )
+
+        user_prompt = UNIFIED_USER_PROMPT_TEMPLATE.format(
+            user_input=user_input,
+            selected_domains=", ".join(selected_domains),
+        )
+
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": UNIFIED_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={"type": "json_object"},
+        )
+
+        content = response.choices[0].message.content
+        if not content:
+            raise ValueError("Empty response from LLM")
+
+        data = json.loads(content)
+        context = StructuredUserContext(**data["context"])
+        search_query = data.get("search_query", user_input)
+
+        return context, search_query
+
 
 # Singleton instance
 _context_extractor: Optional[ContextExtractorService] = None
