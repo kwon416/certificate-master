@@ -10,6 +10,7 @@ import type {
   Certificate,
   NaturalLanguageRequest,
   NaturalLanguageResponse,
+  NaturalRecommendedCertificate,
   StructuredUserContext,
 } from './types'
 
@@ -21,7 +22,7 @@ export interface UnifiedRecommendationRequest {
 
 export interface UnifiedRecommendationResponse {
   structured_context: StructuredUserContext
-  recommendations: RecommendedCertificate[]
+  recommendations: NaturalRecommendedCertificate[]
   query_used: string
   total_matched: number
 }

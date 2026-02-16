@@ -491,9 +491,9 @@ class NaturalRecommendationService:
         # Step 2: 도메인 필터 + 벡터 검색
         filter_dict = None
         if len(request.domains) == 1:
-            filter_dict = {"domain": {"$contains": request.domains[0]}}
+            filter_dict = {"domain": request.domains[0]}
         elif len(request.domains) > 1:
-            filter_dict = {"$or": [{"domain": {"$contains": d}} for d in request.domains]}
+            filter_dict = {"domain": {"$in": request.domains}}
 
         raw_results = self.vector_store.search_records(
             namespace=VectorStoreService.NAMESPACE,
