@@ -1,9 +1,10 @@
-"""ReasonGeneratorService 병렬 실행 및 에러 처리 테스트.
+"""ReasonGeneratorService 배치 프롬프트 및 에러 처리 테스트.
 
-TDD: 순차 LLM 호출을 병렬로 변경하고, 타임아웃/에러 처리를 검증합니다.
+TDD: 개별 LLM 호출을 단일 배치 호출로 변경하고, 에러 처리를 검증합니다.
 """
 
 import asyncio
+import json
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -38,74 +39,59 @@ def make_cert_info(title: str = "테스트 자격증") -> dict:
     }
 
 
-class TestGenerateReasonsBatchConcurrent:
-    """generate_reasons_batch 병렬 실행 테스트."""
+class TestGenerateReasonsBatchSingleCall:
+    """generate_reasons_batch가 단일 LLM 호출로 모든 이유를 생성하는지 테스트."""
 
     @pytest.mark.asyncio
-    async def test_batch_runs_concurrently_not_sequentially(self):
-        """여러 자격증의 추천 이유 생성이 병렬로 실행되어야 함.
-
-        5개 자격증을 각각 0.1초씩 처리할 때,
-        순차: 0.5초+, 병렬: ~0.1초.
-        0.3초 이내 완료되면 병렬 실행으로 판단.
-        """
+    async def test_batch_makes_single_llm_call(self):
+        """N개 자격증에 대해 LLM을 1번만 호출해야 함."""
         service = ReasonGeneratorService(api_key="test-key")
 
-        # generate_reason을 0.1초 지연이 있는 mock으로 대체
-        async def slow_generate(context, cert_info):
-            await asyncio.sleep(0.1)
-            return f"{cert_info['title']}에 대한 추천 이유"
+        # _call_llm_batch mock: JSON 배열 반환
+        certs = [make_cert_info(f"자격증{i}") for i in range(5)]
+        mock_reasons = {
+            f"자격증{i}": f"자격증{i}에 대한 추천 이유입니다."
+            for i in range(5)
+        }
 
-        service.generate_reason = AsyncMock(side_effect=slow_generate)
+        service._call_llm_batch = AsyncMock(return_value=mock_reasons)
 
         context = make_context()
-        certs = [make_cert_info(f"자격증{i}") for i in range(5)]
-
-        start = time.monotonic()
         results = await service.generate_reasons_batch(context, certs)
-        elapsed = time.monotonic() - start
 
         assert len(results) == 5
-        # 병렬 실행이면 0.3초 이내, 순차면 0.5초 이상
-        assert elapsed < 0.3, f"병렬 실행 필요: {elapsed:.2f}초 소요 (순차 실행 감지)"
+        # _call_llm_batch가 정확히 1번 호출
+        service._call_llm_batch.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_batch_handles_partial_failures(self):
-        """일부 자격증의 이유 생성 실패 시 기본 이유로 대체."""
+    async def test_batch_returns_reasons_in_order(self):
+        """결과 순서가 입력 자격증 순서와 동일해야 함."""
         service = ReasonGeneratorService(api_key="test-key")
 
-        call_count = 0
+        certs = [make_cert_info(f"자격증{i}") for i in range(3)]
+        mock_reasons = {
+            "자격증0": "첫 번째 이유",
+            "자격증1": "두 번째 이유",
+            "자격증2": "세 번째 이유",
+        }
 
-        async def sometimes_fail(context, cert_info):
-            nonlocal call_count
-            call_count += 1
-            if call_count % 2 == 0:
-                raise ValueError("LLM 호출 실패")
-            return f"{cert_info['title']} 추천 이유"
-
-        service.generate_reason = AsyncMock(side_effect=sometimes_fail)
+        service._call_llm_batch = AsyncMock(return_value=mock_reasons)
 
         context = make_context()
-        certs = [make_cert_info(f"자격증{i}") for i in range(4)]
-
         results = await service.generate_reasons_batch(context, certs)
 
-        assert len(results) == 4
-        # 홀수 번째는 성공, 짝수 번째는 기본 이유
-        assert "추천 이유" in results[0]  # 성공
-        assert "적합한 자격증입니다" in results[1]  # 기본 이유
-        assert "추천 이유" in results[2]  # 성공
-        assert "적합한 자격증입니다" in results[3]  # 기본 이유
+        assert results[0] == "첫 번째 이유"
+        assert results[1] == "두 번째 이유"
+        assert results[2] == "세 번째 이유"
 
     @pytest.mark.asyncio
-    async def test_batch_all_failures_returns_default_reasons(self):
-        """전부 실패해도 기본 이유를 반환해야 함 (에러 전파 금지)."""
+    async def test_batch_fallback_on_llm_failure(self):
+        """LLM 호출 실패 시 기본 이유를 반환해야 함."""
         service = ReasonGeneratorService(api_key="test-key")
 
-        async def always_fail(context, cert_info):
-            raise ConnectionError("OpenAI API 연결 실패")
-
-        service.generate_reason = AsyncMock(side_effect=always_fail)
+        service._call_llm_batch = AsyncMock(
+            side_effect=ConnectionError("API 연결 실패")
+        )
 
         context = make_context()
         certs = [make_cert_info(f"자격증{i}") for i in range(3)]
@@ -113,31 +99,51 @@ class TestGenerateReasonsBatchConcurrent:
         results = await service.generate_reasons_batch(context, certs)
 
         assert len(results) == 3
-        for result in results:
+        for i, result in enumerate(results):
+            assert f"자격증{i}" in result
             assert "적합한 자격증입니다" in result
 
     @pytest.mark.asyncio
-    async def test_batch_preserves_order(self):
-        """결과 순서가 입력 순서와 동일해야 함."""
+    async def test_batch_fallback_on_partial_missing(self):
+        """LLM 응답에서 일부 자격증이 누락된 경우 기본 이유로 대체."""
         service = ReasonGeneratorService(api_key="test-key")
 
-        async def ordered_generate(context, cert_info):
-            # 각 자격증마다 다른 지연 (순서 뒤섞힘 가능성 테스트)
-            title = cert_info["title"]
-            idx = int(title.replace("자격증", ""))
-            await asyncio.sleep(0.05 * (5 - idx))  # 뒤의 것이 더 빨리 완료
-            return f"{title} 추천"
-
-        service.generate_reason = AsyncMock(side_effect=ordered_generate)
+        # 3개 중 1개만 응답에 포함
+        mock_reasons = {
+            "자격증0": "첫 번째 이유",
+            # 자격증1 누락
+            "자격증2": "세 번째 이유",
+        }
+        service._call_llm_batch = AsyncMock(return_value=mock_reasons)
 
         context = make_context()
-        certs = [make_cert_info(f"자격증{i}") for i in range(5)]
+        certs = [make_cert_info(f"자격증{i}") for i in range(3)]
 
         results = await service.generate_reasons_batch(context, certs)
 
-        assert len(results) == 5
-        for i, result in enumerate(results):
-            assert f"자격증{i}" in result, f"순서 불일치: index {i}에 '{result}'"
+        assert len(results) == 3
+        assert results[0] == "첫 번째 이유"
+        assert "적합한 자격증입니다" in results[1]  # 누락 → 기본 이유
+        assert results[2] == "세 번째 이유"
+
+    @pytest.mark.asyncio
+    async def test_batch_fallback_on_invalid_json(self):
+        """LLM이 잘못된 JSON을 반환하면 기본 이유로 대체."""
+        service = ReasonGeneratorService(api_key="test-key")
+
+        # _call_llm_batch가 ValueError(파싱 실패)를 발생
+        service._call_llm_batch = AsyncMock(
+            side_effect=ValueError("Invalid JSON response")
+        )
+
+        context = make_context()
+        certs = [make_cert_info(f"자격증{i}") for i in range(2)]
+
+        results = await service.generate_reasons_batch(context, certs)
+
+        assert len(results) == 2
+        for result in results:
+            assert "적합한 자격증입니다" in result
 
 
 class TestReasonGeneratorTimeout:
