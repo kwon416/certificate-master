@@ -14,6 +14,8 @@ from app.schemas.recommendation import (
     NaturalLanguageResponse,
     RecommendationRequest,
     RecommendationResponse,
+    UnifiedRecommendationRequest,
+    UnifiedRecommendationResponse,
 )
 from app.services.recommendation_service import RecommendationService
 from app.services.study.natural_recommendation_service import NaturalRecommendationService
@@ -95,6 +97,43 @@ async def get_natural_recommendations(
         return response
     except Exception as e:
         logger.error(f"Natural recommendation error: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
+
+@router.post("/unified", response_model=UnifiedRecommendationResponse)
+async def get_unified_recommendations(
+    request: UnifiedRecommendationRequest,
+    db: DBSession,
+) -> UnifiedRecommendationResponse:
+    """통합 추천 (분야 선택 + 자연어).
+
+    사용자가 관심 분야를 선택하고 자연어로 상황을 설명하면,
+    해당 분야 내에서 맞춤형 자격증을 추천합니다.
+
+    3단계 파이프라인:
+    1. LLM 상황 구조화 + 검색 쿼리 생성
+    2. 도메인 필터 + 벡터 검색
+    3. LLM 추천 이유 생성
+
+    Args:
+        request: 통합 추천 요청 (domains + user_input)
+        db: SQLAlchemy 데이터베이스 세션
+
+    Returns:
+        UnifiedRecommendationResponse: 추천 결과
+    """
+    logger.info(f"Unified recommendation request: domains={request.domains}, input={request.user_input[:50]}...")
+
+    try:
+        service = NaturalRecommendationService(db)
+        response = await service.get_unified_recommendations(request)
+
+        logger.info(f"Returning {len(response.recommendations)} unified recommendations")
+        return response
+    except Exception as e:
+        logger.error(f"Unified recommendation error: {type(e).__name__}: {e}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise
