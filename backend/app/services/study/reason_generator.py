@@ -3,6 +3,7 @@
 사용자 상황과 자격증 정보를 바탕으로 개인화된 추천 이유를 생성합니다.
 """
 
+import asyncio
 import json
 import logging
 from typing import Any, Optional
@@ -17,6 +18,9 @@ from app.services.study.prompts.recommendation_reason import (
 )
 
 logger = logging.getLogger(__name__)
+
+# OpenAI API 타임아웃 (초)
+_LLM_TIMEOUT = 20
 
 
 class ReasonGeneratorService:
@@ -33,7 +37,10 @@ class ReasonGeneratorService:
         self.model = settings.OPENAI_MODEL_NAME
 
         if self.api_key:
-            self.client = AsyncOpenAI(api_key=self.api_key)
+            self.client = AsyncOpenAI(
+                api_key=self.api_key,
+                timeout=_LLM_TIMEOUT,
+            )
         else:
             self.client = None
 
@@ -108,28 +115,35 @@ class ReasonGeneratorService:
         context: StructuredUserContext,
         certificates: list[dict[str, Any]],
     ) -> list[str]:
-        """여러 자격증에 대한 추천 이유를 일괄 생성합니다.
+        """여러 자격증에 대한 추천 이유를 병렬 생성합니다.
+
+        asyncio.gather()로 모든 LLM 호출을 동시에 실행하여
+        총 소요 시간을 대폭 줄입니다.
 
         Args:
             context: 구조화된 사용자 상황 정보.
             certificates: 자격증 정보 리스트.
 
         Returns:
-            list[str]: 각 자격증에 대한 추천 이유 리스트.
+            list[str]: 각 자격증에 대한 추천 이유 리스트 (입력 순서 보장).
         """
-        reasons = []
-        for cert in certificates:
+
+        async def _safe_generate(cert: dict[str, Any]) -> str:
+            """개별 자격증의 추천 이유를 안전하게 생성합니다."""
             try:
-                reason = await self.generate_reason(context, cert)
-                reasons.append(reason)
+                return await self.generate_reason(context, cert)
             except Exception as e:
                 logger.error(f"[ReasonGenerator] Error generating reason: {e}")
-                # 기본 추천 이유
-                reasons.append(
+                return (
                     f"{cert.get('title', '이 자격증')}은(는) "
                     f"{context.goal} 목표에 적합한 자격증입니다."
                 )
-        return reasons
+
+        # 모든 자격증에 대해 병렬로 LLM 호출
+        reasons = await asyncio.gather(
+            *[_safe_generate(cert) for cert in certificates]
+        )
+        return list(reasons)
 
 
 # Singleton instance

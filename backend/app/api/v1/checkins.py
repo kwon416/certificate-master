@@ -5,7 +5,7 @@ MariaDB (SQLAlchemy)로 마이그레이션됨.
 """
 import logging
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -172,7 +172,8 @@ async def get_checkin_stats(
     today = date.today()
 
     # Check if the most recent checkin is today or yesterday
-    if dates and (dates[0] == today or dates[0] == today.replace(day=today.day - 1)):
+    yesterday = today - timedelta(days=1)
+    if dates and (dates[0] == today or dates[0] == yesterday):
         current_streak = 1
 
     for i in range(len(dates) - 1):

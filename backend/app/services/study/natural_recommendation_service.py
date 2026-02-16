@@ -543,9 +543,16 @@ class NaturalRecommendationService:
         top_certificates = scored_certificates[:RECOMMENDATION_TOP_K]
 
         # Step 3: 추천 이유 생성
-        recommendations = await self._generate_recommendations(
-            top_certificates, context
-        )
+        try:
+            recommendations = await self._generate_recommendations(
+                top_certificates, context
+            )
+        except Exception as e:
+            logger.error(f"[Step 3] Reason generation failed: {type(e).__name__}: {e}")
+            # 추천 이유 생성 실패 시에도 기본 이유와 함께 결과 반환
+            recommendations = self._build_fallback_recommendations(
+                top_certificates, context
+            )
 
         return UnifiedRecommendationResponse(
             structured_context=context,
@@ -553,6 +560,69 @@ class NaturalRecommendationService:
             query_used=query,
             total_matched=len(similar_results),
         )
+
+    def _build_fallback_recommendations(
+        self,
+        certificates: list[dict[str, Any]],
+        context: StructuredUserContext,
+    ) -> list[RecommendedCertificate]:
+        """LLM 이유 생성 실패 시 기본 추천 결과를 생성합니다.
+
+        Args:
+            certificates: 점수가 계산된 자격증 리스트.
+            context: 구조화된 사용자 상황.
+
+        Returns:
+            기본 추천 이유가 포함된 RecommendedCertificate 리스트.
+        """
+        recommendations = []
+
+        for cert in certificates:
+            try:
+                cert_schema = Certificate(**cert)
+                reason = (
+                    f"{cert.get('title', '이 자격증')}은(는) "
+                    f"{context.goal} 목표에 적합한 자격증입니다."
+                )
+
+                study_days = cert.get("study_period_days") or 90
+                can_prepare = study_days <= context.max_study_period_days
+                feasibility = Feasibility(
+                    can_prepare=can_prepare,
+                    estimated_days=study_days,
+                )
+
+                career_info = cert.get("career_info") or {}
+                exam_info = cert.get("exam_info") or {}
+                quick_stats = QuickStats(
+                    passing_rate=cert.get("passing_rate"),
+                    average_salary=career_info.get("average_salary"),
+                    exam_fee=exam_info.get("total_fee"),
+                    exam_type=exam_info.get("exam_type"),
+                )
+
+                primary_category = (
+                    cert_schema.categories[0].name if cert_schema.categories else "기타"
+                )
+                key_points = self._generate_key_points(cert, context)
+
+                recommendations.append(
+                    RecommendedCertificate(
+                        certificate=cert_schema,
+                        qualification_category=primary_category,
+                        match_score=cert.get("final_score", 50),
+                        recommendation_reason=reason,
+                        key_points=key_points,
+                        feasibility=feasibility,
+                        quick_stats=quick_stats,
+                        study_insights=StudyInsights(),
+                    )
+                )
+            except Exception as e:
+                logger.error(f"[Fallback] Failed to build recommendation for {cert.get('title')}: {e}")
+                continue
+
+        return recommendations
 
     def _generate_follow_up_question(
         self, context: StructuredUserContext
