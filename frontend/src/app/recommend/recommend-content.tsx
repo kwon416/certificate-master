@@ -7,6 +7,16 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, ArrowRight, Loader2, Sparkles, RotateCcw } from 'lucide-react'
 
+const QUESTION_TEMPLATES = [
+  '비전공자인데 취업에 도움되는 자격증 추천해주세요',
+  '3개월 안에 딸 수 있는 쉬운 자격증이 있나요?',
+  '직장인인데 주말에만 공부할 수 있어요',
+  '대학생인데 스펙 쌓기 좋은 자격증 추천해주세요',
+  '실무 경험 있는데 경력에 도움되는 자격증이요',
+]
+
+const MIN_INPUT_LENGTH = 5
+
 export function RecommendContent() {
   const {
     selectedDomains,
@@ -28,7 +38,7 @@ export function RecommendContent() {
   } = useRecommendStore()
 
   const handleSubmit = async () => {
-    if (selectedDomains.length === 0 || unifiedInput.length < 10) return
+    if (selectedDomains.length === 0 || unifiedInput.length < MIN_INPUT_LENGTH) return
 
     setLoading(true)
     setError(null)
@@ -46,6 +56,10 @@ export function RecommendContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleTemplateClick = (template: string) => {
+    setUnifiedInput(template)
   }
 
   return (
@@ -115,20 +129,36 @@ export function RecommendContent() {
                 선택한 분야: {selectedDomains.join(', ')}
               </p>
             </div>
+
+            {/* 질문 템플릿 */}
+            {!unifiedInput && (
+              <div className="flex flex-wrap gap-2">
+                {QUESTION_TEMPLATES.map((template) => (
+                  <button
+                    key={template}
+                    onClick={() => handleTemplateClick(template)}
+                    className="px-3 py-1.5 text-sm bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700 hover:border-emerald-500/50 text-slate-300 hover:text-emerald-300 rounded-full transition-colors"
+                  >
+                    {template}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <Textarea
               value={unifiedInput}
               onChange={(e) => setUnifiedInput(e.target.value)}
-              placeholder="예: 비전공자인데 3개월 안에 딸 수 있는 자격증을 추천해주세요. 현재 대학생이고 IT 분야 취업을 준비하고 있습니다."
+              placeholder="예: 비전공자인데 3개월 안에 딸 수 있는 자격증을 추천해주세요"
               className="min-h-[150px] bg-slate-800/50 border-slate-700 focus:border-emerald-500 resize-none"
               maxLength={1000}
             />
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-500">
-                {unifiedInput.length}/1000자 (최소 10자)
+                {unifiedInput.length}/1000자
               </span>
               <Button
                 onClick={handleSubmit}
-                disabled={unifiedInput.length < 10 || isLoading}
+                disabled={unifiedInput.length < MIN_INPUT_LENGTH || isLoading}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -178,7 +208,6 @@ export function RecommendContent() {
               </Button>
             </div>
 
-            {/* Use existing NaturalResults-style display */}
             <div className="space-y-4">
               {unifiedRecommendations.map((rec, index) => (
                 <div

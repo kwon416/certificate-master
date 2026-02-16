@@ -3,6 +3,8 @@
 This module creates and configures the FastAPI application instance.
 """
 import logging
+import logging.handlers
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -12,6 +14,48 @@ from app.api.chroma import router as chroma_router
 from app.api.v1 import router as api_v1_router
 from app.core.config import get_settings
 
+
+def setup_logging(settings) -> None:
+    """로깅 설정. LOG_DIR이 지정되면 파일 로깅도 활성화."""
+    log_format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+
+    # 기존 핸들러 제거 (중복 방지)
+    root_logger.handlers.clear()
+
+    # stdout 핸들러
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(logging.Formatter(log_format))
+    root_logger.addHandler(stream_handler)
+
+    # 파일 핸들러 (LOG_DIR 설정 시)
+    if settings.LOG_DIR:
+        os.makedirs(settings.LOG_DIR, exist_ok=True)
+        file_handler = logging.handlers.RotatingFileHandler(
+            os.path.join(settings.LOG_DIR, "backend.log"),
+            maxBytes=50 * 1024 * 1024,  # 50MB
+            backupCount=5,
+            encoding="utf-8",
+        )
+        file_handler.setFormatter(logging.Formatter(log_format))
+        root_logger.addHandler(file_handler)
+
+        # 에러 전용 로그
+        error_handler = logging.handlers.RotatingFileHandler(
+            os.path.join(settings.LOG_DIR, "error.log"),
+            maxBytes=50 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(logging.Formatter(log_format))
+        root_logger.addHandler(error_handler)
+
+
+setup_logging(get_settings())
 logger = logging.getLogger(__name__)
 
 

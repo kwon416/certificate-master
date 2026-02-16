@@ -666,9 +666,9 @@ class UnifiedRecommendationRequest(BaseModel):
     )
     user_input: str = Field(
         ...,
-        min_length=10,
+        min_length=5,
         max_length=1000,
-        description="자연어 입력 (10-1000자)",
+        description="자연어 입력 (5-1000자)",
     )
 
     @field_validator("domains")

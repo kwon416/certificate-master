@@ -482,10 +482,14 @@ class NaturalRecommendationService:
         logger.info(f"[Unified] Processing: domains={request.domains}, input={request.user_input[:50]}...")
 
         # Step 1: 상황 구조화 + 쿼리 생성
-        context, query = await self.context_extractor.extract_context_and_query(
-            user_input=request.user_input,
-            selected_domains=request.domains,
-        )
+        try:
+            context, query = await self.context_extractor.extract_context_and_query(
+                user_input=request.user_input,
+                selected_domains=request.domains,
+            )
+        except Exception as e:
+            logger.error(f"[Step 1] Context extraction failed: {type(e).__name__}: {e}")
+            raise
         logger.info(f"[Step 1] Context: goal={context.goal}, query={query[:50]}")
 
         # Step 2: 도메인 필터 + 벡터 검색

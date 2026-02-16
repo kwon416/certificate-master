@@ -106,6 +106,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
+    LOG_DIR: str = ""  # 파일 로깅 디렉토리 (비어있으면 stdout만 사용)
     CORS_ORIGINS: str  # .env에서 필수로 불러옴
 
 

@@ -22,11 +22,16 @@ services:
     env_file:
       - .env
 
+    # 볼륨 마운트
+    volumes:
+      - /data01/logs/certificate-master-backend-service:/app/logs
+
     # 환경 변수 (운영)
     environment:
       - ENVIRONMENT=production
       - DEBUG=false
       - LOG_LEVEL=INFO
+      - LOG_DIR=/app/logs
 
     # Health check
     healthcheck:
