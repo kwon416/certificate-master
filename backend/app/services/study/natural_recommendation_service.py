@@ -26,6 +26,7 @@ from app.schemas.recommendation import (
 )
 from app.services.embedding.vector_store import VectorStoreService
 from app.services.llm.context_extractor import ContextExtractorService
+from app.services.study.context_parser import parse_user_context, build_search_query
 from app.services.study.reason_generator import ReasonGeneratorService
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,9 @@ from app.core.config import get_settings
 _settings = get_settings()
 RECOMMENDATION_TOP_K = _settings.RECOMMENDATION_TOP_K
 MIN_SIMILARITY_SCORE = _settings.RECOMMENDATION_MIN_SIMILARITY_SCORE
+
+# 통합 추천 전용: 상위 5개만 반환 (비용/속도 최적화)
+UNIFIED_TOP_K = 5
 
 
 class NaturalRecommendationService:
@@ -474,22 +478,23 @@ class NaturalRecommendationService:
     ) -> UnifiedRecommendationResponse:
         """통합 추천 (분야 선택 + 자연어).
 
-        3단계 파이프라인:
-        1. 상황 구조화 + 쿼리 생성 (LLM 1회)
-        2. 도메인 필터 + 벡터 검색
-        3. 추천 이유 생성 (LLM 1회)
+        2단계 파이프라인 (최적화):
+        1. 키워드 파싱 + 벡터 검색 (LLM 호출 없음)
+        2. 배치 추천 이유 생성 (LLM 1회)
+
+        비용 최적화: LLM 호출 22회 → 1회, 응답 시간 60초+ → 5-10초
         """
         logger.info(f"[Unified] Processing: domains={request.domains}, input={request.user_input[:50]}...")
 
-        # Step 1: 상황 구조화 + 쿼리 생성
-        try:
-            context, query = await self.context_extractor.extract_context_and_query(
-                user_input=request.user_input,
-                selected_domains=request.domains,
-            )
-        except Exception as e:
-            logger.error(f"[Step 1] Context extraction failed: {type(e).__name__}: {e}")
-            raise
+        # Step 1: 키워드 기반 상황 파싱 + 검색 쿼리 생성 (LLM 호출 없음)
+        context = parse_user_context(
+            user_input=request.user_input,
+            domains=request.domains,
+        )
+        query = build_search_query(
+            user_input=request.user_input,
+            domains=request.domains,
+        )
         logger.info(f"[Step 1] Context: goal={context.goal}, query={query[:50]}")
 
         # Step 2: 도메인 필터 + 벡터 검색
@@ -502,7 +507,7 @@ class NaturalRecommendationService:
         raw_results = self.vector_store.search_records(
             namespace=VectorStoreService.NAMESPACE,
             query=query,
-            top_k=RECOMMENDATION_TOP_K * 2,
+            top_k=UNIFIED_TOP_K * 3,
             filter_dict=filter_dict,
         )
         logger.info(f"[Step 2] Found {len(raw_results)} candidates with domain filter")
@@ -538,18 +543,17 @@ class NaturalRecommendationService:
                 "final_score": final_score,
             })
 
-        # 점수 기준 정렬 및 상위 N개 선택
+        # 점수 기준 정렬 및 상위 5개 선택
         scored_certificates.sort(key=lambda x: x["final_score"], reverse=True)
-        top_certificates = scored_certificates[:RECOMMENDATION_TOP_K]
+        top_certificates = scored_certificates[:UNIFIED_TOP_K]
 
-        # Step 3: 추천 이유 생성
+        # Step 3: 배치 추천 이유 생성 (LLM 1회)
         try:
             recommendations = await self._generate_recommendations(
                 top_certificates, context
             )
         except Exception as e:
             logger.error(f"[Step 3] Reason generation failed: {type(e).__name__}: {e}")
-            # 추천 이유 생성 실패 시에도 기본 이유와 함께 결과 반환
             recommendations = self._build_fallback_recommendations(
                 top_certificates, context
             )
