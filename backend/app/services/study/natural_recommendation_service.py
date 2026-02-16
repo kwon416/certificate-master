@@ -1,11 +1,9 @@
 """자연어 기반 자격증 추천 통합 서비스.
 
-새로운 5단계 파이프라인을 구현합니다:
-1. LLM 상황 구조화 (JSON)
-2. 하드 필터링 (코드)
-3. 임베딩 검색 (LLM 쿼리 생성 + Retriever)
-4. 후처리 점수화
-5. LLM 추천 생성 + 이유 설명
+3단계 파이프라인:
+1. LLM 상황 구조화 + 쿼리 생성 (통합)
+2. 도메인 필터 + 벡터 검색 + 소프트 필터
+3. LLM 추천 이유 생성
 """
 
 import logging
@@ -20,21 +18,18 @@ from app.schemas.recommendation import (
     NaturalLanguageResponse,
     RecommendedCertificate,
     StructuredUserContext,
+    UnifiedRecommendationRequest,
+    UnifiedRecommendationResponse,
     Feasibility,
     QuickStats,
     StudyInsights,
 )
 from app.services.embedding.vector_store import VectorStoreService
 from app.services.llm.context_extractor import ContextExtractorService
-from app.services.study.query_generator import QueryGeneratorService
 from app.services.study.reason_generator import ReasonGeneratorService
-from app.services.study.reranker import DomainReranker
-from app.services.study.adaptive_threshold import filter_by_adaptive_threshold
-from app.services.study.hybrid_search import HybridSearcher
 
 logger = logging.getLogger(__name__)
 
-# 설정값
 from app.core.config import get_settings
 
 _settings = get_settings()
@@ -45,42 +40,31 @@ MIN_SIMILARITY_SCORE = _settings.RECOMMENDATION_MIN_SIMILARITY_SCORE
 class NaturalRecommendationService:
     """자연어 기반 자격증 추천 통합 서비스.
 
-    5단계 파이프라인:
-    1. 자연어 → 구조화 (ContextExtractorService)
-    2. 하드 필터링 (_apply_hard_filters)
-    3. 벡터 검색 (QueryGeneratorService + VectorStoreService)
-    4. 점수 계산 (_calculate_final_score)
-    5. 추천 이유 생성 (ReasonGeneratorService)
+    3단계 파이프라인:
+    1. 상황 구조화 + 쿼리 생성 (ContextExtractorService)
+    2. 도메인 필터 + 벡터 검색 + 소프트 필터
+    3. 추천 이유 생성 (ReasonGeneratorService)
     """
 
     def __init__(
         self,
         db: Optional[Session],
         context_extractor: Optional[ContextExtractorService] = None,
-        query_generator: Optional[QueryGeneratorService] = None,
         reason_generator: Optional[ReasonGeneratorService] = None,
         vector_store: Optional[VectorStoreService] = None,
-        reranker: Optional[DomainReranker] = None,
-        hybrid_searcher: Optional[HybridSearcher] = None,
     ):
         """서비스를 초기화합니다.
 
         Args:
             db: SQLAlchemy 데이터베이스 세션.
             context_extractor: 상황 구조화 서비스.
-            query_generator: 쿼리 생성 서비스.
             reason_generator: 추천 이유 생성 서비스.
             vector_store: 벡터 스토어 서비스.
-            reranker: 도메인 기반 리랭커.
-            hybrid_searcher: 하이브리드 검색기.
         """
         self.db = db
         self.context_extractor = context_extractor or ContextExtractorService()
-        self.query_generator = query_generator or QueryGeneratorService()
         self.reason_generator = reason_generator or ReasonGeneratorService()
         self.vector_store = vector_store or VectorStoreService()
-        self.reranker = reranker or DomainReranker()
-        self.hybrid_searcher = hybrid_searcher or HybridSearcher()
 
     async def get_recommendations(
         self, request: NaturalLanguageRequest
@@ -103,22 +87,21 @@ class NaturalRecommendationService:
         logger.info(f"[Step 1] Context: goal={structured_context.goal}, "
                    f"background={structured_context.major_background}")
 
-        # Step 3: 쿼리 생성 + 벡터 검색
-        logger.info("[Step 3] Generating search query...")
-        query = await self.query_generator.generate_query(structured_context)
+        # Step 3: 벡터 검색 (자연어 입력을 쿼리로 사용)
+        query = request.user_input
         logger.info(f"[Step 3] Query: {query[:50]}...")
 
         # 벡터 검색 실행
         raw_results = self.vector_store.search_records(
             namespace=VectorStoreService.NAMESPACE,
             query=query,
-            top_k=RECOMMENDATION_TOP_K * 3,  # 적응형 필터링 고려해서 더 많이 가져옴
+            top_k=RECOMMENDATION_TOP_K * 3,
         )
         logger.info(f"[Step 3] Found {len(raw_results)} raw candidates")
 
-        # 적응형 임계값 필터링
-        similar_results = filter_by_adaptive_threshold(raw_results, score_key="score")
-        logger.info(f"[Step 3] After adaptive threshold: {len(similar_results)} candidates")
+        # 고정 임계값 필터링
+        similar_results = [r for r in raw_results if r.get("score", 0) >= MIN_SIMILARITY_SCORE]
+        logger.info(f"[Step 3] After threshold: {len(similar_results)} candidates")
 
         if not similar_results:
             return NaturalLanguageResponse(
@@ -151,46 +134,17 @@ class NaturalRecommendationService:
         # 유사도 점수 매핑
         score_map = {result["id"]: result["score"] for result in similar_results}
 
-        # Step 4: 점수 계산 + 하이브리드 검색 + 리랭킹
-        logger.info("[Step 4] Calculating final scores (hybrid + reranking)...")
+        # Step 4: 점수 계산
+        logger.info("[Step 4] Calculating scores...")
         scored_certificates = []
 
-        # 사용자 도메인 추출 (선호 산업 또는 목표 기반)
-        user_domains = self._extract_user_domains(structured_context)
-
-        # 하이브리드 검색: 키워드 점수 계산
-        keyword_scores = self.hybrid_searcher.calculate_keyword_scores(
-            query=query,
-            certificates=filtered_certificates,
-        )
-        logger.info(f"[Step 4] Keyword scores calculated for {len(keyword_scores)} certificates")
-
         for cert in filtered_certificates:
-            cert_id = str(cert["id"])
             similarity = score_map.get(cert["id"], 0.0)
-            keyword_score = keyword_scores.get(cert_id, 0.0)
-
-            # 기존 점수 계산 (0-100)
-            base_score = self._calculate_final_score(cert, similarity, structured_context)
-
-            # 키워드 매칭 보너스 (0.0-1.0 → 0-15점 추가)
-            keyword_boost = int(keyword_score * 15)
-
-            # 리랭킹: 도메인 매칭 점수 계산 (0.0-1.0 → 0-50점 추가)
-            rerank_boost = self._calculate_rerank_boost(
-                cert, similarity, user_domains
-            )
-
-            # 최종 점수 = 기존 점수 + 키워드 보너스 + 리랭킹 보너스
-            final_score = min(100, base_score + keyword_boost + int(rerank_boost * 50))
+            final_score = self._calculate_final_score(cert, similarity, structured_context)
 
             scored_certificates.append({
                 **cert,
                 "similarity": similarity,
-                "keyword_score": keyword_score,
-                "base_score": base_score,
-                "keyword_boost": keyword_boost,
-                "rerank_boost": rerank_boost,
                 "final_score": final_score,
             })
 
@@ -469,77 +423,132 @@ class NaturalRecommendationService:
 
         return points[:5]
 
-    def _extract_user_domains(self, context: StructuredUserContext) -> List[str]:
-        """구조화된 컨텍스트에서 사용자 도메인을 추출합니다.
+    def _calculate_score(
+        self,
+        similarity: float,
+        cert: dict,
+        context: StructuredUserContext,
+    ) -> int:
+        """새로운 점수 계산 공식.
+
+        도메인 필터가 사전 적용되므로 유사도 비중 70%.
 
         Args:
+            similarity: 벡터 유사도 (0.0-1.0).
+            cert: 자격증 데이터.
             context: 구조화된 사용자 상황.
 
         Returns:
-            사용자 관심 도메인 리스트.
+            최종 점수 (0-100).
         """
-        domains = []
+        score = similarity * 70  # 벡터 유사도 70%
 
-        # 선호 산업 기반 도메인 매핑
-        industry_to_domain = {
-            "IT": "IT개발",
-            "정보처리": "IT개발",
-            "소프트웨어": "IT개발",
-            "금융": "금융",
-            "회계": "금융",
-            "의료": "의료",
-            "건설": "건설",
-            "건축": "건설",
-        }
+        # 비전공자 보너스/감점
+        feasibility_info = cert.get("feasibility_info") or {}
+        if context.major_background == "비전공자":
+            self_study = feasibility_info.get("self_study_possible")
+            if self_study is True:
+                score += 10
+            elif self_study is False:
+                score -= 15
+            # None이면 중립 (0점)
 
-        for industry in context.preferred_industries:
-            for keyword, domain in industry_to_domain.items():
-                if keyword in industry:
-                    if domain not in domains:
-                        domains.append(domain)
+        # 재직자 보너스
+        if context.employment_status == "재직 중":
+            study_period = cert.get("study_period_days") or 90
+            if study_period <= context.max_study_period_days * 0.7:
+                score += 10
+            elif study_period <= context.max_study_period_days:
+                score += 5
 
-        return domains if domains else ["일반"]
+        # 채용 시장 보너스
+        job_market = cert.get("job_market_info") or {}
+        frequency = job_market.get("job_posting_frequency", "")
+        if frequency in ["매우 많음", "많음"]:
+            score += 10
 
-    def _calculate_rerank_boost(
-        self,
-        cert: dict[str, Any],
-        similarity: float,
-        user_domains: List[str],
-    ) -> float:
-        """리랭킹 보너스 점수를 계산합니다.
+        return min(100, max(0, int(score)))
 
-        Args:
-            cert: 자격증 데이터.
-            similarity: 벡터 유사도.
-            user_domains: 사용자 관심 도메인.
+    async def get_unified_recommendations(
+        self, request: UnifiedRecommendationRequest
+    ) -> UnifiedRecommendationResponse:
+        """통합 추천 (분야 선택 + 자연어).
 
-        Returns:
-            리랭킹 보너스 점수 (0.0-1.0).
+        3단계 파이프라인:
+        1. 상황 구조화 + 쿼리 생성 (LLM 1회)
+        2. 도메인 필터 + 벡터 검색
+        3. 추천 이유 생성 (LLM 1회)
         """
-        # Certificate 객체 생성 (리랭커는 Certificate 모델을 받음)
-        from app.models.certificate import Certificate as CertModel
+        logger.info(f"[Unified] Processing: domains={request.domains}, input={request.user_input[:50]}...")
 
-        cert_model = CertModel(
-            id=cert.get("id"),
-            title=cert.get("title", ""),
-            series=cert.get("series", ""),
-            difficulty=cert.get("difficulty", 3),
-            study_period_days=cert.get("study_period_days", 90),
-            career_info=cert.get("career_info"),
+        # Step 1: 상황 구조화 + 쿼리 생성
+        context, query = await self.context_extractor.extract_context_and_query(
+            user_input=request.user_input,
+            selected_domains=request.domains,
+        )
+        logger.info(f"[Step 1] Context: goal={context.goal}, query={query[:50]}")
+
+        # Step 2: 도메인 필터 + 벡터 검색
+        filter_dict = None
+        if len(request.domains) == 1:
+            filter_dict = {"domain": {"$contains": request.domains[0]}}
+        elif len(request.domains) > 1:
+            filter_dict = {"$or": [{"domain": {"$contains": d}} for d in request.domains]}
+
+        raw_results = self.vector_store.search_records(
+            namespace=VectorStoreService.NAMESPACE,
+            query=query,
+            top_k=RECOMMENDATION_TOP_K * 2,
+            filter_dict=filter_dict,
+        )
+        logger.info(f"[Step 2] Found {len(raw_results)} candidates with domain filter")
+
+        # 고정 임계값 필터링
+        MIN_SCORE = 0.25
+        similar_results = [r for r in raw_results if r.get("score", 0) >= MIN_SCORE]
+        logger.info(f"[Step 2] After threshold: {len(similar_results)} candidates")
+
+        if not similar_results:
+            return UnifiedRecommendationResponse(
+                structured_context=context,
+                recommendations=[],
+                query_used=query,
+                total_matched=0,
+            )
+
+        # 자격증 상세 정보 조회
+        cert_ids = [result["id"] for result in similar_results]
+        certificates = self._fetch_certificates_by_ids(cert_ids)
+
+        # 유사도 점수 매핑
+        score_map = {result["id"]: result["score"] for result in similar_results}
+
+        # 소프트 필터 + 점수 계산
+        scored_certificates = []
+        for cert in certificates:
+            similarity = score_map.get(cert["id"], 0.0)
+            final_score = self._calculate_score(similarity, cert, context)
+            scored_certificates.append({
+                **cert,
+                "similarity": similarity,
+                "final_score": final_score,
+            })
+
+        # 점수 기준 정렬 및 상위 N개 선택
+        scored_certificates.sort(key=lambda x: x["final_score"], reverse=True)
+        top_certificates = scored_certificates[:RECOMMENDATION_TOP_K]
+
+        # Step 3: 추천 이유 생성
+        recommendations = await self._generate_recommendations(
+            top_certificates, context
         )
 
-        # 리랭커로 최종 점수 계산
-        reranked_score = self.reranker.calculate_final_score(
-            certificate=cert_model,
-            vector_similarity=similarity,
-            user_domains=user_domains,
+        return UnifiedRecommendationResponse(
+            structured_context=context,
+            recommendations=recommendations,
+            query_used=query,
+            total_matched=len(similar_results),
         )
-
-        # 리랭킹 부스트 = (리랭킹 점수 - 원본 유사도)
-        # 음수가 나올 수 있음 (제외 키워드 패널티)
-        boost = reranked_score - similarity
-
-        return boost
 
     def _generate_follow_up_question(
         self, context: StructuredUserContext
