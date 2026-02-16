@@ -55,6 +55,7 @@ class Certificate(Base):
         feasibility_info: 합격 가능성 정보 (JSON) - NEW
         exam_schedule_detail: 시험 일정 상세 (JSON) - NEW
         similar_certificates: 유사 자격증 비교 (JSON) - NEW
+        domain: 분야 분류 (예: IT/소프트웨어, 건설/건축) - NEW
         view_count: 조회수 - NEW
         created_at: 생성 시간
         updated_at: 수정 시간
@@ -193,6 +194,11 @@ class Certificate(Base):
         default=list,
         comment="유사 자격증 비교 [{certificate_id, title, comparison}]"
     )
+    domain = Column(
+        String(100),
+        nullable=True,
+        comment="분야 분류 (예: IT/소프트웨어, 건설/건축)",
+    )
 
     # 조회수
     view_count = Column(
@@ -251,6 +257,7 @@ class Certificate(Base):
             "feasibility_info": self.feasibility_info or {},
             "exam_schedule_detail": self.exam_schedule_detail or {},
             "similar_certificates": self.similar_certificates or [],
+            "domain": self.domain,
             "view_count": self.view_count or 0,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
