@@ -291,3 +291,51 @@ class TestRecommendationResponseSchema:
         response = RecommendationResponse(**data)
 
         assert response.user_summary is None
+
+
+# ===== 통합 추천 스키마 테스트 =====
+
+
+def test_unified_request_valid():
+    """유효한 통합 추천 요청."""
+    from app.schemas.recommendation import UnifiedRecommendationRequest
+
+    req = UnifiedRecommendationRequest(
+        domains=["IT/소프트웨어"],
+        user_input="비전공자인데 3개월 안에 딸 수 있는 IT 자격증 추천해주세요",
+    )
+    assert req.domains == ["IT/소프트웨어"]
+    assert len(req.user_input) >= 10
+
+
+def test_unified_request_multiple_domains():
+    """복수 도메인 선택."""
+    from app.schemas.recommendation import UnifiedRecommendationRequest
+
+    req = UnifiedRecommendationRequest(
+        domains=["IT/소프트웨어", "전기/전자"],
+        user_input="IT나 전기 쪽 자격증을 준비하고 싶습니다",
+    )
+    assert len(req.domains) == 2
+
+
+def test_unified_request_empty_domains_fails():
+    """도메인이 비어있으면 실패."""
+    from app.schemas.recommendation import UnifiedRecommendationRequest
+
+    with pytest.raises(ValidationError):
+        UnifiedRecommendationRequest(
+            domains=[],
+            user_input="테스트 입력입니다 충분히 길게",
+        )
+
+
+def test_unified_request_short_input_fails():
+    """user_input이 10자 미만이면 실패."""
+    from app.schemas.recommendation import UnifiedRecommendationRequest
+
+    with pytest.raises(ValidationError):
+        UnifiedRecommendationRequest(
+            domains=["IT/소프트웨어"],
+            user_input="짧음",
+        )

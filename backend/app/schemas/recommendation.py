@@ -648,3 +648,57 @@ def _infer_interest_domains(preferred_industries: list[str]) -> list[str]:
             domains.add("IT개발")
 
     return list(domains)[:3]  # 최대 3개
+
+
+# ===== 통합 추천 스키마 (Redesign) =====
+
+
+class UnifiedRecommendationRequest(BaseModel):
+    """통합 추천 요청 (분야 선택 + 자연어).
+
+    기존 RecommendationRequest(위저드)와 NaturalLanguageRequest를 통합합니다.
+    """
+
+    domains: list[str] = Field(
+        ...,
+        min_length=1,
+        description="선택한 분야 목록 (최소 1개)",
+    )
+    user_input: str = Field(
+        ...,
+        min_length=10,
+        max_length=1000,
+        description="자연어 입력 (10-1000자)",
+    )
+
+    @field_validator("domains")
+    @classmethod
+    def validate_domains(cls, v: list[str]) -> list[str]:
+        from app.core.domains import DOMAIN_LIST
+
+        invalid = [d for d in v if d not in DOMAIN_LIST]
+        if invalid:
+            raise ValueError(f"Invalid domains: {invalid}")
+        return v
+
+
+class UnifiedRecommendationResponse(BaseModel):
+    """통합 추천 응답."""
+
+    structured_context: StructuredUserContext = Field(
+        ...,
+        description="LLM이 구조화한 사용자 상황",
+    )
+    recommendations: list[RecommendedCertificate] = Field(
+        default_factory=list,
+        description="추천 자격증 목록",
+    )
+    query_used: str = Field(
+        ...,
+        description="벡터 검색에 사용된 쿼리",
+    )
+    total_matched: int = Field(
+        ...,
+        ge=0,
+        description="조건에 맞는 전체 자격증 수",
+    )
