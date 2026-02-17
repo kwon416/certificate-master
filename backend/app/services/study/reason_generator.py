@@ -20,8 +20,9 @@ from app.services.study.prompts.recommendation_reason import (
 
 logger = logging.getLogger(__name__)
 
-# OpenAI API 타임아웃 (초) - 배치는 더 긴 응답이 필요할 수 있음
-_LLM_TIMEOUT = 30
+# OpenAI API 타임아웃 (초) - 프록시 타임아웃(60s) 내에 fallback 실행 보장
+_LLM_TIMEOUT = 20
+_LLM_MAX_RETRIES = 1  # 총 2회 시도 (initial + 1 retry), 최대 ~41초
 
 
 class ReasonGeneratorService:
@@ -41,6 +42,7 @@ class ReasonGeneratorService:
             self.client = AsyncOpenAI(
                 api_key=self.api_key,
                 timeout=_LLM_TIMEOUT,
+                max_retries=_LLM_MAX_RETRIES,
             )
         else:
             self.client = None
@@ -103,6 +105,12 @@ class ReasonGeneratorService:
                 {"role": "system", "content": RECOMMENDATION_REASON_SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
+            store=True,
+            metadata={
+                "service": "reason_generator",
+                "method": "single",
+                "cert_title": cert_json[:100],
+            },
         )
 
         content = response.choices[0].message.content
@@ -167,6 +175,12 @@ class ReasonGeneratorService:
                 {"role": "user", "content": user_prompt},
             ],
             response_format={"type": "json_object"},
+            store=True,
+            metadata={
+                "service": "reason_generator",
+                "method": "batch",
+                "cert_count": str(len(certificates)),
+            },
         )
 
         content = response.choices[0].message.content

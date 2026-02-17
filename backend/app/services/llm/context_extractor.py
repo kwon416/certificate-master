@@ -16,6 +16,10 @@ from app.services.study.prompts.context_extraction import (
     CONTEXT_EXTRACTION_USER_PROMPT_TEMPLATE,
 )
 
+# OpenAI API 타임아웃 설정 - 프록시 타임아웃(60s) 내에 완료 보장
+_LLM_TIMEOUT = 20
+_LLM_MAX_RETRIES = 1
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,7 +37,11 @@ class ContextExtractorService:
         self.model = settings.OPENAI_MODEL_NAME
 
         if self.api_key:
-            self.client = AsyncOpenAI(api_key=self.api_key)
+            self.client = AsyncOpenAI(
+                api_key=self.api_key,
+                timeout=_LLM_TIMEOUT,
+                max_retries=_LLM_MAX_RETRIES,
+            )
         else:
             self.client = None
 
@@ -79,6 +87,11 @@ class ContextExtractorService:
                 {"role": "user", "content": user_prompt},
             ],
             response_format={"type": "json_object"},
+            store=True,
+            metadata={
+                "service": "context_extractor",
+                "method": "extract_context",
+            },
         )
 
         content = response.choices[0].message.content
@@ -127,6 +140,12 @@ class ContextExtractorService:
                 {"role": "user", "content": user_prompt},
             ],
             response_format={"type": "json_object"},
+            store=True,
+            metadata={
+                "service": "context_extractor",
+                "method": "extract_context_and_query",
+                "domains": ", ".join(selected_domains[:3]),
+            },
         )
 
         content = response.choices[0].message.content
