@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("", response_model=RecommendationResponse)
+@router.post("", response_model=RecommendationResponse, deprecated=True)
 async def get_recommendations(
     request: RecommendationRequest,
     db: DBSession,
@@ -60,7 +60,7 @@ async def get_recommendations(
         raise
 
 
-@router.post("/natural", response_model=NaturalLanguageResponse)
+@router.post("/natural", response_model=NaturalLanguageResponse, deprecated=True)
 async def get_natural_recommendations(
     request: NaturalLanguageRequest,
     db: DBSession,

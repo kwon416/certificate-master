@@ -28,6 +28,11 @@ from app.services.embedding.vector_store import VectorStoreService
 from app.services.llm.context_extractor import ContextExtractorService
 from app.services.study.context_parser import parse_user_context, build_search_query
 from app.services.study.reason_generator import ReasonGeneratorService
+from app.services.search.context_parser import EnhancedContextParser
+from app.services.search.bm25_service import get_bm25_service
+from app.services.search.hybrid_search_service import HybridSearchService
+from app.services.search.reason_template import ReasonTemplateEngine
+from app.schemas.recommendation import SearchStats
 
 logger = logging.getLogger(__name__)
 
@@ -476,93 +481,152 @@ class NaturalRecommendationService:
     async def get_unified_recommendations(
         self, request: UnifiedRecommendationRequest
     ) -> UnifiedRecommendationResponse:
-        """통합 추천 (분야 선택 + 자연어).
+        """통합 추천 (하이브리드 검색 + 템플릿 이유).
 
-        2단계 파이프라인 (최적화):
-        1. 키워드 파싱 + 벡터 검색 (LLM 호출 없음)
-        2. 배치 추천 이유 생성 (LLM 1회)
-
-        비용 최적화: LLM 호출 22회 → 1회, 응답 시간 60초+ → 5-10초
+        LLM 호출 없이 Dense+Sparse 하이브리드 검색과
+        데이터 기반 동적 템플릿으로 추천을 생성합니다.
         """
         logger.info(f"[Unified] Processing: domains={request.domains}, input={request.user_input[:50]}...")
 
-        # Step 1: 키워드 기반 상황 파싱 + 검색 쿼리 생성 (LLM 호출 없음)
-        context = parse_user_context(
+        # Step 1: 키워드 기반 상황 파싱 (개선된 4단계 파서)
+        parser = EnhancedContextParser()
+        context = parser.parse(
             user_input=request.user_input,
-            domains=request.domains,
+            domains=request.domains if request.domains else None,
         )
-        query = build_search_query(
-            user_input=request.user_input,
-            domains=request.domains,
-        )
+
+        # 검색 쿼리 구성: 도메인 키워드 + 사용자 입력
+        domain_keywords = " ".join(request.domains) if request.domains else ""
+        query = f"{domain_keywords} {request.user_input}".strip()
         logger.info(f"[Step 1] Context: goal={context.goal}, query={query[:50]}")
 
-        # Step 2: 도메인 필터 + 벡터 검색
-        filter_dict = None
-        if len(request.domains) == 1:
-            filter_dict = {"domain": request.domains[0]}
-        elif len(request.domains) > 1:
-            filter_dict = {"domain": {"$in": request.domains}}
+        # Step 2: 하이브리드 검색 (Dense + Sparse + RRF)
+        bm25 = get_bm25_service()
 
-        raw_results = self.vector_store.search_records(
-            namespace=VectorStoreService.NAMESPACE,
-            query=query,
-            top_k=UNIFIED_TOP_K * 3,
-            filter_dict=filter_dict,
-        )
-        logger.info(f"[Step 2] Found {len(raw_results)} candidates with domain filter")
+        if bm25.is_ready():
+            hybrid = HybridSearchService(
+                vector_store=self.vector_store,
+                bm25_service=bm25,
+            )
+            search_results = await hybrid.search(
+                query=query,
+                top_k=UNIFIED_TOP_K,
+                domains=request.domains if request.domains else None,
+            )
+            search_stats_data = hybrid.last_search_stats
+        else:
+            # BM25 미준비 시 Dense만 사용 (폴백)
+            logger.warning("[Step 2] BM25 not ready, using Dense search only")
+            raw_results = self.vector_store.search_records(
+                namespace=VectorStoreService.NAMESPACE,
+                query=query,
+                top_k=UNIFIED_TOP_K * 3,
+            )
+            MIN_SCORE = 0.25
+            search_results = [
+                {"id": r["id"], "rrf_score": r.get("score", 0)}
+                for r in raw_results
+                if r.get("score", 0) >= MIN_SCORE
+            ][:UNIFIED_TOP_K]
+            search_stats_data = {
+                "dense_count": len(raw_results),
+                "sparse_count": 0,
+                "merged_count": len(search_results),
+                "elapsed_ms": 0,
+            }
 
-        # 고정 임계값 필터링
-        MIN_SCORE = 0.25
-        similar_results = [r for r in raw_results if r.get("score", 0) >= MIN_SCORE]
-        logger.info(f"[Step 2] After threshold: {len(similar_results)} candidates")
+        logger.info(f"[Step 2] Found {len(search_results)} results via hybrid search")
 
-        if not similar_results:
+        if not search_results:
             return UnifiedRecommendationResponse(
                 structured_context=context,
                 recommendations=[],
                 query_used=query,
                 total_matched=0,
+                search_stats=SearchStats(**search_stats_data),
             )
 
         # 자격증 상세 정보 조회
-        cert_ids = [result["id"] for result in similar_results]
+        cert_ids = [r["id"] for r in search_results]
         certificates = self._fetch_certificates_by_ids(cert_ids)
 
-        # 유사도 점수 매핑
-        score_map = {result["id"]: result["score"] for result in similar_results}
+        # RRF 순위 기반 스코어링
+        rrf_rank_map = {r["id"]: rank for rank, r in enumerate(search_results, 1)}
 
-        # 소프트 필터 + 점수 계산
-        scored_certificates = []
+        # Step 3: 템플릿 기반 이유 생성 (LLM 없음)
+        engine = ReasonTemplateEngine()
+        recommendations = []
+
         for cert in certificates:
-            similarity = score_map.get(cert["id"], 0.0)
-            final_score = self._calculate_score(similarity, cert, context)
-            scored_certificates.append({
-                **cert,
-                "similarity": similarity,
-                "final_score": final_score,
-            })
+            try:
+                cert_schema = Certificate(**cert)
+                rrf_rank = rrf_rank_map.get(cert["id"], len(search_results))
 
-        # 점수 기준 정렬 및 상위 5개 선택
-        scored_certificates.sort(key=lambda x: x["final_score"], reverse=True)
-        top_certificates = scored_certificates[:UNIFIED_TOP_K]
+                # RRF 순위 기반 점수 + 컨텍스트 보너스
+                base = max(0, 70 - (rrf_rank - 1) * 7)
+                bonus = 0
+                if context.goal in ("취업", "이직"):
+                    jm = cert.get("job_market_info", {}) or {}
+                    if jm.get("job_posting_frequency") in ("많음", "매우 많음"):
+                        bonus += 10
+                if context.major_background == "비전공자":
+                    fi = cert.get("feasibility_info", {}) or {}
+                    if fi.get("self_study_possible"):
+                        bonus += 10
+                if context.employment_status == "재직 중":
+                    study_days = cert.get("study_period_days", 0)
+                    if study_days and study_days <= context.max_study_period_days * 0.7:
+                        bonus += 10
+                match_score = min(100, base + bonus)
 
-        # Step 3: 배치 추천 이유 생성 (LLM 1회)
-        try:
-            recommendations = await self._generate_recommendations(
-                top_certificates, context
-            )
-        except Exception as e:
-            logger.error(f"[Step 3] Reason generation failed: {type(e).__name__}: {e}")
-            recommendations = self._build_fallback_recommendations(
-                top_certificates, context
-            )
+                # 템플릿 이유 생성
+                reason = engine.generate(cert, context)
+
+                study_days = cert.get("study_period_days") or 90
+                feasibility = Feasibility(
+                    can_prepare=study_days <= context.max_study_period_days,
+                    estimated_days=study_days,
+                )
+
+                career_info = cert.get("career_info") or {}
+                exam_info = cert.get("exam_info") or {}
+                quick_stats = QuickStats(
+                    passing_rate=cert.get("passing_rate"),
+                    average_salary=career_info.get("average_salary"),
+                    exam_fee=exam_info.get("total_fee"),
+                    exam_type=exam_info.get("exam_type"),
+                )
+
+                primary_category = (
+                    cert_schema.categories[0].name if cert_schema.categories else "기타"
+                )
+                key_points = self._generate_key_points(cert, context)
+
+                recommendations.append(
+                    RecommendedCertificate(
+                        certificate=cert_schema,
+                        qualification_category=primary_category,
+                        match_score=match_score,
+                        recommendation_reason=reason,
+                        key_points=key_points,
+                        feasibility=feasibility,
+                        quick_stats=quick_stats,
+                        study_insights=StudyInsights(),
+                    )
+                )
+            except Exception as e:
+                logger.error(f"[Step 3] Failed for {cert.get('title')}: {e}")
+                continue
+
+        # match_score 순 정렬
+        recommendations.sort(key=lambda r: r.match_score, reverse=True)
 
         return UnifiedRecommendationResponse(
             structured_context=context,
             recommendations=recommendations,
             query_used=query,
-            total_matched=len(similar_results),
+            total_matched=len(search_results),
+            search_stats=SearchStats(**search_stats_data),
         )
 
     def _build_fallback_recommendations(
