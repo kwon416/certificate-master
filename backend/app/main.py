@@ -74,6 +74,33 @@ async def lifespan(app: FastAPI):
     # Startup
     settings = get_settings()
     print(f"Starting Certificate Master API in {settings.ENVIRONMENT} mode")
+
+    # BM25 인덱스 빌드 (하이브리드 검색용)
+    try:
+        from app.services.search.bm25_service import get_bm25_service
+        from app.core.database import get_db
+        from app.models.certificate import Certificate
+
+        db = next(get_db())
+        certs = (
+            db.query(Certificate)
+            .filter(Certificate.overview.isnot(None))
+            .all()
+        )
+
+        cert_dicts = []
+        for cert in certs:
+            cert_dict = cert.to_dict() if hasattr(cert, "to_dict") else {}
+            cert_dict["id"] = str(cert.id)
+            cert_dicts.append(cert_dict)
+
+        bm25 = get_bm25_service()
+        bm25.build_index(cert_dicts)
+        logger.info(f"BM25 인덱스 빌드 완료: {len(cert_dicts)}건")
+        db.close()
+    except Exception as e:
+        logger.warning(f"BM25 인덱스 빌드 실패 (서비스는 계속 동작): {e}")
+
     yield
     # Shutdown
     print("Shutting down Certificate Master API")
