@@ -12,6 +12,7 @@ import type {
   NaturalLanguageResponse,
   NaturalRecommendedCertificate,
 } from '@/lib/api/types'
+import type { UnifiedRecommendationResponse } from '@/lib/api/recommendations'
 
 // 입력 모드 타입
 export type InputMode = 'wizard' | 'natural'
@@ -118,7 +119,7 @@ interface RecommendState {
   setSelectedDomains: (domains: string[]) => void
   setUnifiedInput: (input: string) => void
   setUnifiedStep: (step: 'domain' | 'input' | 'loading' | 'results') => void
-  setUnifiedRecommendations: (response: { structured_context: StructuredUserContext; recommendations: NaturalRecommendedCertificate[]; query_used: string; total_matched: number }) => void
+  setUnifiedRecommendations: (response: UnifiedRecommendationResponse) => void
   resetUnified: () => void
 
   // 액션

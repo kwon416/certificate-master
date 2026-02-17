@@ -82,21 +82,35 @@ class TestUnifiedHybridComponents:
         assert True  # If we got here, no LLM dependency
 
 
-class TestDeprecatedEndpoints:
-    """레거시 엔드포인트 deprecated 표시 확인."""
+class TestLegacyEndpointsRemoved:
+    """레거시 엔드포인트가 제거되었는지 확인."""
 
-    def test_wizard_endpoint_deprecated(self):
-        """wizard 엔드포인트가 deprecated로 표시되었다."""
+    def test_wizard_endpoint_removed(self):
+        """wizard 엔드포인트가 더 이상 존재하지 않는다."""
         from app.api.v1.recommendations import router
-        for route in router.routes:
-            if hasattr(route, 'path') and route.path == "":
-                assert getattr(route, 'deprecated', False) is True
-                break
 
-    def test_natural_endpoint_deprecated(self):
-        """natural 엔드포인트가 deprecated로 표시되었다."""
+        paths = [
+            getattr(route, "path", None)
+            for route in router.routes
+        ]
+        assert "" not in paths
+
+    def test_natural_endpoint_removed(self):
+        """natural 엔드포인트가 더 이상 존재하지 않는다."""
         from app.api.v1.recommendations import router
-        for route in router.routes:
-            if hasattr(route, 'path') and route.path == "/natural":
-                assert getattr(route, 'deprecated', False) is True
-                break
+
+        paths = [
+            getattr(route, "path", None)
+            for route in router.routes
+        ]
+        assert "/natural" not in paths
+
+    def test_unified_endpoint_exists(self):
+        """unified 엔드포인트는 존재한다."""
+        from app.api.v1.recommendations import router
+
+        paths = [
+            getattr(route, "path", None)
+            for route in router.routes
+        ]
+        assert "/unified" in paths
