@@ -1,0 +1,93 @@
+"""하이브리드 검색 서비스: Dense(ChromaDB) + Sparse(BM25) + RRF 결합."""
+
+from __future__ import annotations
+
+import logging
+import time
+from typing import Optional
+
+from app.services.search.bm25_service import BM25SearchService
+
+logger = logging.getLogger(__name__)
+
+
+class HybridSearchService:
+    """Dense 벡터 검색과 Sparse BM25 검색을 RRF로 결합하는 하이브리드 검색 서비스."""
+
+    RRF_K = 60
+
+    def __init__(self, vector_store, bm25_service: BM25SearchService) -> None:
+        self._vector_store = vector_store
+        self._bm25_service = bm25_service
+        self.last_search_stats: dict = {}
+
+    async def search(
+        self,
+        query: str,
+        top_k: int = 10,
+        domains: Optional[list[str]] = None,
+        dense_weight: float = 1.0,
+        sparse_weight: float = 1.0,
+    ) -> list[dict]:
+        """Dense + Sparse 검색 결과를 RRF(Reciprocal Rank Fusion)로 결합하여 반환한다.
+
+        Args:
+            query: 검색 쿼리 문자열.
+            top_k: 반환할 최대 결과 수.
+            domains: 필터링할 도메인 목록 (선택).
+            dense_weight: Dense 검색 RRF 가중치.
+            sparse_weight: Sparse 검색 RRF 가중치.
+
+        Returns:
+            RRF 점수 기준으로 정렬된 검색 결과 리스트.
+        """
+        start = time.monotonic()
+        retrieve_k = top_k * 3
+
+        # Dense(벡터) 검색과 Sparse(BM25) 검색을 동시 실행
+        dense_task = self._vector_store.search_records(
+            query=query, top_k=retrieve_k
+        )
+        sparse_results = self._bm25_service.search(
+            query=query, top_k=retrieve_k, domains=domains
+        )
+        dense_results = await dense_task
+
+        # RRF 점수 계산: score = weight / (K + rank), rank는 1-based
+        rrf_scores: dict[str, float] = {}
+
+        for rank, result in enumerate(dense_results, 1):
+            rrf_scores[result["id"]] = dense_weight / (self.RRF_K + rank)
+
+        for rank, result in enumerate(sparse_results, 1):
+            cert_id = result["id"]
+            rrf_scores.setdefault(cert_id, 0.0)
+            rrf_scores[cert_id] += sparse_weight / (self.RRF_K + rank)
+
+        # RRF 점수 내림차순 정렬 후 top_k 제한
+        sorted_results = sorted(
+            rrf_scores.items(), key=lambda x: x[1], reverse=True
+        )[:top_k]
+
+        elapsed = (time.monotonic() - start) * 1000
+
+        self.last_search_stats = {
+            "dense_count": len(dense_results),
+            "sparse_count": len(sparse_results),
+            "merged_count": len(sorted_results),
+            "elapsed_ms": round(elapsed, 2),
+        }
+
+        logger.info(
+            "하이브리드 검색 완료: query=%r, dense=%d, sparse=%d, merged=%d, elapsed=%.1fms",
+            query,
+            len(dense_results),
+            len(sparse_results),
+            len(sorted_results),
+            elapsed,
+        )
+
+        return [
+            {"id": cert_id, "rrf_score": score}
+            for cert_id, score in sorted_results
+        ]
