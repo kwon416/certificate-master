@@ -637,13 +637,44 @@ def format_search_text(cert: dict) -> str:
     career_info = cert.get("career_info", {}) or {}
     job_market_info = cert.get("job_market_info", {}) or {}
 
+    # categories: [{code, name}] 리스트 → 이름만 추출
+    categories = cert.get("categories", [])
+    if isinstance(categories, list):
+        categories_str = ", ".join(
+            cat.get("name", "") if isinstance(cat, dict) else str(cat)
+            for cat in categories
+        )
+    else:
+        categories_str = str(categories) if categories else ""
+
+    # industry: 리스트 또는 문자열
+    industry = career_info.get("industry", "")
+    if isinstance(industry, list):
+        industry_str = ", ".join(industry)
+    else:
+        industry_str = industry or ""
+
+    # related_jobs: 리스트
+    related_jobs = career_info.get("related_jobs", [])
+    if isinstance(related_jobs, list):
+        related_jobs_str = ", ".join(related_jobs)
+    else:
+        related_jobs_str = str(related_jobs) if related_jobs else ""
+
+    # preferred_industries: 리스트
+    preferred_industries = job_market_info.get("preferred_industries", [])
+    if isinstance(preferred_industries, list):
+        preferred_industries_str = ", ".join(preferred_industries[:5])
+    else:
+        preferred_industries_str = str(preferred_industries) if preferred_industries else ""
+
     parts = [
         cert.get("title", ""),
-        cert.get("categories", ""),
-        cert.get("series", ""),
-        career_info.get("industry", ""),
-        career_info.get("related_jobs", ""),
+        categories_str,
+        cert.get("series", "") or "",
+        industry_str,
+        related_jobs_str,
         (cert.get("overview", "") or "")[:200],
-        job_market_info.get("preferred_industries", ""),
+        preferred_industries_str,
     ]
     return " ".join(filter(None, parts))

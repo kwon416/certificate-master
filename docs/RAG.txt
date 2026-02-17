@@ -1,0 +1,86 @@
+사용자의 목표를 달성하기 위해 데이터베이스 정보를 임베딩하고 벡터 데이터베이스에 저장하여 유사도 검색을 통해 데이터를 추천하는 방법은 다음 단계로 구현할 수 있습니다.
+
+### 1. RAG 파이프라인 구성 요소 이해
+1.  **문서 로드 (Load)**: PDF, 텍스트 파일, 웹페이지 등에서 문서 데이터를 불러옵니다.
+2.  **문서 분할 (Split)**: LLM 입력 길이에 맞춰 `chunk_size` 및 `overlap` 기준으로 문서를 분할합니다.
+3.  **임베딩 (Embedding)**: 분할된 텍스트를 의미 기반 벡터로 변환합니다. 임베딩은 데이터 레코드를 벡터라고 부르며, 텍스트, 이미지와 같은 비정형 데이터를 벡터로 변환하는 작업입니다. 벡터는 크기와 방향을 가지는 물리량으로, 여러 의미의 데이터들을 특정한 순서대로 모아둔 데이터 레코드를 의미합니다. 임베딩 벡터 간의 거리를 계산하여 의미적 관계를 파악할 수 있습니다.
+4.  **벡터 저장소 (VectorStore)**: 임베딩된 벡터를 벡터 DB에 저장하여 검색 가능하게 구성합니다. 기존 관계형 데이터베이스(RDBMS)는 쿼리와 정확히 일치하는 행을 찾는 반면, 벡터 데이터베이스는 벡터 간의 거리나 유사도를 기반으로 가장 유사한 벡터를 찾습니다.
+5.  **검색 (Retrieval)**: 입력 질의와 유사한 문서를 검색하는 retriever 객체를 사용합니다.
+6.  **프롬프트 구성 (Prompting)**: 검색된 문서와 질의를 프롬프트로 구성하여 모델에 입력합니다.
+7.  **모델 호출 (LLM)**: LLM을 통해 응답을 생성합니다.
+8.  **결과 반환 (Output)**: 최종 프롬프트, 모델 호출, 응답 결과를 하나의 체인으로 반환합니다.
+
+### 2. 벡터 데이터베이스 선택 및 설정
+1.  **벡터 데이터베이스의 필요성**: 임베딩 벡터 결과를 저장하고 쿼리하기 위한 데이터베이스가 필요하며, 비정형 데이터를 임베딩 벡터로 변환하여 유사도 검색을 수행하는 전용 데이터베이스가 벡터 DB입니다.
+2.  **PostgreSQL (pgvector)**: PostgreSQL의 확장 기능인 pgvector는 임베딩 벡터를 테이블 컬럼에 저장하고 SQL로 유사도 검색을 처리할 수 있게 해줍니다. LangChain과도 바로 연동될 수 있다는 장점이 있습니다. 대규모 RAG 시스템이나 분산 환경에서는 검색 속도에 차이를 보일 수 있으며, 하이브리드 서치나 sparse 검색 같은 기능은 직접 구현해야 할 수 있습니다.
+    *   **데이터 타입**: `vector(n)` 형태의 새로운 컬럼 타입을 제공합니다 (예: `embedding vector(1536)`).
+    *   **유사도 계산**: L2 거리(Euclidean), 내적(Inner Product), 코사인 유사도(Cosine Similarity)를 지원하며, 기본 옵션은 코사인 유사도입니다.
+    *   **인덱스 구조**: 대규모 검색을 위해 ivfflat과 hnsw 인덱스를 지원하며, 소규모에서는 인덱스 없이도 충분히 빠릅니다.
+    *   **설치 및 사용**: Docker를 사용하여 쉽게 설치할 수 있으며, `CREATE EXTENSION vector` 명령으로 확장 기능을 활성화할 수 있습니다. LangChain에서 `PGVector.from_params`를 통해 연결하고 임베딩 모델을 지정할 수 있습니다.
+3.  **Milvus**: 대규모 RAG, 추천, 검색 시스템에 특화된 오픈소스 벡터 데이터베이스입니다. 1조 개 규모의 벡터 인덱스를 지원하고, Dense(임베딩 기반)와 Sparse(BM25 기반) 검색을 모두 지원하며, 분산 확장 및 클라우드 친화적입니다.
+    *   **주요 용어**: 컬렉션(Collection), 필드(Field), 인덱스(Index), 메트릭(Metric), 하이브리드 검색(Hybrid Search), RRF(Reciprocal Rank Fusion) 등을 이해해야 합니다.
+    *   **스키마 설계**: LLM 입력용 원문(`text_gen`)과 검색 최적화된 정제본(`text_emb`)을 분리하여 저장하면 디버깅 및 운영 난이도를 낮출 수 있습니다.
+    *   **인덱스 및 메트릭 선택**: Dense 벡터는 `IVF_FLAT` 인덱스와 `COSINE` 유사도를, Sparse 벡터는 `SPARSE_INVERTED_INDEX`와 `BM25`를 사용하는 것이 일반적입니다. L2, IP, COSINE, Hamming, Jaccard, BM25 등 다양한 유사도 메트릭을 지원합니다.
+    *   **하이브리드 검색**: Dense(의미 기반)와 Sparse(키워드 기반) 검색 결과를 RRF(Reciprocal Rank Fusion) 기법으로 결합하여 검색 품질을 높일 수 있습니다.
+    *   **파라미터 조정**: HNSW와 같은 인덱스는 `m` (이웃 노드 개수), `ef_construction` (그래프 구성 시 참조 범위), `ef_search` (검색 시 참조 범위)와 같은 파라미터 조정을 통해 정확도와 탐색 속도 사이의 균형을 맞출 수 있습니다.
+4.  **FAISS (Facebook AI Similarity Search)**: 라이브러리 형태로 제공되며, Python/C++ 등에서 임베딩을 메모리에 올려 빠르게 유사도 검색을 할 수 있게 해줍니다. 모든 벡터들과 유사도를 계산하는 전수 비교(FLAT) 방식은 소규모 데이터셋에서 높은 정확도를 제공하지만, 대규모 데이터에서는 탐색 속도가 느려질 수 있습니다. FAISS는 Flat, IVF, HNSW, PQ 인덱싱 기법을 지원합니다.
+5.  **Pinecone**: 관리형 서비스 형태로 제공되며, 클라우드 기반 서비스로 확장성이 뛰어납니다. Sparse 벡터를 지원하여 키워드 검색과 하이브리드 검색으로 활용 가능하며, 메타 데이터로 필터링 작업을 쉽게 할 수 있습니다.
+6.  **Elasticsearch**: 기존 검색 엔진 기능에 추가로 벡터 DB 기능을 제공하며, 가장 잘 알려져 있고 커뮤니티가 활성화되어 있습니다.
+
+### 3. 임베딩 모델 및 벡터화
+1.  **임베딩 모델 선택**: HuggingFace의 `BAAI/bge-m3` 모델이나 카카오의 `Kanana-Nano-2.1B` 모델 등을 사용할 수 있습니다. `SentenceTransformer` 모델(`hunkim/sentence-transformer-klue` 등)을 사용하여 한국어 임베딩을 생성할 수 있습니다.
+2.  **문서 분할**: `RecursiveCharacterTextSplitter`와 같은 도구를 사용하여 문서를 `chunk_size` 및 `chunk_overlap` 기준으로 분할합니다.
+3.  **벡터화 및 저장**: 분할된 텍스트를 선택한 임베딩 모델로 벡터화하고, `FAISS.from_documents`와 같은 함수를 사용하여 벡터 데이터베이스에 저장합니다.
+
+### 4. 유사도 검색 구현
+1.  **유사도 지표 선택**:
+    *   **코사인 유사도 (Cosine Similarity)**: 두 벡터 간의 각도를 측정하는 방법으로, 1에 가까울수록 유사하고 -1에 가까울수록 정반대의 벡터입니다. 자연어 임베딩에 많이 사용됩니다.
+    *   **L2 거리 (Euclidean Distance)**: 두 벡터 간의 직선 거리를 측정하는 방법으로, 0에 가까울수록 유사하고 값이 클수록 정반대의 벡터입니다. 주로 컴퓨터 비전 분야에서 사용됩니다.
+    *   **내적 (Inner Product)**: 두 벡터 간의 내적을 측정하는 방법으로, 양수는 같은 방향, 음수는 반대 방향의 벡터입니다. NLP에서 자주 사용됩니다.
+    *   **BM25**: 전통적인 정보 검색에서 사용되는 키워드 매칭 기반 메트릭으로, 희소 벡터(키워드 매칭)에 적합합니다.
+2.  **검색 쿼리**: `vectorstore.similarity_search(query, k=2)`와 같이 쿼리 벡터와 가장 유사한 K개의 결과를 검색할 수 있습니다. SQL을 사용한다면 `SELECT ... ORDER BY embedding <=> query_vector LIMIT n;` 형태로 코사인 유사도를 기반으로 쿼리를 던질 수 있습니다.
+3.  **하이브리드 검색**: Dense 검색(의미 기반)과 Sparse 검색(키워드 기반)을 각각 수행한 후, RRF(Reciprocal Rank Fusion) 기법으로 두 결과의 랭킹을 합산하여 최종 랭킹을 산출할 수 있습니다. 이를 통해 짧은 한글 질의에서 발생하는 문제를 해소하고, 검색 결과의 안정성을 높일 수 있습니다.
+
+### 5. RAG Graph 구성 및 테스트
+1.  **Graph 정의**: LangChain과 같은 라이브러리를 사용하여 `retrieve` (문서 검색)와 `generate` (답변 생성) 함수를 정의하고, 이들을 연결하여 하나의 체인(Graph)을 구성합니다.
+2.  **질의 테스트**: 구성된 Graph를 통해 사용자의 질문에 대해 문서를 검색하고 LLM으로부터 응답을 생성하여 결과를 확인할 수 있습니다.
+
+### 출처 
+
+[1] 3. LLM 모델 활용 RAG 구현. (n.d.). Retrieved https://docs.kakaocloud.com/tutorial/machine-learning-ai/llm-rag
+
+[2] AI Ready 데이터베이스, PostgreSQL이 다시 주목받는 이유 ... (2025). https://techinterviewblog.com/1798/
+
+[3] AI 애플리케이션에 적합한 벡터 데이터베이스를 선택하기 ... (2025). https://milvus.io/ko/blog/choosing-the-right-vector-database-for-your-ai-apps.md
+
+[4] Embedding을 저장하는 VectorDB 그리고 벡터 유사도 검색 ... (2024). https://pearlluck.tistory.com/824
+
+[5] [Information Retrieval] Vector DB - 나의 작은 valley - 티스토리. (2024). https://minesmallcalley.tistory.com/855
+
+[6] LINE VOOM의 실시간 추천 시스템을 위한 대규모 벡터 DB 구축기. (2025). https://techblog.lycorp.co.jp/ko/large-scale-vector-db-for-real-time-recommendation-in-line-voom
+
+[7] [NLP] RAG - Milvus DB 사용하기. (2025). https://hjjummy.tistory.com/36
+
+[8] pgvector: PostgreSQL에서 벡터 데이터 활용을 위한 실전 가이드. (2025). https://edbkorea.com/blog/pgvector-postgresql%EC%97%90%EC%84%9C-%EB%B2%A1%ED%84%B0-%EB%8D%B0%EC%9D%B4%ED%84%B0-%ED%99%9C%EC%9A%A9%EC%9D%84-%EC%9C%84%ED%95%9C-%EC%8B%A4%EC%A0%84-%EA%B0%80%EC%9D%B4%EB%93%9C/
+
+[9] Pinecone 파인콘 벡터DB시리즈 -(1) : 네이버 블로그. (2023). https://blog.naver.com/ulsancoding/223114445215
+
+[10] [Python] 벡터 DB로 문장 검색하기 (Faiss 활용). (2025). https://stickode.tistory.com/1635
+
+[11] [RAG] 폐쇄망 + NO-Docker + RHEL환경에서 대규모 검색을 ... (2025). https://mz-moonzoo.tistory.com/109
+
+[12] RAG의 10억 규모 벡터 유사성 검색. (2025). https://kr.linkedin.com/pulse/billion-scale-vector-similarity-search-rag-sudhanshu-sharma--ivauf?tl=ko
+
+[13] [고도화된 RAG 방식(5)] 벡터 DB(Vector Database) 구축 - 모아비. (n.d.). Retrieved https://moabi.co.kr/docs/%EA%B3%A0%EB%8F%84%ED%99%94%EB%90%9C-rag-%EB%B0%A9%EC%8B%9D5-%EB%B2%A1%ED%84%B0-dbvector-database-%EA%B5%AC%EC%B6%95-%EB%8C%80%ED%91%9C%EC%A0%81%EC%9D%B8-%EC%A0%9C%ED%92%88-%EB%9D%BC%EC%9D%B4/
+
+[14] 벡터 검색을 위한 계층적 탐색 가능한 작은 세계(HNSW) 이해 ... (2025). https://milvus.io/ko/blog/understand-hierarchical-navigable-small-worlds-hnsw-for-vector-search.md
+
+[15] 벡터(Vector) 데이터베이스 추천 TOP 5 – 2026년 AI 프로젝트 ... (2026). https://lemontia.tistory.com/1116
+
+[16] 벡터데이터베이스 pgvector 사용해보기 (with. 랭체인). (2025). https://akku-dev.tistory.com/295
+
+[17] 스팸 메일 유사도 검색을 위한 벡터 데이터베이스 활용. (2025). https://motivator.jiransecurity.com/trend/96
+
+[18] 웹 개발자를 위한 RAG 기초(0) - RAG 관련 용어, 관련 기술 스펙 ... (2025). https://goddaehee.tistory.com/397
+
+[19] 텍스트 임베딩 기반 벡터DB 구축 - 도갱개발지. (2025). https://do-gang.tistory.com/entry/%ED%85%8D%EC%8A%A4%ED%8A%B8-%EC%9E%84%EB%B2%A0%EB%94%A9-%EA%B8%B0%EB%B0%98-%EB%B2%A1%ED%84%B0DB-%EA%B5%AC%EC%B6%95
