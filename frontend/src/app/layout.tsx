@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Outfit } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
@@ -134,9 +134,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: SITE_URL,
   },
-  other: {
-    'theme-color': '#030712',
-  },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
+    { media: '(prefers-color-scheme: dark)', color: '#030712' },
+  ],
 }
 
 export default function RootLayout({

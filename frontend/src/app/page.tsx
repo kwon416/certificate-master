@@ -73,7 +73,7 @@ function SearchPageLoading() {
           <div className="text-center max-w-3xl mx-auto mb-8">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">
               <span className="text-foreground">나에게 맞는 </span>
-              <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">자격증</span>
+              <span className="gradient-text">자격증</span>
               <span className="text-foreground">을 찾아보세요</span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground">
@@ -81,7 +81,7 @@ function SearchPageLoading() {
             </p>
           </div>
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         </div>
       </section>
@@ -114,7 +114,7 @@ export default async function HomePage() {
                   <li key={cert.id}>
                     <Link
                       href={`/certificates/${cert.slug || cert.id}`}
-                      className="inline-block rounded-full border border-border bg-card/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
+                      className="inline-block rounded-full border border-border bg-card/50 px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                     >
                       {cert.title}
                     </Link>

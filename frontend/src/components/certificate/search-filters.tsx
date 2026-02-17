@@ -139,7 +139,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-foreground">자격구분</label>
-          <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs">
+          <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs">
             1단계
           </Badge>
         </div>
@@ -175,9 +175,9 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       {filters.categories && filters.categories.length > 0 && (
         <div className="space-y-3 pl-4 border-l-2 border-emerald-500/30">
           <div className="flex items-center gap-2">
-            <ChevronRight className="h-4 w-4 text-emerald-400" />
+            <ChevronRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <label className="text-sm font-medium text-foreground">계열</label>
-            <Badge variant="outline" className="border-cyan-500/30 text-cyan-400 text-xs">
+            <Badge variant="outline" className="border-cyan-500/30 text-cyan-600 dark:text-cyan-400 text-xs">
               2단계
             </Badge>
           </div>
@@ -280,12 +280,12 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
           <div className="text-xs text-muted-foreground mb-2">적용된 필터</div>
           <div className="flex flex-wrap gap-2">
             {filters.categories && filters.categories.length > 0 && (
-              <Badge variant="secondary" className="bg-emerald-900/30 text-emerald-400">
+              <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 {filters.categories[0]}
               </Badge>
             )}
             {filters.series && (
-              <Badge variant="secondary" className="bg-cyan-900/30 text-cyan-400">
+              <Badge variant="secondary" className="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
                 {filters.series}
               </Badge>
             )}
@@ -316,7 +316,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
               필터
             </h3>
             {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400">
+              <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                 {activeFilterCount}
               </Badge>
             )}
@@ -338,7 +338,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
               {activeFilterCount > 0 && (
                 <Badge
                   variant="secondary"
-                  className="ml-2 bg-emerald-500/20 text-emerald-400"
+                  className="ml-2 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                 >
                   {activeFilterCount}
                 </Badge>

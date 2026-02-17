@@ -82,10 +82,10 @@ export function RecommendContent() {
               unifiedStep === 'domain' ? 'bg-emerald-500' : 'bg-emerald-500/30'
             }`} />
             <div className={`w-8 h-0.5 ${
-              unifiedStep !== 'domain' ? 'bg-emerald-500' : 'bg-slate-700'
+              unifiedStep !== 'domain' ? 'bg-emerald-500' : 'bg-border'
             }`} />
             <div className={`w-3 h-3 rounded-full transition-colors ${
-              unifiedStep === 'input' || unifiedStep === 'loading' ? 'bg-emerald-500' : 'bg-slate-700'
+              unifiedStep === 'input' || unifiedStep === 'loading' ? 'bg-emerald-500' : 'bg-border'
             }`} />
           </div>
         )}
@@ -101,7 +101,7 @@ export function RecommendContent() {
               <Button
                 onClick={() => setUnifiedStep('input')}
                 disabled={selectedDomains.length === 0}
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 다음
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -117,7 +117,7 @@ export function RecommendContent() {
               <div className="flex items-center gap-2 mb-2">
                 <button
                   onClick={() => setUnifiedStep('domain')}
-                  className="text-slate-400 hover:text-slate-200 transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -137,7 +137,7 @@ export function RecommendContent() {
                   <button
                     key={template}
                     onClick={() => handleTemplateClick(template)}
-                    className="px-3 py-1.5 text-sm bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700 hover:border-emerald-500/50 text-slate-300 hover:text-emerald-300 rounded-full transition-colors"
+                    className="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 border border-border hover:border-emerald-500/50 text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 rounded-full transition-colors"
                   >
                     {template}
                   </button>
@@ -149,24 +149,24 @@ export function RecommendContent() {
               value={unifiedInput}
               onChange={(e) => setUnifiedInput(e.target.value)}
               placeholder="예: 비전공자인데 3개월 안에 딸 수 있는 자격증을 추천해주세요"
-              className="min-h-[150px] bg-slate-800/50 border-slate-700 focus:border-emerald-500 resize-none"
+              className="min-h-[150px] bg-muted/50 border-border focus:border-emerald-500 resize-none"
               maxLength={1000}
             />
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted-foreground">
                 {unifiedInput.length}/1000자
               </span>
               <Button
                 onClick={handleSubmit}
                 disabled={unifiedInput.length < MIN_INPUT_LENGTH || isLoading}
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 AI 추천 받기
               </Button>
             </div>
             {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 dark:text-red-400 text-sm">
                 {error}
               </div>
             )}
@@ -201,7 +201,7 @@ export function RecommendContent() {
               <Button
                 variant="outline"
                 onClick={resetUnified}
-                className="border-slate-700"
+                className="border-border"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 다시 추천받기
@@ -212,12 +212,12 @@ export function RecommendContent() {
               {unifiedRecommendations.map((rec, index) => (
                 <div
                   key={rec.certificate.id}
-                  className="p-6 bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-xl space-y-3"
+                  className="p-6 bg-card/50 backdrop-blur-xl border border-border/50 rounded-xl space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-emerald-500 font-bold text-lg">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-lg">
                           #{index + 1}
                         </span>
                         <h3 className="text-lg font-semibold text-foreground">
@@ -229,14 +229,14 @@ export function RecommendContent() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-emerald-400">
+                      <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                         {rec.match_score}점
                       </div>
                       <div className="text-xs text-muted-foreground">매칭 점수</div>
                     </div>
                   </div>
 
-                  <p className="text-sm text-slate-300">
+                  <p className="text-sm text-foreground/80">
                     {rec.recommendation_reason}
                   </p>
 
@@ -245,7 +245,7 @@ export function RecommendContent() {
                       {rec.key_points.map((point, i) => (
                         <span
                           key={i}
-                          className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs rounded-full"
+                          className="px-2 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs rounded-full"
                         >
                           {point}
                         </span>
@@ -253,7 +253,7 @@ export function RecommendContent() {
                     </div>
                   )}
 
-                  <div className="flex gap-4 text-xs text-slate-400 pt-2 border-t border-slate-800">
+                  <div className="flex gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
                     {rec.quick_stats?.passing_rate && (
                       <span>합격률: {rec.quick_stats.passing_rate}%</span>
                     )}

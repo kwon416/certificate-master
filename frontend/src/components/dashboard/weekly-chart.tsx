@@ -77,7 +77,7 @@ export function WeeklyChart({ data, targetHours = 3 }: WeeklyChartProps) {
                     <span
                       className={cn(
                         'absolute text-xs font-medium',
-                        isToday ? 'text-emerald-400' : 'text-muted-foreground'
+                        isToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
                       )}
                       style={{
                         bottom: `${Math.max(heightPercent, 4) + 4}%`,

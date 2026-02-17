@@ -164,8 +164,8 @@ export default function AboutContent() {
           <div className="max-w-4xl mx-auto text-center">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-8 animate-slide-up">
-              <Sparkles className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-400">
+              <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
                 자격증 비교 정보 플랫폼
               </span>
             </div>
@@ -190,7 +190,7 @@ export default function AboutContent() {
               <Button
                 size="lg"
                 asChild
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-900 font-semibold text-lg px-8 py-6 hover:from-emerald-400 hover:to-cyan-400 shadow-lg shadow-emerald-500/25"
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold text-lg px-8 py-6 hover:from-emerald-400 hover:to-cyan-400 shadow-lg shadow-emerald-500/25"
               >
                 <Link href="/">
                   <Search className="mr-2 h-5 w-5" />
@@ -202,15 +202,15 @@ export default function AboutContent() {
             {/* Trust Indicators */}
             <div className="mt-16 flex flex-wrap justify-center gap-8 text-sm text-muted-foreground animate-slide-up stagger-4">
               <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-emerald-400" />
+                <Zap className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span>맞춤형 AI 자격증 추천</span>
               </div>
               <div className="flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-cyan-400" />
+                <Trophy className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                 <span>공공데이터 기반 자격증 정보</span>
               </div>
               <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-violet-400" />
+                <Target className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                 <span>시험 일정 · 난이도 비교</span>
               </div>
             </div>
@@ -301,7 +301,7 @@ export default function AboutContent() {
         variants={sectionVariants}
       >
         <div className="container mx-auto px-4">
-          <Badge variant="outline" className="mx-auto mb-4 border-emerald-500/30 text-emerald-400 block w-fit">
+          <Badge variant="outline" className="mx-auto mb-4 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 block w-fit">
             이용 방법
           </Badge>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-4">
@@ -357,7 +357,7 @@ export default function AboutContent() {
                 <Button
                   size="lg"
                   asChild
-                  className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-900 font-semibold text-lg px-8 hover:from-emerald-400 hover:to-cyan-400"
+                  className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold text-lg px-8 hover:from-emerald-400 hover:to-cyan-400"
                 >
                   <Link href="/">
                     <Search className="mr-2 h-5 w-5" />

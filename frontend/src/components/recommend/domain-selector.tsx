@@ -57,8 +57,8 @@ export function DomainSelector({ selected, onSelect }: DomainSelectorProps) {
                 'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
                 'hover:shadow-md hover:-translate-y-0.5',
                 isSelected
-                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                  : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600',
+                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  : 'border-border bg-muted/50 text-muted-foreground hover:border-muted-foreground/50',
               )}
             >
               <Icon className="w-6 h-6" />

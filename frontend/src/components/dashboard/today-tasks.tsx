@@ -32,9 +32,9 @@ const taskTypeIcons = {
 }
 
 const taskTypeColors = {
-  lecture: 'text-cyan-400',
-  problem: 'text-violet-400',
-  review: 'text-amber-400',
+  lecture: 'text-cyan-600 dark:text-cyan-400',
+  problem: 'text-violet-600 dark:text-violet-400',
+  review: 'text-amber-600 dark:text-amber-400',
   other: 'text-muted-foreground',
 }
 
@@ -66,7 +66,7 @@ export function TodayTasks({
         <div className="flex items-center justify-between">
           <CardTitle className="text-foreground">오늘의 학습</CardTitle>
           {hasCheckedInToday ? (
-            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+            <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
               <Sparkles className="mr-1 h-3 w-3" />
               체크인 완료
             </Badge>
@@ -96,7 +96,7 @@ export function TodayTasks({
                 {/* Checkbox */}
                 <div className="flex-shrink-0">
                   {task.completed ? (
-                    <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+                    <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                   ) : (
                     <Circle className="h-6 w-6 text-muted-foreground" />
                   )}
@@ -137,7 +137,7 @@ export function TodayTasks({
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-foreground/80">오늘의 학습 시간</span>
-                <span className="text-2xl font-bold text-emerald-400">
+                <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {todayStudyHours}h
                 </span>
               </div>
@@ -163,7 +163,7 @@ export function TodayTasks({
             className={cn(
               'w-full',
               completedCount >= totalCount
-                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-900 hover:from-emerald-400 hover:to-cyan-400'
+                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-400 hover:to-cyan-400'
                 : 'bg-muted text-muted-foreground'
             )}
           >

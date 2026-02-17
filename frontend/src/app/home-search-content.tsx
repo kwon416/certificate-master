@@ -119,7 +119,7 @@ export function HomeSearchContent() {
           <div className="text-center max-w-3xl mx-auto mb-8">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 opacity-0 animate-slide-up">
               <span className="text-foreground">나에게 맞는</span>
-              <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+              <span className="gradient-text">
                 자격증
               </span>
               <span className="text-foreground">을 찾아보세요</span>
@@ -236,7 +236,7 @@ export function HomeSearchContent() {
             {/* Initial Loading State */}
             {isLoading && results.length === 0 && (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             )}
 

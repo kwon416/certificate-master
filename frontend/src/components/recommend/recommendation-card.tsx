@@ -75,7 +75,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
           <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
             <div className="space-y-1.5 md:space-y-2 min-w-0">
               <Link href={`/certificates/${certificate.slug || certificate.id}`} className="block group">
-                <h3 className="text-lg md:text-2xl font-bold text-foreground group-hover:text-emerald-400 transition-colors line-clamp-2">
+                <h3 className="text-lg md:text-2xl font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2">
                   {certificate.title}
                 </h3>
               </Link>
@@ -93,7 +93,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
           </div>
           <div className="flex flex-col items-start sm:items-end gap-1.5 md:gap-2">
             <div className="inline-flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30">
-              <Hash className="w-4 h-4 md:w-5 md:h-5 text-emerald-400" />
+              <Hash className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 dark:text-emerald-400" />
               <span className="text-lg md:text-xl font-bold text-foreground">{rank}</span>
             </div>
           </div>
@@ -137,7 +137,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         {filteredKeyPoints.length > 0 && (
           <div className="space-y-2.5">
             <span className="text-sm md:text-base font-semibold text-foreground flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               핵심 포인트
             </span>
             <ul className="space-y-2">
@@ -154,7 +154,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
                     className="flex flex-col gap-1 text-sm md:text-base bg-muted/40 rounded-lg px-3 py-2.5"
                   >
                     {label && (
-                      <span className="text-xs font-medium text-emerald-400 break-words">{label}</span>
+                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 break-words">{label}</span>
                     )}
                     <span className="text-foreground break-words whitespace-normal">{content}</span>
                   </li>

@@ -71,7 +71,7 @@ export function RecommendationResults() {
       <div className="text-center py-12">
         <p className="text-muted-foreground mb-4">추천 결과가 없습니다.</p>
         <Button onClick={resetWizard} variant="outline" className="group">
-          <RefreshCcw className="w-5 h-5 mr-2 text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
+          <RefreshCcw className="w-5 h-5 mr-2 text-emerald-600 dark:text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
           다시 추천받기
         </Button>
       </div>
@@ -90,7 +90,7 @@ export function RecommendationResults() {
         </div>
         <div className="flex items-center gap-2 md:gap-3">
           <Button onClick={resetWizard} variant="outline" size="sm" className="group h-9 md:h-10 text-sm">
-            <RefreshCcw className="w-4 h-4 mr-1.5 md:mr-2 text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
+            <RefreshCcw className="w-4 h-4 mr-1.5 md:mr-2 text-emerald-600 dark:text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
             다시 추천받기
           </Button>
         </div>
@@ -101,7 +101,7 @@ export function RecommendationResults() {
         <div className="rounded-xl md:rounded-2xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/20 p-3 md:p-4">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 p-2 rounded-lg bg-emerald-500/10">
-              <MessageSquare className="w-5 h-5 text-emerald-400" />
+              <MessageSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
               <p className="text-xs text-emerald-700 dark:text-emerald-300 mb-1">내 요청</p>
@@ -121,7 +121,7 @@ export function RecommendationResults() {
                 key={index}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg bg-muted border border-border/50"
               >
-                <span className="text-emerald-400">{item.icon}</span>
+                <span className="text-emerald-600 dark:text-emerald-400">{item.icon}</span>
                 {item.label && (
                   <span className="text-[10px] md:text-xs text-muted-foreground">{item.label}</span>
                 )}
@@ -140,7 +140,7 @@ export function RecommendationResults() {
             다시 추천을 받아보세요.
           </p>
           <Button onClick={resetWizard} variant="outline" className="group">
-            <RefreshCcw className="w-4 h-4 mr-1.5 text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
+            <RefreshCcw className="w-4 h-4 mr-1.5 text-emerald-600 dark:text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
             다시 추천받기
           </Button>
         </div>
@@ -159,7 +159,7 @@ export function RecommendationResults() {
       <div className="mt-6 md:mt-12 text-center pb-4">
         <p className="text-muted-foreground mb-3 md:mb-4 text-sm md:text-base">다른 추천을 받고 싶으신가요?</p>
         <Button onClick={resetWizard} variant="outline" className="px-6 md:px-8 group">
-          <RefreshCcw className="w-4 h-4 mr-1.5 md:mr-2 text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
+          <RefreshCcw className="w-4 h-4 mr-1.5 md:mr-2 text-emerald-600 dark:text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
           다시 추천받기
         </Button>
       </div>

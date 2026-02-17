@@ -16,7 +16,7 @@ export function ThemeToggle() {
     // SSR/hydration 시 placeholder 렌더링 (layout shift 방지)
     return (
       <button
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-transparent"
         aria-label="테마 전환"
       >
         <span className="h-4 w-4" />
@@ -29,7 +29,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
       aria-label="테마 전환"
       title={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
     >

@@ -24,7 +24,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center space-x-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500">
-                <GraduationCap className="h-5 w-5 text-slate-900" />
+                <GraduationCap className="h-5 w-5 text-white" />
               </div>
               <span className="font-bold text-lg text-foreground">
                 자격증 마스터

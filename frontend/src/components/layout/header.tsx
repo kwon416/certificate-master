@@ -31,7 +31,7 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="mr-8 flex items-center space-x-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500">
-            <GraduationCap className="h-5 w-5 text-slate-900" />
+            <GraduationCap className="h-5 w-5 text-white" />
           </div>
           <span className="font-bold text-lg tracking-tight text-foreground">
             자격증 마스터
@@ -47,7 +47,7 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-2 text-sm font-medium transition-colors hover:text-emerald-400',
+                  'flex items-center gap-2 text-sm font-medium transition-colors hover:text-emerald-600 dark:hover:text-emerald-400',
                   pathname === item.href
                     ? 'text-primary'
                     : 'text-muted-foreground'

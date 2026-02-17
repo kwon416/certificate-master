@@ -45,9 +45,9 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                     )}
                   >
                     {milestone.status === 'completed' ? (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                     ) : milestone.status === 'in-progress' ? (
-                      <Circle className="h-5 w-5 text-cyan-400" />
+                      <Circle className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                     ) : (
                       <Lock className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -78,9 +78,9 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                       className={cn(
                         'text-sm font-medium px-2 py-0.5 rounded',
                         milestone.status === 'completed'
-                          ? 'bg-emerald-500/20 text-emerald-400'
+                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                           : milestone.status === 'in-progress'
-                          ? 'bg-cyan-500/20 text-cyan-400'
+                          ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400'
                           : 'bg-muted text-muted-foreground'
                       )}
                     >
@@ -102,8 +102,8 @@ export function StudyTimeline({ milestones }: StudyTimelineProps) {
                         <span
                           className={cn(
                             milestone.status === 'completed'
-                              ? 'text-emerald-400'
-                              : 'text-cyan-400'
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-cyan-600 dark:text-cyan-400'
                           )}
                         >
                           {milestone.progress}%
