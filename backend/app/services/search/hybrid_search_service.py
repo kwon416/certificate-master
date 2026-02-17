@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from typing import Optional
@@ -44,14 +45,22 @@ class HybridSearchService:
         start = time.monotonic()
         retrieve_k = top_k * 3
 
-        # Dense(벡터) 검색과 Sparse(BM25) 검색을 동시 실행
-        dense_task = self._vector_store.search_records(
-            query=query, top_k=retrieve_k
+        # Dense(벡터) 검색과 Sparse(BM25) 검색을 병렬 실행
+        # search_records / bm25.search 모두 동기 함수이므로 to_thread로 감싸기
+        dense_results, sparse_results = await asyncio.gather(
+            asyncio.to_thread(
+                self._vector_store.search_records,
+                self._vector_store.NAMESPACE,
+                query,
+                retrieve_k,
+            ),
+            asyncio.to_thread(
+                self._bm25_service.search,
+                query,
+                retrieve_k,
+                domains,
+            ),
         )
-        sparse_results = self._bm25_service.search(
-            query=query, top_k=retrieve_k, domains=domains
-        )
-        dense_results = await dense_task
 
         # RRF 점수 계산: score = weight / (K + rank), rank는 1-based
         rrf_scores: dict[str, float] = {}

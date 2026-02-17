@@ -1,14 +1,15 @@
 """하이브리드 검색 서비스 (Dense + Sparse + RRF) 테스트."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 from app.services.search.hybrid_search_service import HybridSearchService
 
 
 @pytest.fixture
 def mock_vector_store():
-    store = AsyncMock()
-    store.search_records = AsyncMock(return_value=[
+    store = MagicMock()
+    store.NAMESPACE = "certificates"
+    store.search_records = MagicMock(return_value=[
         {"id": "cert-A", "score": 0.8, "metadata": {}},
         {"id": "cert-B", "score": 0.6, "metadata": {}},
         {"id": "cert-C", "score": 0.4, "metadata": {}},
@@ -86,3 +87,19 @@ class TestRRFFusion:
         service._bm25_service.search.return_value = []
         results = await service.search("", top_k=5)
         assert results == []
+
+    @pytest.mark.asyncio
+    async def test_search_records_called_with_namespace(self, service):
+        """search_records에 namespace 인자가 전달되는지 확인."""
+        await service.search("테스트", top_k=5)
+        service._vector_store.search_records.assert_called_once_with(
+            "certificates", "테스트", 15
+        )
+
+    @pytest.mark.asyncio
+    async def test_bm25_called_with_correct_args(self, service):
+        """BM25 search에 올바른 인자가 전달되는지 확인."""
+        await service.search("테스트", top_k=5, domains=["IT"])
+        service._bm25_service.search.assert_called_once_with(
+            "테스트", 15, ["IT"]
+        )

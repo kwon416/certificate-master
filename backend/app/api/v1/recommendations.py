@@ -113,9 +113,9 @@ async def get_unified_recommendations(
     해당 분야 내에서 맞춤형 자격증을 추천합니다.
 
     3단계 파이프라인:
-    1. LLM 상황 구조화 + 검색 쿼리 생성
-    2. 도메인 필터 + 벡터 검색
-    3. LLM 추천 이유 생성
+    1. 규칙 기반 컨텍스트 파싱 (4단계 NLU)
+    2. 하이브리드 검색 (Dense + BM25 Sparse + RRF 결합)
+    3. 데이터 기반 템플릿 추천 이유 생성
 
     Args:
         request: 통합 추천 요청 (domains + user_input)

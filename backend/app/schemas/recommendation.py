@@ -660,9 +660,8 @@ class UnifiedRecommendationRequest(BaseModel):
     """
 
     domains: list[str] = Field(
-        ...,
-        min_length=1,
-        description="선택한 분야 목록 (최소 1개)",
+        default=[],
+        description="선택한 분야 목록 (빈 리스트 시 자동 추론)",
     )
     user_input: str = Field(
         ...,
@@ -674,6 +673,8 @@ class UnifiedRecommendationRequest(BaseModel):
     @field_validator("domains")
     @classmethod
     def validate_domains(cls, v: list[str]) -> list[str]:
+        if not v:
+            return v  # 빈 리스트 허용 (자동 추론)
         from app.core.domains import DOMAIN_LIST
 
         invalid = [d for d in v if d not in DOMAIN_LIST]
