@@ -682,6 +682,15 @@ class UnifiedRecommendationRequest(BaseModel):
         return v
 
 
+class SearchStats(BaseModel):
+    """하이브리드 검색 통계."""
+
+    dense_count: int = Field(..., description="Dense 검색 결과 수")
+    sparse_count: int = Field(..., description="Sparse(BM25) 검색 결과 수")
+    merged_count: int = Field(..., description="RRF 결합 후 최종 결과 수")
+    elapsed_ms: float = Field(..., description="총 검색 소요 시간 (ms)")
+
+
 class UnifiedRecommendationResponse(BaseModel):
     """통합 추천 응답."""
 
@@ -701,4 +710,8 @@ class UnifiedRecommendationResponse(BaseModel):
         ...,
         ge=0,
         description="조건에 맞는 전체 자격증 수",
+    )
+    search_stats: SearchStats | None = Field(
+        default=None,
+        description="하이브리드 검색 통계",
     )
