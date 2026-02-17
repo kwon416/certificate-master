@@ -620,3 +620,30 @@ def build_user_matching_metadata(cert: dict) -> dict:
         "target_job_types": target_job_types[:200],
         "target_company_types": target_company_types[:200],
     }
+
+
+def format_search_text(cert: dict) -> str:
+    """검색 최적화용 압축 텍스트를 생성한다 (임베딩용).
+
+    기존 format_certificate_text()가 모든 섹션을 포함하여 의미 신호가
+    희석되는 문제를 해결하기 위해, 핵심 정보만 포함한 압축 텍스트를 생성한다.
+
+    Args:
+        cert: 자격증 데이터 딕셔너리
+
+    Returns:
+        검색 최적화된 압축 텍스트
+    """
+    career_info = cert.get("career_info", {}) or {}
+    job_market_info = cert.get("job_market_info", {}) or {}
+
+    parts = [
+        cert.get("title", ""),
+        cert.get("categories", ""),
+        cert.get("series", ""),
+        career_info.get("industry", ""),
+        career_info.get("related_jobs", ""),
+        (cert.get("overview", "") or "")[:200],
+        job_market_info.get("preferred_industries", ""),
+    ]
+    return " ".join(filter(None, parts))
