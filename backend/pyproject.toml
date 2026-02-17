@@ -26,6 +26,8 @@ dependencies = [
     # Content crawling (웹 페이지 본문 추출)
     "trafilatura>=2.0.0",
     "py3langid>=0.3.0",
+    # BM25 keyword search
+    "rank-bm25>=0.2",
 ]
 
 [project.optional-dependencies]
