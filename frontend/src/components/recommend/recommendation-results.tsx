@@ -10,9 +10,11 @@ import { RefreshCcw, Target, Briefcase, Clock, BarChart3, User, MessageSquare } 
 import { Button } from '@/components/ui/button'
 import { RecommendationCard } from './recommendation-card'
 import { useRecommendStore } from '@/stores/recommend-store'
-import type { RecommendedCertificate } from '@/lib/api/recommendations'
+import type { NaturalRecommendedCertificate } from '@/lib/api/types'
 
-type NormalizedRecommendation = RecommendedCertificate & { rank: number }
+type NormalizedRecommendation = Partial<NaturalRecommendedCertificate> &
+  Pick<NaturalRecommendedCertificate, 'certificate' | 'match_score' | 'recommendation_reason' | 'key_points' | 'feasibility'> &
+  { rank: number }
 
 // 요약 항목 파싱 및 아이콘 매핑
 interface SummaryItem {

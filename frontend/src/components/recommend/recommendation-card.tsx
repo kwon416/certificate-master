@@ -9,10 +9,12 @@ import Link from 'next/link'
 import { type ReactNode, useMemo } from 'react'
 import { Clock3, TrendingUp, Sparkles, FileText, Briefcase, Hash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { RecommendedCertificate } from '@/lib/api/recommendations'
+import type { NaturalRecommendedCertificate } from '@/lib/api/types'
 
 interface RecommendationCardProps {
-  recommendation: RecommendedCertificate & { rank?: number }
+  recommendation: Partial<NaturalRecommendedCertificate> &
+    Pick<NaturalRecommendedCertificate, 'certificate' | 'recommendation_reason' | 'key_points' | 'feasibility'> &
+    { rank?: number }
 }
 
 const parseNumericValue = (value: number | string | null | undefined): number | null => {
