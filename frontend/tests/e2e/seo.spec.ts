@@ -17,6 +17,35 @@ test.describe('SEO - JSON-LD 구조화 데이터', () => {
     expect(html).toContain('"@type":"Organization"')
   })
 
+  test('Organization 스키마의 contactPoint 이메일이 올바른 도메인을 사용해야 함', async ({ request }) => {
+    const response = await request.get('/')
+    const html = await response.text()
+
+    // Organization JSON-LD 파싱
+    const jsonLdMatches = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gs)
+    expect(jsonLdMatches).not.toBeNull()
+
+    let orgSchema: Record<string, unknown> | null = null
+    for (const match of jsonLdMatches!) {
+      const jsonStr = match.replace(/<script[^>]*>/, '').replace(/<\/script>/, '')
+      try {
+        const parsed = JSON.parse(jsonStr) as Record<string, unknown>
+        if (parsed['@type'] === 'Organization') {
+          orgSchema = parsed
+          break
+        }
+      } catch {
+        continue
+      }
+    }
+
+    expect(orgSchema).not.toBeNull()
+    // 존재하지 않는 certmaster.kr 도메인이 아닌 실제 운영 이메일을 사용해야 함
+    const contactPoint = orgSchema!.contactPoint as Record<string, string> | undefined
+    expect(contactPoint?.email).not.toContain('certmaster.kr')
+    expect(contactPoint?.email).toContain('i-ve.ai')
+  })
+
   test('Organization 스키마에 유효한 logo URL이 포함되어야 함', async ({ request }) => {
     const response = await request.get('/')
     const html = await response.text()
@@ -429,11 +458,12 @@ test.describe('SEO - Sitemap 개선', () => {
     expect(response.status()).toBe(200)
     const body = await response.text()
 
-    // 정적 페이지 필수 포함
+    // 구현된 정적 페이지만 포함해야 함
     expect(body).toContain('/recommend')
-    expect(body).toContain('/community')
     expect(body).toContain('/terms')
     expect(body).toContain('/privacy')
+    // /community는 미구현 페이지이므로 sitemap에 없어야 함
+    expect(body).not.toMatch(/\/community<\/loc>/)
   })
 
   test('sitemap에 자격증 페이지가 포함되어야 함 (API 연동)', async ({ request }) => {
