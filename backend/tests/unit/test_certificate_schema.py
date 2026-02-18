@@ -241,3 +241,50 @@ class TestCertificateSchema:
         assert len(cert.recommended_lectures) == 1
         assert cert.career_info != {}
 
+    def test_certificate_domain_field_present(self):
+        """Certificate 스키마에 domain 필드가 존재해야 한다."""
+        from datetime import datetime, timezone
+
+        cert = Certificate(
+            id="test-uuid",
+            raw_id="T_정보처리기사",
+            categories=[{"code": "T", "name": "국가기술자격"}],
+            series="기사",
+            title="정보처리기사",
+            domain="IT/소프트웨어",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        assert cert.domain == "IT/소프트웨어"
+
+    def test_certificate_domain_nullable(self):
+        """domain 필드는 nullable이다."""
+        from datetime import datetime, timezone
+
+        cert = Certificate(
+            id="test-uuid",
+            raw_id="T_테스트",
+            categories=[{"code": "T", "name": "국가기술자격"}],
+            title="테스트자격증",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        assert cert.domain is None
+
+    def test_certificate_domain_in_api_response(self):
+        """domain 필드가 직렬화된 응답에 포함되어야 한다."""
+        from datetime import datetime, timezone
+
+        cert = Certificate(
+            id="test-uuid",
+            raw_id="T_전기기사",
+            categories=[{"code": "T", "name": "국가기술자격"}],
+            title="전기기사",
+            domain="전기/전자",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        data = cert.model_dump()
+        assert "domain" in data
+        assert data["domain"] == "전기/전자"
+

@@ -348,6 +348,9 @@ class Certificate(CertificateBase):
         default_factory=list, description="유사 자격증 비교 (SimilarCertificate 구조)"
     )
 
+    # 도메인 분류
+    domain: Optional[str] = Field(None, description="분야 분류 (예: IT/소프트웨어, 건설/건축)")
+
     # 합격률
     passing_rate: Optional[float] = Field(None, description="합격률 (%)")
 

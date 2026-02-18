@@ -319,15 +319,15 @@ def test_unified_request_multiple_domains():
     assert len(req.domains) == 2
 
 
-def test_unified_request_empty_domains_fails():
-    """도메인이 비어있으면 실패."""
+def test_unified_request_empty_domains_allowed():
+    """도메인이 비어있어도 허용된다 (자동 추론 모드)."""
     from app.schemas.recommendation import UnifiedRecommendationRequest
 
-    with pytest.raises(ValidationError):
-        UnifiedRecommendationRequest(
-            domains=[],
-            user_input="테스트 입력입니다 충분히 길게",
-        )
+    req = UnifiedRecommendationRequest(
+        domains=[],
+        user_input="테스트 입력입니다 충분히 길게",
+    )
+    assert req.domains == []
 
 
 def test_unified_request_short_input_fails():
