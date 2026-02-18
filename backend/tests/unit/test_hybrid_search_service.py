@@ -93,7 +93,8 @@ class TestRRFFusion:
         """search_records에 namespace 인자가 전달되는지 확인."""
         await service.search("테스트", top_k=5)
         service._vector_store.search_records.assert_called_once_with(
-            "certificates", "테스트", 15
+            "certificates", "테스트", 15,
+            filter_dict=None
         )
 
     @pytest.mark.asyncio
@@ -102,4 +103,31 @@ class TestRRFFusion:
         await service.search("테스트", top_k=5, domains=["IT"])
         service._bm25_service.search.assert_called_once_with(
             "테스트", 15, ["IT"]
+        )
+
+    @pytest.mark.asyncio
+    async def test_dense_search_passes_domain_filter(self, service):
+        """domains가 주어지면 Dense 검색에 filter_dict가 전달되는지 확인."""
+        await service.search("테스트", top_k=5, domains=["IT/소프트웨어"])
+        service._vector_store.search_records.assert_called_once_with(
+            "certificates", "테스트", 15,
+            filter_dict={"domain": {"$in": ["IT/소프트웨어"]}}
+        )
+
+    @pytest.mark.asyncio
+    async def test_dense_search_no_filter_without_domains(self, service):
+        """domains가 없으면 Dense 검색에 filter_dict가 전달되지 않는지 확인."""
+        await service.search("테스트", top_k=5)
+        service._vector_store.search_records.assert_called_once_with(
+            "certificates", "테스트", 15,
+            filter_dict=None
+        )
+
+    @pytest.mark.asyncio
+    async def test_dense_search_no_filter_with_empty_domains(self, service):
+        """domains가 빈 리스트면 filter_dict가 전달되지 않는지 확인."""
+        await service.search("테스트", top_k=5, domains=[])
+        service._vector_store.search_records.assert_called_once_with(
+            "certificates", "테스트", 15,
+            filter_dict=None
         )

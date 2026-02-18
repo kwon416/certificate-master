@@ -45,6 +45,9 @@ class HybridSearchService:
         start = time.monotonic()
         retrieve_k = top_k * 3
 
+        # Dense 검색용 도메인 필터 구성
+        dense_filter = {"domain": {"$in": domains}} if domains else None
+
         # Dense(벡터) 검색과 Sparse(BM25) 검색을 병렬 실행
         # search_records / bm25.search 모두 동기 함수이므로 to_thread로 감싸기
         dense_results, sparse_results = await asyncio.gather(
@@ -53,6 +56,7 @@ class HybridSearchService:
                 self._vector_store.NAMESPACE,
                 query,
                 retrieve_k,
+                filter_dict=dense_filter,
             ),
             asyncio.to_thread(
                 self._bm25_service.search,
