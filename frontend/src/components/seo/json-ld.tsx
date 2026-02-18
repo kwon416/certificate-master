@@ -40,7 +40,7 @@ export function JsonLd({ type, data }: JsonLdProps) {
         sameAs: [],
         contactPoint: {
           '@type': 'ContactPoint',
-          email: 'contact@certmaster.kr',
+          email: 'contact@i-ve.ai',
           contactType: 'customer service',
           availableLanguage: 'Korean',
         },
