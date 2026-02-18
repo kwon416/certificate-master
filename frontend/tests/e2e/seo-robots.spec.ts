@@ -15,7 +15,7 @@ test.describe('robots.txt SEO', () => {
   })
 
   test('should disallow private paths for all user-agents', async () => {
-    const privatePaths = ['/api/', '/auth/', '/dashboard', '/study-plans']
+    const privatePaths = ['/api/', '/auth/', '/dashboard', '/study-plans', '/analytics']
 
     for (const path of privatePaths) {
       expect(robotsText).toContain(`Disallow: ${path}`)

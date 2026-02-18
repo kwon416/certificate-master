@@ -7,6 +7,7 @@ Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard
 Disallow: /study-plans
+Disallow: /analytics
 Disallow: /login
 Disallow: /signup
 
@@ -23,6 +24,7 @@ Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard
 Disallow: /study-plans
+Disallow: /analytics
 Disallow: /login
 Disallow: /signup
 
@@ -33,6 +35,7 @@ Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard
 Disallow: /study-plans
+Disallow: /analytics
 Disallow: /login
 Disallow: /signup
 
@@ -43,5 +46,6 @@ Disallow: /api/
 Disallow: /auth/
 Disallow: /dashboard
 Disallow: /study-plans
+Disallow: /analytics
 Disallow: /login
 Disallow: /signup

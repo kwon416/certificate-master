@@ -54,9 +54,17 @@ test.describe('Sitemap', () => {
       const body = await response.text()
 
       // 필수 정적 페이지 확인
-      expect(body).toContain('/community')
       expect(body).toContain('/terms')
       expect(body).toContain('/privacy')
+    })
+
+    test('커뮤니티 페이지(/community)가 sitemap에 포함되지 않아야 함', async ({ request }) => {
+      const response = await request.get('/sitemap.xml')
+      const body = await response.text()
+
+      // /community 페이지는 아직 구현되지 않으므로 sitemap에서 제외
+      // 크롤 버짓 낭비 및 Google 신뢰도 저하 방지
+      expect(body).not.toMatch(/\/community<\/loc>/)
     })
 
     test('changeFrequency 값이 포함되어야 함', async ({ request }) => {
