@@ -5,6 +5,7 @@ import { useRecommendStore } from '@/stores/recommend-store'
 import { recommendationsAPI } from '@/lib/api/recommendations'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { RecommendationCard } from '@/components/recommend/recommendation-card'
 import { ArrowLeft, ArrowRight, Loader2, Sparkles, RotateCcw } from 'lucide-react'
 
 const QUESTION_TEMPLATES = [
@@ -210,61 +211,10 @@ export function RecommendContent() {
 
             <div className="space-y-4">
               {unifiedRecommendations.map((rec, index) => (
-                <div
+                <RecommendationCard
                   key={rec.certificate.id}
-                  className="p-6 bg-card/50 backdrop-blur-xl border border-border/50 rounded-xl space-y-3"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-lg">
-                          #{index + 1}
-                        </span>
-                        <h3 className="text-lg font-semibold text-foreground">
-                          {rec.certificate.title}
-                        </h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {rec.qualification_category}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                        {rec.match_score}점
-                      </div>
-                      <div className="text-xs text-muted-foreground">매칭 점수</div>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-foreground/80">
-                    {rec.recommendation_reason}
-                  </p>
-
-                  {rec.key_points && rec.key_points.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {rec.key_points.map((point, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs rounded-full"
-                        >
-                          {point}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
-                    {rec.quick_stats?.passing_rate && (
-                      <span>합격률: {rec.quick_stats.passing_rate}%</span>
-                    )}
-                    {rec.feasibility && (
-                      <span>준비 기간: 약 {Math.ceil(rec.feasibility.estimated_days / 30)}개월</span>
-                    )}
-                    {rec.quick_stats?.exam_type && (
-                      <span>시험 유형: {rec.quick_stats.exam_type}</span>
-                    )}
-                  </div>
-                </div>
+                  recommendation={{ ...rec, rank: index + 1 }}
+                />
               ))}
             </div>
           </div>
