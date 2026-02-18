@@ -28,6 +28,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: `${SITE_URL}/community`,
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 const upcomingFeatures = [

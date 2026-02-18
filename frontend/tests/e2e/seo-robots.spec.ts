@@ -58,3 +58,14 @@ test.describe('robots.txt SEO', () => {
     expect(robotsText).toContain('sitemap.xml')
   })
 })
+
+test.describe('미구현 페이지 noindex', () => {
+  test('/community 페이지는 noindex 처리되어야 함', async ({ request }) => {
+    const response = await request.get('/community')
+    const html = await response.text()
+
+    // 미구현("준비 중") 페이지는 검색엔진에 인덱싱되면 안 됨
+    const hasNoindex = html.includes('noindex')
+    expect(hasNoindex, '/community 페이지에 noindex 메타 태그가 없음').toBe(true)
+  })
+})
