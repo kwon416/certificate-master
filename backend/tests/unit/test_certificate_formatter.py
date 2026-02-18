@@ -179,9 +179,9 @@ class TestFormatterIntegration:
         assert direct_result == service_result
 
     def test_vector_store_uses_common_formatter(self):
-        """VectorStoreService가 공통 포맷터를 사용하는지 테스트."""
+        """VectorStoreService가 공통 포맷터(format_search_text)를 사용하는지 테스트."""
         from unittest.mock import patch, MagicMock
-        from app.utils.certificate_formatter import format_certificate_text
+        from app.utils.certificate_formatter import format_search_text
 
         with patch("app.services.embedding.vector_store.get_settings") as mock_settings:
             mock_settings.return_value.CHROMA_HOST = "test-host"
@@ -214,9 +214,9 @@ class TestFormatterIntegration:
                 }
 
                 record = service.format_record_for_upsert(cert)
-                direct_text = format_certificate_text(cert)
+                direct_text = format_search_text(cert)
 
-                # chunk_text가 공통 포맷터의 결과와 동일해야 함
+                # chunk_text가 공통 포맷터(format_search_text)의 결과와 동일해야 함
                 assert record["chunk_text"] == direct_text
 
 

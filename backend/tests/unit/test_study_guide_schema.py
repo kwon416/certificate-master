@@ -23,11 +23,6 @@ class TestStudyGuideSchema:
                 "기출문제 위주",
                 "강의 + 문제풀이 병행"
             ],
-            "learning_sequence": [
-                "1단계: 기초 이론 학습 (30일)",
-                "2단계: 실전 문제 풀이 (30일)",
-                "3단계: 모의고사 및 복습 (14일)"
-            ],
             "time_allocation": {
                 "theory": "40%",
                 "practice": "50%",
@@ -51,8 +46,6 @@ class TestStudyGuideSchema:
 
         assert len(guide.study_methods) == 3
         assert "교재 중심 학습" in guide.study_methods
-        assert len(guide.learning_sequence) == 3
-        assert "1단계" in guide.learning_sequence[0]
         assert guide.time_allocation["theory"] == "40%"
         assert guide.time_allocation["practice"] == "50%"
         assert len(guide.recommended_books) == 1
@@ -66,7 +59,6 @@ class TestStudyGuideSchema:
         guide = StudyGuide(**data)
 
         assert guide.study_methods == []
-        assert guide.learning_sequence == []
         assert guide.time_allocation is None
         assert guide.recommended_books == []
         assert guide.success_tips == []
