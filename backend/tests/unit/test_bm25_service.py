@@ -6,6 +6,11 @@ from app.services.search.bm25_service import BM25SearchService
 
 @pytest.fixture
 def sample_certificates() -> list[dict]:
+    """BM25 테스트용 샘플 자격증 데이터.
+
+    Contextual Prefix 적용 이후 BM25 IDF가 소규모 코퍼스에서도
+    양수 점수를 산출하도록 충분한 문서 수(5개 이상)를 확보합니다.
+    """
     return [
         {
             "id": "cert-001",
@@ -42,6 +47,42 @@ def sample_certificates() -> list[dict]:
                 "related_jobs": "보안 전문가, 보안 컨설턴트",
             },
             "domain": "IT/소프트웨어",
+        },
+        {
+            "id": "cert-004",
+            "title": "공인중개사",
+            "categories": "국가전문자격",
+            "series": "부동산",
+            "overview": "부동산 중개 및 거래에 관한 전문 자격증",
+            "career_info": {
+                "industry": "부동산",
+                "related_jobs": "부동산 중개사",
+            },
+            "domain": "부동산",
+        },
+        {
+            "id": "cert-005",
+            "title": "한식조리기능사",
+            "categories": "국가기술자격",
+            "series": "조리",
+            "overview": "한식 조리 기술에 관한 기능사 자격증",
+            "career_info": {
+                "industry": "요식업",
+                "related_jobs": "조리사, 셰프",
+            },
+            "domain": "요식업",
+        },
+        {
+            "id": "cert-006",
+            "title": "사회복지사",
+            "categories": "국가전문자격",
+            "series": "복지",
+            "overview": "사회복지 서비스 제공에 관한 전문 자격증",
+            "career_info": {
+                "industry": "사회복지",
+                "related_jobs": "사회복지사, 상담사",
+            },
+            "domain": "사회복지",
         },
     ]
 

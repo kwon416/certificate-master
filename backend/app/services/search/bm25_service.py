@@ -8,6 +8,7 @@ from typing import Optional
 from rank_bm25 import BM25Okapi
 
 from app.services.search.tokenizer import tokenize
+from app.utils.certificate_formatter import build_contextual_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -84,14 +85,22 @@ class BM25SearchService:
         return results
 
     def _build_index_text(self, cert: dict) -> str:
-        """자격증 데이터에서 인덱스용 텍스트를 생성한다."""
+        """자격증 데이터에서 인덱스용 텍스트를 생성한다.
+
+        Contextual Prefix를 포함하여 키워드 매칭 품질을 향상시킵니다.
+        """
+        prefix = build_contextual_prefix(cert)
         career_info = cert.get("career_info", {}) or {}
+        industry = career_info.get("industry", "")
+        related_jobs = career_info.get("related_jobs", "")
+
         parts = [
+            prefix,
             cert.get("title", ""),
             cert.get("categories", ""),
             cert.get("series", ""),
-            career_info.get("industry", ""),
-            career_info.get("related_jobs", ""),
+            " ".join(industry) if isinstance(industry, list) else str(industry or ""),
+            " ".join(related_jobs) if isinstance(related_jobs, list) else str(related_jobs or ""),
             (cert.get("overview", "") or "")[:200],
         ]
         return " ".join(filter(None, parts))
