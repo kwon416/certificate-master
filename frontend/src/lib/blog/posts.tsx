@@ -181,9 +181,218 @@ const post1: BlogPost = {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// 포스트: 비전공자 IT 자격증 추천
+// ──────────────────────────────────────────────────────────────────────────────
+const post2: BlogPost = {
+  slug: '비전공자-it-자격증-추천-2026',
+  title: '비전공자도 딸 수 있는 IT 자격증 5선 (2026년, 독학 가능)',
+  description:
+    'IT 비전공자도 독학으로 취득 가능한 IT 자격증 5개를 엄선했습니다. 난이도, 준비 기간, 독학 방법, 취업 효과까지 비교 분석합니다.',
+  keywords: [
+    '비전공자 IT 자격증',
+    '비전공자 자격증 추천',
+    'IT 자격증 독학',
+    '비전공자 정보처리기사',
+    '비전공자 자격증',
+    'IT 자격증 추천 2026',
+    '비전공 개발자 자격증',
+    '컴퓨터 자격증 추천',
+    '코딩 자격증',
+  ],
+  publishedAt: '2026-02-20',
+  updatedAt: '2026-02-20',
+  category: '자격증 추천',
+  readTime: 8,
+  toc: [
+    { id: 'intro', title: '비전공자가 IT 자격증을 따야 하는 이유' },
+    { id: 'criteria', title: '선정 기준: 독학 가능 + 취업 효과' },
+    { id: 'cert1', title: '1. 정보처리기사 — IT 취업의 기본기' },
+    { id: 'cert2', title: '2. 빅데이터분석기사 — 데이터 직군 진입' },
+    { id: 'cert3', title: '3. SQLD — 데이터베이스 입문' },
+    { id: 'cert4', title: '4. 리눅스마스터 2급 — 서버 관리 기초' },
+    { id: 'cert5', title: '5. 네트워크관리사 2급 — 네트워크 기초' },
+    { id: 'comparison', title: '한눈에 비교하기' },
+    { id: 'how-to-start', title: '어디서부터 시작할까?' },
+  ],
+  content: () => (
+    <>
+      <h2 id="intro">비전공자가 IT 자격증을 따야 하는 이유</h2>
+      <p>
+        IT 업계는 학력보다 실력을 중시하는 분위기이지만, 비전공자 입장에서 &ldquo;기초 지식이
+        있다&rdquo;는 걸 증명하기 어렵습니다. 자격증은 그 증명 수단 중 가장 객관적인 방법입니다.
+      </p>
+      <p>
+        실제로 채용 공고에서 IT 자격증을 우대하는 비율은 꾸준히 증가하고 있으며, 특히 공공기관·대기업에서는
+        가산점 제도로 직접적인 점수 혜택까지 받을 수 있습니다.
+      </p>
+      <p>
+        이 글에서는 비전공자도 <strong>독학으로 3~6개월 안에 취득 가능한</strong> IT 자격증 5개를
+        엄선했습니다.
+      </p>
+
+      <h2 id="criteria">선정 기준: 독학 가능 + 취업 효과</h2>
+      <ul>
+        <li>
+          <strong>독학 가능</strong>: 학원 없이 교재·인강·기출문제만으로 합격 가능
+        </li>
+        <li>
+          <strong>비전공자 합격률</strong>: 비전공자 합격 사례가 풍부한 자격증
+        </li>
+        <li>
+          <strong>취업 시장 수요</strong>: 채용 공고에서 우대 또는 필수로 요구
+        </li>
+        <li>
+          <strong>준비 기간</strong>: 6개월 이내로 취득 가능
+        </li>
+      </ul>
+
+      <h2 id="cert1">1. 정보처리기사 — IT 취업의 기본기</h2>
+      <p>
+        IT 분야 국가기술자격 중 가장 범용적인 자격증입니다. 개발, QA, PM, 시스템 운영 등
+        IT 직군 전반에서 인정받으며, 공기업 가산점 혜택도 있습니다.
+      </p>
+      <ul>
+        <li><strong>난이도</strong>: 중급 (비전공자 3~6개월)</li>
+        <li><strong>시험 구성</strong>: 필기(객관식) + 실기(서술형)</li>
+        <li><strong>독학 팁</strong>: 필기는 기출문제 3회독으로 충분, 실기는 SQL·프로그래밍 기초 필요</li>
+        <li><strong>비전공자 합격률</strong>: 약 30~35%</li>
+        <li><strong>취업 효과</strong>: IT 채용 공고 60% 이상에서 우대</li>
+      </ul>
+      <p>
+        <Link href="/certificates/정보처리기사" className="text-primary underline">
+          정보처리기사 상세 정보 보기 →
+        </Link>
+      </p>
+
+      <h2 id="cert2">2. 빅데이터분석기사 — 데이터 직군 진입</h2>
+      <p>
+        데이터 분석·AI 분야 취업을 목표로 한다면 가장 추천하는 자격증입니다. 파이썬 기초와 통계
+        지식만 있으면 비전공자도 도전 가능합니다.
+      </p>
+      <ul>
+        <li><strong>난이도</strong>: 중급 (비전공자 3~6개월)</li>
+        <li><strong>시험 구성</strong>: 필기(객관식) + 실기(파이썬·R 실습)</li>
+        <li><strong>독학 팁</strong>: 필기는 통계 기초서 1권 + 기출, 실기는 파이썬 판다스 실습 위주</li>
+        <li><strong>취업 효과</strong>: 데이터 분석가, BI 엔지니어, AI 연구원 채용 시 우대</li>
+      </ul>
+
+      <h2 id="cert3">3. SQLD — 데이터베이스 입문</h2>
+      <p>
+        SQL Developer(SQLD)는 데이터베이스 기초를 증명하는 민간자격증입니다. 개발자뿐 아니라
+        마케터, 기획자 등 데이터를 다루는 모든 직무에서 활용됩니다.
+      </p>
+      <ul>
+        <li><strong>난이도</strong>: 하 (비전공자 1~2개월)</li>
+        <li><strong>시험 구성</strong>: 객관식 50문항 (과목합산 60점 이상 합격)</li>
+        <li><strong>독학 팁</strong>: SQL 기본서 1권 + 기출문제 2주면 충분</li>
+        <li><strong>취업 효과</strong>: IT·데이터 직군 입문 자격으로 인정</li>
+      </ul>
+
+      <h2 id="cert4">4. 리눅스마스터 2급 — 서버 관리 기초</h2>
+      <p>
+        서버 운영, DevOps, 클라우드 직무에 관심 있다면 리눅스마스터 2급이 좋은 시작점입니다.
+        기초적인 리눅스 명령어와 시스템 관리를 다룹니다.
+      </p>
+      <ul>
+        <li><strong>난이도</strong>: 하 (비전공자 1~2개월)</li>
+        <li><strong>시험 구성</strong>: 온라인 CBT (상시 응시 가능)</li>
+        <li><strong>독학 팁</strong>: 가상머신에 리눅스 설치 후 실습 병행하면 효과적</li>
+        <li><strong>취업 효과</strong>: 서버 관리, 클라우드 엔지니어 입문</li>
+      </ul>
+
+      <h2 id="cert5">5. 네트워크관리사 2급 — 네트워크 기초</h2>
+      <p>
+        네트워크 기초 지식을 증명하는 자격증으로, 서버·보안·인프라 직무 입문에 도움이 됩니다.
+        실기 시험이 있어 실무 능력도 함께 평가받을 수 있습니다.
+      </p>
+      <ul>
+        <li><strong>난이도</strong>: 중하 (비전공자 2~3개월)</li>
+        <li><strong>시험 구성</strong>: 필기(객관식) + 실기(네트워크 구축)</li>
+        <li><strong>독학 팁</strong>: 이론서 1회독 후 기출문제 반복, 실기는 패킷트레이서로 실습</li>
+        <li><strong>취업 효과</strong>: 네트워크·보안·인프라 엔지니어 입문</li>
+      </ul>
+
+      <h2 id="comparison">한눈에 비교하기</h2>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-2 pr-4">자격증</th>
+              <th className="text-left py-2 pr-4">난이도</th>
+              <th className="text-left py-2 pr-4">준비 기간</th>
+              <th className="text-left py-2 pr-4">시험 방식</th>
+              <th className="text-left py-2">추천 직무</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b">
+              <td className="py-2 pr-4 font-medium">정보처리기사</td>
+              <td className="py-2 pr-4">중급</td>
+              <td className="py-2 pr-4">3~6개월</td>
+              <td className="py-2 pr-4">필기+실기</td>
+              <td className="py-2">IT 전반</td>
+            </tr>
+            <tr className="border-b">
+              <td className="py-2 pr-4 font-medium">빅데이터분석기사</td>
+              <td className="py-2 pr-4">중급</td>
+              <td className="py-2 pr-4">3~6개월</td>
+              <td className="py-2 pr-4">필기+실기</td>
+              <td className="py-2">데이터·AI</td>
+            </tr>
+            <tr className="border-b">
+              <td className="py-2 pr-4 font-medium">SQLD</td>
+              <td className="py-2 pr-4">하</td>
+              <td className="py-2 pr-4">1~2개월</td>
+              <td className="py-2 pr-4">객관식</td>
+              <td className="py-2">IT·데이터 입문</td>
+            </tr>
+            <tr className="border-b">
+              <td className="py-2 pr-4 font-medium">리눅스마스터 2급</td>
+              <td className="py-2 pr-4">하</td>
+              <td className="py-2 pr-4">1~2개월</td>
+              <td className="py-2 pr-4">CBT 상시</td>
+              <td className="py-2">서버·클라우드</td>
+            </tr>
+            <tr>
+              <td className="py-2 pr-4 font-medium">네트워크관리사 2급</td>
+              <td className="py-2 pr-4">중하</td>
+              <td className="py-2 pr-4">2~3개월</td>
+              <td className="py-2 pr-4">필기+실기</td>
+              <td className="py-2">네트워크·보안</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="how-to-start">어디서부터 시작할까?</h2>
+      <p>
+        자격증 선택이 어렵다면, 자신의 상황과 목표에 맞는 자격증을 AI가 추천해 드립니다.
+        분야, 경험, 투자 가능 시간을 선택하면 맞춤 추천을 받을 수 있습니다.
+      </p>
+      <ul>
+        <li>
+          <Link href="/recommend" className="text-primary underline">
+            AI 맞춤 자격증 추천받기 →
+          </Link>
+        </li>
+        <li>
+          <Link href="/blog/취업-자격증-top5-2026" className="text-primary underline">
+            취업을 위한 자격증 TOP 5 보기 →
+          </Link>
+        </li>
+      </ul>
+      <p>
+        비전공자라도 체계적으로 준비하면 IT 자격증을 충분히 취득할 수 있습니다.
+        가장 쉬운 SQLD부터 시작해서 정보처리기사까지 단계적으로 도전해 보세요.
+      </p>
+    </>
+  ),
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // 모든 포스트
 // ──────────────────────────────────────────────────────────────────────────────
-const allPosts: BlogPost[] = [post1]
+const allPosts: BlogPost[] = [post1, post2]
 
 /**
  * 슬러그로 포스트 조회 (상세 페이지용)
