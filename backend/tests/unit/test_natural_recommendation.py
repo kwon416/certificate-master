@@ -438,54 +438,6 @@ class TestContextExtractorService:
             assert result.major_background == "비전공자"
 
 
-class TestQueryGeneratorService:
-    """QueryGeneratorService 테스트."""
-
-    def test_service_exists(self):
-        """서비스 클래스가 존재하는지 확인."""
-        from app.services.study.query_generator import QueryGeneratorService
-
-        assert QueryGeneratorService is not None
-
-    def test_service_has_generate_method(self):
-        """generate_query 메서드가 존재하는지 확인."""
-        from app.services.study.query_generator import QueryGeneratorService
-
-        service = QueryGeneratorService()
-        assert hasattr(service, "generate_query")
-        assert callable(service.generate_query)
-
-    @pytest.mark.asyncio
-    async def test_generate_query_returns_string(self):
-        """generate_query가 문자열을 반환하는지 확인 (Mock)."""
-        from unittest.mock import AsyncMock, patch
-
-        from app.schemas.recommendation import StructuredUserContext
-        from app.services.study.query_generator import QueryGeneratorService
-
-        context = StructuredUserContext(
-            goal="취업",
-            employment_status="학생",
-            major_background="비전공자",
-            weekly_study_hours=15,
-            max_study_period_days=90,
-            difficulty_preference="중",
-            preferred_industries=["IT"],
-        )
-
-        service = QueryGeneratorService()
-
-        with patch.object(
-            service, "_call_llm", new_callable=AsyncMock
-        ) as mock_llm:
-            mock_llm.return_value = "IT 취업 비전공자 입문 자격증"
-
-            result = await service.generate_query(context)
-
-            assert isinstance(result, str)
-            assert len(result) > 0
-
-
 class TestReasonGeneratorService:
     """ReasonGeneratorService 테스트."""
 
@@ -781,13 +733,15 @@ class TestScoreCalculation:
 class TestNaturalRecommendationAPI:
     """자연어 추천 API 엔드포인트 테스트."""
 
-    def test_endpoint_exists(self):
-        """엔드포인트가 라우터에 등록되어 있는지 확인."""
+    def test_active_endpoints_exist(self):
+        """활성 엔드포인트가 라우터에 등록되어 있는지 확인."""
         from app.api.v1.recommendations import router
 
-        # 라우터의 경로 확인
         routes = [route.path for route in router.routes]
-        assert "/natural" in routes
+        # /natural은 제거됨, /unified와 /structured가 활성
+        assert "/unified" in routes
+        assert "/structured" in routes
+        assert "/natural" not in routes
 
     def test_request_validation(self):
         """요청 스키마 검증 테스트."""
