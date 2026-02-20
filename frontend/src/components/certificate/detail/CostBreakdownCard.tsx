@@ -84,12 +84,12 @@ export function CostBreakdownCard({ costBreakdown, certificateTitle, className }
       <CardContent className="space-y-4">
         {/* 응시료 */}
         {hasExamFee && (
-          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+          <div className="flex flex-col gap-1 p-3 bg-muted/30 rounded-lg">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-amber-400" />
-              <span className="text-foreground/80">응시료</span>
+              <span className="text-foreground/80 text-sm">응시료</span>
             </div>
-            <span className="font-medium text-foreground">{costBreakdown?.exam_fee}</span>
+            <span className="font-semibold text-foreground pl-6">{costBreakdown?.exam_fee}</span>
           </div>
         )}
 

@@ -437,6 +437,56 @@ test.describe('Certificate Detail Page (V2 Schema)', () => {
     });
   });
 
+  test.describe('Mobile UI', () => {
+    test('탭 목록이 스크롤 후에도 viewport 내에 보여야 한다 (sticky)', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 }) // iPhone 14
+      await page.goto('/')
+      await page.waitForLoadState('networkidle')
+
+      const cards = page.locator('a[href^="/certificates/"]')
+      const cardCount = await cards.count()
+      test.skip(cardCount === 0, 'No certificates available')
+
+      if (cardCount > 0) {
+        await cards.first().click()
+        await page.waitForLoadState('networkidle')
+
+        // 페이지 맨 아래로 스크롤
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+        await page.waitForTimeout(300)
+
+        // 탭 목록이 여전히 viewport 안에 보여야 함
+        const tabList = page.getByRole('tablist')
+        await expect(tabList).toBeInViewport()
+      }
+    })
+
+    test('응시료 섹션이 모바일에서 줄바꿈으로 표시되어야 한다', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.goto('/')
+      await page.waitForLoadState('networkidle')
+
+      const cards = page.locator('a[href^="/certificates/"]')
+      const cardCount = await cards.count()
+      test.skip(cardCount === 0, 'No certificates available')
+
+      if (cardCount > 0) {
+        await cards.first().click()
+        await page.waitForLoadState('networkidle')
+
+        // 응시료 섹션 존재 확인
+        const examFeeSection = page.getByText('응시료')
+        if (await examFeeSection.count() > 0) {
+          await expect(examFeeSection.first()).toBeVisible()
+          // 응시료 컨테이너가 flex-col 방향으로 레이아웃되어 있어야 함
+          const feeContainer = examFeeSection.first().locator('..')
+          const flexDir = await feeContainer.evaluate(el => getComputedStyle(el).flexDirection)
+          expect(flexDir).toBe('column')
+        }
+      }
+    })
+  })
+
   test.describe('View Count Display', () => {
     test('should display view count on certificate detail page', async ({ page }) => {
       await page.goto('/');

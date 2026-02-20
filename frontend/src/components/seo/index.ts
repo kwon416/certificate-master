@@ -1,1 +1,1 @@
-export { JsonLd, CertificateJsonLd, createBreadcrumbData } from './json-ld'
+export { JsonLd, CertificateJsonLd, BlogArticleJsonLd, createBreadcrumbData } from './json-ld'

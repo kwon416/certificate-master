@@ -5,6 +5,7 @@ const footerLinks = {
   product: [
     { label: '자격증 검색', href: '/' },
     { label: 'AI 추천', href: '/recommend' },
+    { label: '블로그', href: '/blog' },
   ],
   community: [
     { label: '커뮤니티', href: '/community' },

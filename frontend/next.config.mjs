@@ -84,6 +84,12 @@ const nextConfig = {
     },
   },
 
+  // ESLint 9 flat config는 Next.js 14의 구 ESLint API(useEslintrc, extensions)와 호환 불가
+  // granite build 시 ESLint 검사를 건너뛰고, 별도 lint 명령으로 처리
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // 트레일링 슬래시 제거 (SEO)
   trailingSlash: false,
 

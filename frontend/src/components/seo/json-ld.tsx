@@ -129,6 +129,62 @@ export function CertificateJsonLd({ certificate }: CertificateJsonLdProps) {
   )
 }
 
+// 블로그 아티클 JSON-LD
+interface BlogArticleJsonLdProps {
+  post: {
+    slug: string
+    title: string
+    description: string
+    publishedAt: string
+    updatedAt: string
+    category: string
+  }
+}
+
+export function BlogArticleJsonLd({ post }: BlogArticleJsonLdProps) {
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.description,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt,
+    author: {
+      '@type': 'Organization',
+      name: '자격증 마스터',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: '자격증 마스터',
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/android-icon-192x192.png`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${SITE_URL}/blog/${post.slug}`,
+    },
+    image: {
+      '@type': 'ImageObject',
+      url: `${SITE_URL}/og-image.png`,
+      width: 1200,
+      height: 630,
+    },
+    articleSection: post.category,
+    inLanguage: 'ko-KR',
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  )
+}
+
 // Breadcrumb 생성 헬퍼
 export function createBreadcrumbData(items: { name: string; url: string }[]) {
   return {

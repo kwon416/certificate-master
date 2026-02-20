@@ -46,15 +46,15 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           {/* 비전공자 합격률 */}
           {feasibilityInfo.non_major_pass_rate && (
-            <div className="bg-emerald-900/10 rounded-lg p-4 border border-emerald-500/20">
-              <div className="flex items-center gap-2 mb-1">
-                <Users className="h-4 w-4 text-emerald-400" />
-                <span className="text-sm text-muted-foreground">비전공자 합격률</span>
+            <div className="bg-emerald-900/10 rounded-lg p-3 border border-emerald-500/20">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Users className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">비전공자 합격률</span>
               </div>
-              <span className="text-xl font-bold text-emerald-400">
+              <span className="text-base font-bold text-emerald-400">
                 {feasibilityInfo.non_major_pass_rate}
               </span>
             </div>
@@ -62,12 +62,12 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
 
           {/* 1회 응시 합격률 */}
           {feasibilityInfo.first_attempt_pass_rate && (
-            <div className="bg-cyan-900/10 rounded-lg p-4 border border-cyan-500/20">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-cyan-400" />
-                <span className="text-sm text-muted-foreground">1회 합격률</span>
+            <div className="bg-cyan-900/10 rounded-lg p-3 border border-cyan-500/20">
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingUp className="h-3.5 w-3.5 text-cyan-400 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">1회 합격률</span>
               </div>
-              <span className="text-xl font-bold text-cyan-400">
+              <span className="text-base font-bold text-cyan-400">
                 {feasibilityInfo.first_attempt_pass_rate}
               </span>
             </div>
@@ -77,23 +77,23 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
           {feasibilityInfo.self_study_possible !== null && (
             <div
               className={cn(
-                'rounded-lg p-4 border',
+                'rounded-lg p-3 border',
                 feasibilityInfo.self_study_possible
                   ? 'bg-emerald-900/10 border-emerald-500/20'
                   : 'bg-amber-900/10 border-amber-500/20'
               )}
             >
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-1.5 mb-1">
                 {feasibilityInfo.self_study_possible ? (
-                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-amber-400" />
+                  <XCircle className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
                 )}
-                <span className="text-sm text-muted-foreground">독학 가능</span>
+                <span className="text-xs text-muted-foreground">독학 가능</span>
               </div>
               <span
                 className={cn(
-                  'text-lg font-bold',
+                  'text-base font-bold',
                   feasibilityInfo.self_study_possible ? 'text-emerald-400' : 'text-amber-400'
                 )}
               >
@@ -104,12 +104,12 @@ export function FeasibilityCard({ feasibilityInfo, className }: FeasibilityCardP
 
           {/* 최소 준비 기간 */}
           {feasibilityInfo.minimum_study_period !== null && (
-            <div className="bg-violet-900/10 rounded-lg p-4 border border-violet-500/20">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-violet-400" />
-                <span className="text-sm text-muted-foreground">최소 준비 기간</span>
+            <div className="bg-violet-900/10 rounded-lg p-3 border border-violet-500/20">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Clock className="h-3.5 w-3.5 text-violet-400 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground">최소 준비 기간</span>
               </div>
-              <span className="text-xl font-bold text-violet-400">
+              <span className="text-base font-bold text-violet-400">
                 {feasibilityInfo.minimum_study_period >= 30
                   ? `약 ${Math.max(1, Math.round(feasibilityInfo.minimum_study_period / 30))}개월`
                   : `${feasibilityInfo.minimum_study_period}일`}

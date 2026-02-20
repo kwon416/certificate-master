@@ -243,13 +243,15 @@ export default function CertificateDetailContent({
 
         {/* Tabs */}
         <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="bg-card/50 p-1 flex-wrap h-auto">
-            <TabsTrigger value="overview">한눈에 보기</TabsTrigger>
-            <TabsTrigger value="exam">시험 정보</TabsTrigger>
-            <TabsTrigger value="feasibility">합격 전략</TabsTrigger>
-            <TabsTrigger value="career">취업 활용</TabsTrigger>
-            <TabsTrigger value="study-guide">학습 가이드</TabsTrigger>
-          </TabsList>
+          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm py-2 -mx-4 px-4">
+            <TabsList className="bg-card/50 p-1 flex-wrap h-auto w-full">
+              <TabsTrigger value="overview">한눈에 보기</TabsTrigger>
+              <TabsTrigger value="exam">시험 정보</TabsTrigger>
+              <TabsTrigger value="feasibility">합격 전략</TabsTrigger>
+              <TabsTrigger value="career">취업 활용</TabsTrigger>
+              <TabsTrigger value="study-guide">학습 가이드</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="mt-6">
             <OverviewTab certificate={cert} />

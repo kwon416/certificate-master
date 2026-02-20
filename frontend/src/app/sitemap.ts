@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next'
+import { getAllPostSlugs } from '@/lib/blog/posts'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cert.i-ve.ai'
 
@@ -48,12 +49,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.3,
     },
+    {
+      url: `${SITE_URL}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
   ]
+
+  // 블로그 포스트 (빌드 타임, API 불필요)
+  const blogPages: MetadataRoute.Sitemap = getAllPostSlugs().map(({ slug, updatedAt }) => ({
+    url: `${SITE_URL}/blog/${slug}`,
+    lastModified: new Date(updatedAt),
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }))
 
   // 동적 자격증 페이지들 (API에서 페이지네이션으로 전체 가져오기)
   const certificatePages = await fetchCertificatePages()
 
-  return [...staticPages, ...certificatePages]
+  return [...staticPages, ...blogPages, ...certificatePages]
 }
 
 async function fetchCertificatePages(): Promise<MetadataRoute.Sitemap> {

@@ -12,7 +12,8 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
-    "test:report": "playwright show-report playwright-report"
+    "test:report": "playwright show-report playwright-report",
+    "deploy": "echo 'Deploy via Docker Compose (see deploy/README.md)'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -37,8 +38,8 @@
     "lucide-react": "^0.562.0",
     "next": "14.2.35",
     "next-themes": "^0.4.6",
-    "react": "^18",
-    "react-dom": "^18",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-hook-form": "^7.70.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
@@ -51,6 +52,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.2",
     "eslint-config-next": "14.2.35",
     "postcss": "^8",

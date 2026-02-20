@@ -228,35 +228,35 @@ export function CertificateCard({
           />
           {isListView ? (
             /* List View - Compact Layout */
-            <div className="flex items-center gap-4 pl-2">
+            <div className="flex items-center gap-3 pl-2">
               {/* Icon */}
-              <div className="text-3xl flex-shrink-0">{getCategoryIcon(primaryCategory)}</div>
+              <div className="text-2xl flex-shrink-0">{getCategoryIcon(primaryCategory)}</div>
 
               {/* Content */}
-              <div className="flex-1 min-w-0 pr-8">
-                {/* Title + Categories */}
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h3 className="text-base font-semibold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
-                    {title}
-                  </h3>
-                  <div className="flex flex-wrap gap-1">
-                    {categories.slice(0, 2).map((cat, idx) => {
-                      const catColor = getCategoryColor(cat.name)
-                      return (
-                        <Badge
-                          key={idx}
-                          variant="secondary"
-                          className={cn('text-xs font-medium border', catColor.bg, catColor.border, catColor.text)}
-                        >
-                          {cat.name}
-                        </Badge>
-                      )
-                    })}
-                  </div>
+              <div className="flex-1 min-w-0 pr-7">
+                {/* Title - 항상 한 줄, truncate */}
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate leading-snug">
+                  {title}
+                </h3>
+
+                {/* Categories - 타이틀 아래 고정 줄 */}
+                <div className="flex flex-wrap gap-1 mt-0.5 mb-1">
+                  {categories.slice(0, 2).map((cat, idx) => {
+                    const catColor = getCategoryColor(cat.name)
+                    return (
+                      <Badge
+                        key={idx}
+                        variant="secondary"
+                        className={cn('text-xs font-medium border', catColor.bg, catColor.border, catColor.text)}
+                      >
+                        {cat.name}
+                      </Badge>
+                    )
+                  })}
                 </div>
 
-                {/* Stats - Single Line */}
-                <div className="flex flex-wrap items-center gap-3 text-sm">
+                {/* Stats - 좁아지면 두 줄로 자연스럽게 래핑 (• 구분자 제거) */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
                   {difficulty !== null && (
                     <div className="flex items-center gap-1.5">
                       <DifficultyStars level={difficulty} />
@@ -265,24 +265,18 @@ export function CertificateCard({
                       </span>
                     </div>
                   )}
-                  {(difficulty !== null && (passRate !== null || studyPeriod !== null)) && (
-                    <span className="text-muted-foreground/50">•</span>
-                  )}
                   {passRate !== null && (
                     <div className="flex items-center gap-1">
-                      <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                      <TrendingUp className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
                         {(passRate * 100).toFixed(0)}%
                       </span>
                     </div>
                   )}
-                  {(passRate !== null && studyPeriod !== null) && (
-                    <span className="text-muted-foreground/50">•</span>
-                  )}
                   {studyPeriod !== null && (
                     <div className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-                      <span className="text-sm text-foreground/80">
+                      <Clock className="h-3 w-3 text-cyan-600 dark:text-cyan-400" />
+                      <span className="text-xs text-foreground/80">
                         {getStudyPeriodLabel(studyPeriod)}
                       </span>
                     </div>
@@ -291,7 +285,7 @@ export function CertificateCard({
               </div>
 
               {/* Arrow indicator */}
-              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex-shrink-0" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex-shrink-0" />
             </div>
           ) : (
             /* Grid View - Original Layout */
