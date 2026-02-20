@@ -79,6 +79,9 @@ class TestVectorStoreServiceIntegrated:
                     "overview": "IT 분야의 대표적인 자격증입니다.",
                     "difficulty": 3,
                     "study_period_days": 90,
+                    "career_info": {"industry": ["IT", "소프트웨어"]},
+                    "job_market_info": {},
+                    "feasibility_info": {},
                 }
 
                 record = service.format_record_for_upsert(cert)
@@ -86,7 +89,8 @@ class TestVectorStoreServiceIntegrated:
                 assert record["_id"] == "uuid-123"
                 assert "chunk_text" in record
                 assert "정보처리기사" in record["chunk_text"]
-                assert "IT 분야" in record["chunk_text"]
+                # Contextual Prefix에서 career_info.industry 기반으로 "IT" 포함
+                assert "IT" in record["chunk_text"]
                 assert record["title"] == "정보처리기사"
                 assert record["categories"] == "국가기술자격"
 
