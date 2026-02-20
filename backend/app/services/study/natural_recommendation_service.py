@@ -17,12 +17,17 @@ from app.schemas.recommendation import (
     NaturalLanguageRequest,
     NaturalLanguageResponse,
     RecommendedCertificate,
+    StructuredRecommendationRequest,
     StructuredUserContext,
     UnifiedRecommendationRequest,
     UnifiedRecommendationResponse,
     Feasibility,
     QuickStats,
     StudyInsights,
+)
+from app.services.search.structured_query import (
+    build_structured_query,
+    build_structured_metadata_filter,
 )
 from app.services.embedding.vector_store import VectorStoreService
 from app.services.llm.context_extractor import ContextExtractorService
@@ -619,6 +624,156 @@ class NaturalRecommendationService:
                 continue
 
         # match_score 순 정렬
+        recommendations.sort(key=lambda r: r.match_score, reverse=True)
+
+        return UnifiedRecommendationResponse(
+            structured_context=context,
+            recommendations=recommendations,
+            query_used=query,
+            total_matched=len(search_results),
+            search_stats=SearchStats(**search_stats_data),
+        )
+
+    async def get_structured_recommendations(
+        self, request: StructuredRecommendationRequest
+    ) -> UnifiedRecommendationResponse:
+        """구조화된 입력 기반 추천 (Contextual Retrieval).
+
+        구조화된 사용자 입력에서 Contextual Prefix와 동일한 어휘의 쿼리를 생성하여
+        검색 정확도를 높입니다.
+        """
+        logger.info(f"[Structured] domains={request.domains}, purpose={request.purpose}")
+
+        # Step 1: 구조화된 쿼리 + 메타데이터 필터 생성
+        query = build_structured_query(
+            domains=request.domains,
+            purpose=request.purpose,
+            current_status=request.current_status,
+            preference_tags=request.preference_tags,
+            additional_input=request.additional_input,
+        )
+        metadata_filter = build_structured_metadata_filter(
+            preference_tags=request.preference_tags,
+            current_status=request.current_status,
+        )
+        logger.info(f"[Step 1] Query: {query[:80]}, Filter: {metadata_filter}")
+
+        # Step 2: 컨텍스트 파싱
+        parser = EnhancedContextParser()
+        context = parser.parse(
+            user_input=f"{request.purpose} {request.current_status} {request.additional_input}".strip(),
+            domains=request.domains,
+        )
+
+        # Step 3: 하이브리드 검색
+        bm25 = get_bm25_service()
+
+        if bm25.is_ready():
+            hybrid = HybridSearchService(
+                vector_store=self.vector_store,
+                bm25_service=bm25,
+            )
+            search_results = await hybrid.search(
+                query=query,
+                top_k=UNIFIED_TOP_K,
+                domains=request.domains if request.domains else None,
+            )
+            search_stats_data = hybrid.last_search_stats
+        else:
+            logger.warning("[Step 2] BM25 not ready, using Dense search only")
+            raw_results = self.vector_store.search_records(
+                namespace=VectorStoreService.NAMESPACE,
+                query=query,
+                top_k=UNIFIED_TOP_K * 3,
+                filter_dict=metadata_filter,
+            )
+            MIN_SCORE = 0.25
+            search_results = [
+                {"id": r["id"], "rrf_score": r.get("score", 0)}
+                for r in raw_results
+                if r.get("score", 0) >= MIN_SCORE
+            ][:UNIFIED_TOP_K]
+            search_stats_data = {
+                "dense_count": len(raw_results),
+                "sparse_count": 0,
+                "merged_count": len(search_results),
+                "elapsed_ms": 0,
+            }
+
+        logger.info(f"[Step 2] Found {len(search_results)} results")
+
+        if not search_results:
+            return UnifiedRecommendationResponse(
+                structured_context=context,
+                recommendations=[],
+                query_used=query,
+                total_matched=0,
+                search_stats=SearchStats(**search_stats_data),
+            )
+
+        # 자격증 상세 정보 조회
+        cert_ids = [r["id"] for r in search_results]
+        certificates = self._fetch_certificates_by_ids(cert_ids)
+        rrf_rank_map = {r["id"]: rank for rank, r in enumerate(search_results, 1)}
+
+        # Step 3: 템플릿 기반 이유 생성
+        engine = ReasonTemplateEngine()
+        recommendations = []
+
+        for cert in certificates:
+            try:
+                cert_schema = Certificate(**cert)
+                rrf_rank = rrf_rank_map.get(cert["id"], len(search_results))
+
+                base = max(0, 70 - (rrf_rank - 1) * 7)
+                bonus = 0
+                if request.purpose in ("취업", "이직"):
+                    jm = cert.get("job_market_info", {}) or {}
+                    if jm.get("job_posting_frequency") in ("많음", "매우 많음"):
+                        bonus += 10
+                if request.current_status in ("학생", "취준생", "전업 준비"):
+                    fi = cert.get("feasibility_info", {}) or {}
+                    if fi.get("self_study_possible"):
+                        bonus += 10
+                if request.current_status == "직장인":
+                    study_days = cert.get("study_period_days", 0)
+                    if study_days and study_days <= context.max_study_period_days * 0.7:
+                        bonus += 10
+                match_score = min(100, base + bonus)
+
+                reason = engine.generate(cert, context)
+                study_days = cert.get("study_period_days") or 90
+                feasibility = Feasibility(
+                    can_prepare=study_days <= context.max_study_period_days,
+                    estimated_days=study_days,
+                )
+                career_info = cert.get("career_info") or {}
+                exam_info = cert.get("exam_info") or {}
+                quick_stats = QuickStats(
+                    passing_rate=cert.get("passing_rate"),
+                    average_salary=career_info.get("average_salary"),
+                    exam_fee=exam_info.get("total_fee"),
+                    exam_type=exam_info.get("exam_type"),
+                )
+                primary_category = (
+                    cert_schema.categories[0].name if cert_schema.categories else "기타"
+                )
+                key_points = self._generate_key_points(cert, context)
+
+                recommendations.append(RecommendedCertificate(
+                    certificate=cert_schema,
+                    qualification_category=primary_category,
+                    match_score=match_score,
+                    recommendation_reason=reason,
+                    key_points=key_points,
+                    feasibility=feasibility,
+                    quick_stats=quick_stats,
+                    study_insights=StudyInsights(),
+                ))
+            except Exception as e:
+                logger.error(f"[Structured] Failed for {cert.get('title')}: {e}")
+                continue
+
         recommendations.sort(key=lambda r: r.match_score, reverse=True)
 
         return UnifiedRecommendationResponse(

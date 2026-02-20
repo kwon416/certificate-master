@@ -86,6 +86,40 @@ VALID_CERTIFICATE_LEVELS = [
 ]
 
 
+# Contextual Retrieval 구조화된 추천 요청
+VALID_STRUCTURED_PURPOSES = [
+    "취업",
+    "이직",
+    "전문성 강화",
+    "실무 활용",
+    "교양",
+]
+
+VALID_STRUCTURED_STATUS = [
+    "학생",
+    "취준생",
+    "직장인",
+    "경력자",
+    "전업 준비",
+]
+
+VALID_PREFERENCE_TAGS = [
+    "독학 가능",
+    "비전공자",
+    "비용 저렴",
+    "CBT 상시시험",
+]
+
+
+class StructuredRecommendationRequest(BaseModel):
+    """구조화된 추천 요청 (Contextual Retrieval)."""
+    domains: list[str] = Field(..., min_length=1, description="관심 분야")
+    purpose: str = Field(..., description="목적")
+    current_status: str = Field(..., description="현재 상황")
+    preference_tags: list[str] = Field(default_factory=list, description="선호 태그")
+    additional_input: str = Field(default="", description="추가 입력")
+
+
 class RecommendationRequest(BaseModel):
     """사용자 컨텍스트 기반 추천 요청 스키마."""
 
