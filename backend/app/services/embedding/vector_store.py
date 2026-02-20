@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from app.services.embedding.protocol import EmbeddingServiceProtocol
 from app.utils.certificate_formatter import (
     format_certificate_text,
+    format_contextual_search_text,
     format_search_text,
     build_certificate_metadata,
 )
@@ -349,7 +350,7 @@ class VectorStoreService:
         Returns:
             _id, chunk_text, 메타데이터를 포함한 레코드.
         """
-        chunk_text = format_search_text(cert)
+        chunk_text = format_contextual_search_text(cert)
         metadata = build_certificate_metadata(cert)
 
         return {
