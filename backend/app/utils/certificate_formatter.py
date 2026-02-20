@@ -736,3 +736,86 @@ def build_contextual_prefix(cert: dict) -> str:
         f"{target}에게 적합하며 {purpose}에 도움이 됩니다. "
         f"약 {period} 준비, 난이도 {diff}/5입니다."
     )
+
+
+def format_contextual_search_text(cert: dict) -> str:
+    """Contextual Retrieval용 검색 최적화 임베딩 텍스트를 생성합니다.
+
+    기존 format_search_text()와 다른 점:
+    1. Contextual Prefix가 앞에 붙어 맥락 정보 제공
+    2. overview 제거 (신호 희석 방지)
+    3. User Matching 태그 추가 (비전공자, 직장인, 독학가능 등)
+
+    Args:
+        cert: 자격증 데이터 딕셔너리.
+
+    Returns:
+        Contextual Prefix가 포함된 검색 최적화 텍스트.
+    """
+    prefix = build_contextual_prefix(cert)
+
+    career_info = cert.get("career_info", {}) or {}
+    job_market_info = cert.get("job_market_info", {}) or {}
+
+    # categories
+    categories = cert.get("categories", [])
+    if isinstance(categories, list):
+        categories_str = ", ".join(
+            cat.get("name", "") if isinstance(cat, dict) else str(cat)
+            for cat in categories
+        )
+    else:
+        categories_str = str(categories) if categories else ""
+
+    # industry
+    industry = career_info.get("industry", "")
+    if isinstance(industry, list):
+        industry_str = ", ".join(industry)
+    else:
+        industry_str = industry or ""
+
+    # related_jobs
+    related_jobs = career_info.get("related_jobs", [])
+    if isinstance(related_jobs, list):
+        related_jobs_str = ", ".join(related_jobs)
+    else:
+        related_jobs_str = str(related_jobs) if related_jobs else ""
+
+    # use_cases
+    use_cases = career_info.get("use_cases", [])
+    if isinstance(use_cases, list):
+        use_cases_str = ", ".join(use_cases[:5])
+    else:
+        use_cases_str = str(use_cases) if use_cases else ""
+
+    # preferred_industries
+    preferred = job_market_info.get("preferred_industries", [])
+    if isinstance(preferred, list):
+        preferred_str = ", ".join(preferred[:5])
+    else:
+        preferred_str = str(preferred) if preferred else ""
+
+    # User Matching Tags
+    matching_tags = []
+    if cert.get("feasibility_info", {}) and cert["feasibility_info"].get(
+        "self_study_possible"
+    ):
+        matching_tags.append("독학가능")
+    if _is_non_major_friendly(cert):
+        matching_tags.append("비전공자추천")
+    if _is_working_adult_friendly(cert):
+        matching_tags.append("직장인추천")
+    matching_str = " ".join(matching_tags)
+
+    parts = [
+        prefix,
+        cert.get("title", ""),
+        categories_str,
+        cert.get("series", "") or "",
+        industry_str,
+        related_jobs_str,
+        use_cases_str,
+        preferred_str,
+        matching_str,
+    ]
+    return " ".join(filter(None, parts))
