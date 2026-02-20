@@ -117,7 +117,29 @@ class StructuredRecommendationRequest(BaseModel):
     purpose: str = Field(..., description="목적")
     current_status: str = Field(..., description="현재 상황")
     preference_tags: list[str] = Field(default_factory=list, description="선호 태그")
-    additional_input: str = Field(default="", description="추가 입력")
+    additional_input: str = Field(default="", max_length=1000, description="추가 입력")
+
+    @field_validator("purpose")
+    @classmethod
+    def validate_purpose(cls, v: str) -> str:
+        if v not in VALID_STRUCTURED_PURPOSES:
+            raise ValueError(f"Invalid purpose: {v}. Must be one of {VALID_STRUCTURED_PURPOSES}")
+        return v
+
+    @field_validator("current_status")
+    @classmethod
+    def validate_current_status(cls, v: str) -> str:
+        if v not in VALID_STRUCTURED_STATUS:
+            raise ValueError(f"Invalid status: {v}. Must be one of {VALID_STRUCTURED_STATUS}")
+        return v
+
+    @field_validator("preference_tags")
+    @classmethod
+    def validate_preference_tags(cls, v: list[str]) -> list[str]:
+        for tag in v:
+            if tag not in VALID_PREFERENCE_TAGS:
+                raise ValueError(f"Invalid tag: {tag}. Must be one of {VALID_PREFERENCE_TAGS}")
+        return v
 
 
 class RecommendationRequest(BaseModel):

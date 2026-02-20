@@ -732,7 +732,7 @@ def build_contextual_prefix(cert: dict) -> str:
     diff = cert.get("difficulty") or 3
 
     return (
-        f"이 자격증은 {domain} 분야의 {series}으로, "
+        f"이 자격증은 {domain} 분야, {series} 계열이며, "
         f"{target}에게 적합하며 {purpose}에 도움이 됩니다. "
         f"약 {period} 준비, 난이도 {diff}/5입니다."
     )

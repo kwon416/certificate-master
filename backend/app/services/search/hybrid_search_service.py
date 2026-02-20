@@ -29,6 +29,7 @@ class HybridSearchService:
         domains: Optional[list[str]] = None,
         dense_weight: float = 1.0,
         sparse_weight: float = 1.0,
+        filter_dict: Optional[dict] = None,
     ) -> list[dict]:
         """Dense + Sparse 검색 결과를 RRF(Reciprocal Rank Fusion)로 결합하여 반환한다.
 
@@ -38,6 +39,7 @@ class HybridSearchService:
             domains: 필터링할 도메인 목록 (선택).
             dense_weight: Dense 검색 RRF 가중치.
             sparse_weight: Sparse 검색 RRF 가중치.
+            filter_dict: ChromaDB 메타데이터 필터 (선택). 도메인 필터와 병합됩니다.
 
         Returns:
             RRF 점수 기준으로 정렬된 검색 결과 리스트.
@@ -45,8 +47,16 @@ class HybridSearchService:
         start = time.monotonic()
         retrieve_k = top_k * 3
 
-        # Dense 검색용 도메인 필터 구성
-        dense_filter = {"domain": {"$in": domains}} if domains else None
+        # Dense 검색용 필터 구성: 도메인 필터 + 메타데이터 필터 병합
+        dense_filter = None
+        domain_filter = {"domain": {"$in": domains}} if domains else None
+
+        if domain_filter and filter_dict:
+            dense_filter = {"$and": [domain_filter, filter_dict]}
+        elif domain_filter:
+            dense_filter = domain_filter
+        elif filter_dict:
+            dense_filter = filter_dict
 
         # Dense(벡터) 검색과 Sparse(BM25) 검색을 병렬 실행
         # search_records / bm25.search 모두 동기 함수이므로 to_thread로 감싸기

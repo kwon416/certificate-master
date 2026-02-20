@@ -5,7 +5,7 @@
 동작 순서:
 1. ChromaDB 컬렉션 초기화 (clear_all)
 2. MariaDB에서 enriched 자격증 전체 조회 (overview IS NOT NULL)
-3. format_search_text + build_certificate_metadata로 텍스트/메타 준비
+3. format_contextual_search_text + build_certificate_metadata로 텍스트/메타 준비
 4. OpenAI text-embedding-3-small로 배치 임베딩 생성
 5. ChromaDB에 upsert + MariaDB vector_id 동기화
 6. 결과 리포트 출력

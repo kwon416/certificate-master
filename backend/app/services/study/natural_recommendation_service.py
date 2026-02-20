@@ -665,7 +665,7 @@ class NaturalRecommendationService:
             domains=request.domains,
         )
 
-        # Step 3: 하이브리드 검색
+        # Step 3: 하이브리드 검색 (metadata_filter를 Dense 검색에 전달)
         bm25 = get_bm25_service()
 
         if bm25.is_ready():
@@ -677,6 +677,7 @@ class NaturalRecommendationService:
                 query=query,
                 top_k=UNIFIED_TOP_K,
                 domains=request.domains if request.domains else None,
+                filter_dict=metadata_filter,
             )
             search_stats_data = hybrid.last_search_stats
         else:

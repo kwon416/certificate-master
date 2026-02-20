@@ -23,9 +23,7 @@ from app.services.embedding.service import EmbeddingService
 if TYPE_CHECKING:
     from app.services.embedding.protocol import EmbeddingServiceProtocol
 from app.utils.certificate_formatter import (
-    format_certificate_text,
     format_contextual_search_text,
-    format_search_text,
     build_certificate_metadata,
 )
 

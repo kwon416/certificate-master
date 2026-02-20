@@ -94,13 +94,24 @@ class BM25SearchService:
         industry = career_info.get("industry", "")
         related_jobs = career_info.get("related_jobs", "")
 
+        # categories: list[dict] → 이름만 추출
+        categories = cert.get("categories", [])
+        if isinstance(categories, list):
+            categories_str = " ".join(
+                cat.get("name", "") if isinstance(cat, dict) else str(cat)
+                for cat in categories
+            )
+        else:
+            categories_str = str(categories) if categories else ""
+
         parts = [
             prefix,
             cert.get("title", ""),
-            cert.get("categories", ""),
+            categories_str,
             cert.get("series", ""),
             " ".join(industry) if isinstance(industry, list) else str(industry or ""),
             " ".join(related_jobs) if isinstance(related_jobs, list) else str(related_jobs or ""),
+            # BM25 키워드 검색에는 overview가 유용 (Dense와 달리 의미 희석 없음)
             (cert.get("overview", "") or "")[:200],
         ]
         return " ".join(filter(None, parts))
