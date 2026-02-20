@@ -16,6 +16,15 @@ export interface UnifiedRecommendationRequest {
   user_input: string
 }
 
+// Structured recommendation types (Contextual Retrieval)
+export interface StructuredRecommendationRequest {
+  domains: string[]
+  purpose: string
+  current_status: string
+  preference_tags?: string[]
+  additional_input?: string
+}
+
 export interface SearchStats {
   dense_count: number
   sparse_count: number
@@ -54,6 +63,43 @@ export const recommendationsAPI = {
     try {
       const response = await api.post<UnifiedRecommendationResponse>(
         '/api/v1/recommendations/unified',
+        request
+      )
+
+      const elapsed = Date.now() - startTime
+      if (elapsed < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
+      }
+
+      return response
+    } catch (error) {
+      const elapsed = Date.now() - startTime
+      if (elapsed < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed))
+      }
+      throw error
+    }
+  },
+
+  /**
+   * 구조화된 입력 기반 자격증 추천 (Contextual Retrieval)
+   *
+   * 3단계 파이프라인:
+   * 1. 구조화된 입력 → 검색 쿼리 + 메타데이터 필터
+   * 2. Dense + BM25 Sparse + RRF 결합 검색
+   * 3. 데이터 기반 템플릿 추천 이유 생성
+   */
+  async getStructuredRecommendations(
+    request: StructuredRecommendationRequest
+  ): Promise<UnifiedRecommendationResponse> {
+    console.log('🌐 [API] POST /api/v1/recommendations/structured')
+
+    const minLoadingTime = 800
+    const startTime = Date.now()
+
+    try {
+      const response = await api.post<UnifiedRecommendationResponse>(
+        '/api/v1/recommendations/structured',
         request
       )
 

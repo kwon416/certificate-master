@@ -109,18 +109,30 @@ interface RecommendState {
   // 통합 플로우 (Redesign)
   selectedDomains: string[]
   unifiedInput: string
-  unifiedStep: 'domain' | 'input' | 'loading' | 'results'
+  unifiedStep: 'domain' | 'context' | 'input' | 'preferences' | 'loading' | 'results'
   unifiedRecommendations: NaturalRecommendedCertificate[] | null
   unifiedContext: StructuredUserContext | null
   unifiedQueryUsed: string | null
   unifiedTotalMatched: number
 
+  // 구조화된 추천 상태 (Contextual Retrieval)
+  structuredPurpose: string
+  structuredStatus: string
+  structuredPreferenceTags: string[]
+  structuredAdditionalInput: string
+
   // 통합 액션
   setSelectedDomains: (domains: string[]) => void
   setUnifiedInput: (input: string) => void
-  setUnifiedStep: (step: 'domain' | 'input' | 'loading' | 'results') => void
+  setUnifiedStep: (step: 'domain' | 'context' | 'input' | 'preferences' | 'loading' | 'results') => void
   setUnifiedRecommendations: (response: UnifiedRecommendationResponse) => void
   resetUnified: () => void
+
+  // 구조화된 추천 액션
+  setStructuredPurpose: (purpose: string) => void
+  setStructuredStatus: (status: string) => void
+  togglePreferenceTag: (tag: string) => void
+  setStructuredAdditionalInput: (input: string) => void
 
   // 액션
   setInputMode: (mode: InputMode) => void
@@ -194,6 +206,12 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
   unifiedQueryUsed: null,
   unifiedTotalMatched: 0,
 
+  // 구조화된 추천 상태
+  structuredPurpose: '',
+  structuredStatus: '',
+  structuredPreferenceTags: [],
+  structuredAdditionalInput: '',
+
   // 통합 액션
   setSelectedDomains: (domains) => set({ selectedDomains: domains }),
   setUnifiedInput: (input) => set({ unifiedInput: input }),
@@ -217,7 +235,24 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
     unifiedTotalMatched: 0,
     isLoading: false,
     error: null,
+    // 구조화된 추천 초기화
+    structuredPurpose: '',
+    structuredStatus: '',
+    structuredPreferenceTags: [],
+    structuredAdditionalInput: '',
   }),
+
+  // 구조화된 추천 액션
+  setStructuredPurpose: (purpose) => set({ structuredPurpose: purpose }),
+  setStructuredStatus: (status) => set({ structuredStatus: status }),
+  togglePreferenceTag: (tag) => set((state) => {
+    const tags = state.structuredPreferenceTags
+    if (tags.includes(tag)) {
+      return { structuredPreferenceTags: tags.filter(t => t !== tag) }
+    }
+    return { structuredPreferenceTags: [...tags, tag] }
+  }),
+  setStructuredAdditionalInput: (input) => set({ structuredAdditionalInput: input }),
 
   // 입력 모드 전환
   setInputMode: (mode) => {
@@ -277,6 +312,11 @@ export const useRecommendStore = create<RecommendState>((set, get) => ({
       unifiedContext: null,
       unifiedQueryUsed: null,
       unifiedTotalMatched: 0,
+      // 구조화된 추천 초기화
+      structuredPurpose: '',
+      structuredStatus: '',
+      structuredPreferenceTags: [],
+      structuredAdditionalInput: '',
     })
   },
 
