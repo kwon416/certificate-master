@@ -678,3 +678,61 @@ def format_search_text(cert: dict) -> str:
         preferred_industries_str,
     ]
     return " ".join(filter(None, parts))
+
+
+def build_contextual_prefix(cert: dict) -> str:
+    """자격증의 Contextual Retrieval용 맥락 설명을 생성합니다.
+
+    Anthropic Contextual Retrieval 전략에 따라, 임베딩 텍스트 앞에
+    붙여서 검색 시 쿼리와의 의미적 매칭을 향상시킵니다.
+
+    Args:
+        cert: 자격증 데이터 딕셔너리.
+
+    Returns:
+        50-100 토큰의 맥락 설명 문자열.
+    """
+    feasibility = cert.get("feasibility_info", {}) or {}
+    career = cert.get("career_info", {}) or {}
+    job_market = cert.get("job_market_info", {}) or {}
+
+    # 1. 대상 사용자
+    target_users = []
+    if feasibility.get("self_study_possible"):
+        target_users.append("비전공자")
+    difficulty = cert.get("difficulty")
+    if difficulty is not None and difficulty <= 2:
+        target_users.append("입문자")
+    if _is_working_adult_friendly(cert):
+        target_users.append("직장인")
+    target = "·".join(target_users) if target_users else "관련 전공자"
+
+    # 2. 목적
+    purpose = "자기계발"
+    if job_market.get("requirement_type") == "필수":
+        purpose = "취업·이직 필수"
+    elif job_market.get("job_posting_frequency") in ("많음", "매우 많음"):
+        purpose = "취업·이직 우대"
+
+    # 3. 기간
+    days = cert.get("study_period_days") or 90
+    period = f"{days // 30}개월" if days >= 30 else f"{days}일"
+
+    # 4. 분야
+    industry = career.get("industry", [])
+    if isinstance(industry, list) and industry:
+        domain = ", ".join(industry[:3])
+    else:
+        domain = cert.get("domain", "") or ""
+
+    # 5. 계열
+    series = cert.get("series", "") or ""
+
+    # 6. 난이도
+    diff = cert.get("difficulty") or 3
+
+    return (
+        f"이 자격증은 {domain} 분야의 {series}으로, "
+        f"{target}에게 적합하며 {purpose}에 도움이 됩니다. "
+        f"약 {period} 준비, 난이도 {diff}/5입니다."
+    )
