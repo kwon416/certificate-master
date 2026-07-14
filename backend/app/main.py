@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.chroma import router as chroma_router
 from app.api.v1 import router as api_v1_router
@@ -175,6 +176,25 @@ async def health_check():
         "service": "certificate-master-api",
         "environment": settings.ENVIRONMENT,
     }
+
+
+# 모니터링 대시보드용 표준 헬스체크. 어느 origin에서도 조회 가능.
+# 기존 /health 는 앱 내부 규약이 다르므로 그대로 두고 별도 엔드포인트 추가.
+@app.get("/healthz")
+async def healthz():
+    return JSONResponse(
+        content={
+            "status": "ok",
+            "service": "cert.i-ve.ai",
+            "version": "0.1.0",
+            "commit": os.environ.get("GIT_COMMIT", "unknown"),
+            "builtAt": os.environ.get("BUILD_TIMESTAMP"),
+        },
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @app.get("/health/db")
